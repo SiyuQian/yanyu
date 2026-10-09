@@ -32,13 +32,10 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
   );
 
   const { settings, isLoading, updateChecksLocked } = useSettings();
-  // Wait for the lock state too (null = not loaded yet), otherwise the first
-  // render could fire an update check before HANDY_DISABLE_UPDATER is known.
+  // Wait for the release configuration lock before checking for updates.
   const settingsLoaded =
     !isLoading && settings !== null && updateChecksLocked !== null;
-  // Forced-off by system configuration (HANDY_DISABLE_UPDATER) overrides the
-  // stored preference without persisting it, mirroring the backend's effective
-  // updater state.
+  // The backend lock overrides the stored preference without persisting it.
   const updateChecksEnabled =
     (settings?.update_checks_enabled ?? false) && updateChecksLocked === false;
 

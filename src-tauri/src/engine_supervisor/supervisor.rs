@@ -1111,7 +1111,7 @@ impl Worker {
         let mut command = ProcessCommand::new(exe);
         #[cfg(target_os = "linux")]
         if let Some(arg0) = std::env::args_os().next() {
-            // Keep `ps` showing Handy's own path rather than /proc/self/exe.
+            // Keep `ps` showing Yanyu's own path rather than /proc/self/exe.
             use std::os::unix::process::CommandExt;
             command.arg0(arg0);
         }
@@ -1325,7 +1325,7 @@ fn wait_exit(child: &mut Child, timeout: Duration) -> Option<ExitStatus> {
 #[cfg(test)]
 static LIVE_WORKERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
-/// The file Handy was started from, with its identity (device and inode),
+/// The file Yanyu was started from, with its identity (device and inode),
 /// recorded at startup; see [`worker_exe`]. `None` if either couldn't be
 /// read, which skips the check.
 #[cfg(all(unix, not(test)))]
@@ -1348,14 +1348,14 @@ fn record_launched_exe() {
                 let id = file_id(&path)?;
                 Ok((path, id))
             })
-            .inspect_err(|e| warn!("Could not identify Handy's executable: {}", e))
+            .inspect_err(|e| warn!("Could not identify Yanyu's executable: {}", e))
             .ok()
     });
 }
 
 /// The executable a worker runs: always this very binary, so the two agree
 /// on the protocol and on transcribe.cpp's backend libraries. Upgrading or
-/// moving Handy while it runs replaces or removes the file it started from,
+/// moving Yanyu while it runs replaces or removes the file it started from,
 /// and a worker started from there would be the new version (macOS), or this
 /// binary loading the new version's backend libraries (Linux). Only a
 /// restart fixes that, so refuse to start one and say so. Windows locks a
@@ -1367,7 +1367,7 @@ fn worker_exe() -> io::Result<PathBuf> {
     if let Some((path, launched)) = LAUNCHED_EXE.get().and_then(Option::as_ref) {
         if file_id(path).ok().as_ref() != Some(launched) {
             return Err(io::Error::other(
-                "Handy was updated or moved while it was running; restart Handy",
+                "Yanyu was updated or moved while it was running; restart Yanyu",
             ));
         }
     }
@@ -1478,7 +1478,7 @@ mod unit_tests {
 /// need a debug worker exe (fault injection is compiled out of release), and
 /// the stream tests a model that can stream.
 /// Run with:
-/// `HANDY_TRANSCRIBE_WORKER_EXE=target/debug/handy HANDY_TEST_MODEL=<gguf>
+/// `HANDY_TRANSCRIBE_WORKER_EXE=target/debug/yanyu HANDY_TEST_MODEL=<gguf>
 ///  HANDY_TEST_WAV=<16 kHz mono wav> cargo test --lib engine_supervisor --
 ///  --ignored --nocapture --test-threads=1`
 #[cfg(test)]
