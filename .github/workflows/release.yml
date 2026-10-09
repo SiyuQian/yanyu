@@ -1,6 +1,13 @@
 name: "Release"
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   create-release:
@@ -9,34 +16,36 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release-id: ${{ steps.create-release.outputs.result }}
-      version: ${{ steps.get-version.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Get version from tauri.conf.json
-        id: get-version
-        shell: bash
-        run: |
-          VERSION=$(grep -o '"version": "[^"]*"' src-tauri/tauri.conf.json | cut -d'"' -f4)
-          echo "Application version from tauri.conf.json: $VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Create Draft Release
+      - name: Select or create release
         id: create-release
         uses: actions/github-script@v9
         with:
           script: |
+            const fs = require('node:fs');
+            const { version } = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
+            const tag = `v${version}`;
+            if (context.eventName === 'release') {
+              const release = context.payload.release;
+              if (release.tag_name !== tag) {
+                throw new Error(`Release tag ${release.tag_name} must match application version ${tag}`);
+              }
+              return release.id;
+            }
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: `v${{ steps.get-version.outputs.version }}`,
-              name: `v${{ steps.get-version.outputs.version }}`,
+              tag_name: tag,
+              target_commitish: context.sha,
+              name: tag,
               draft: true,
               prerelease: false,
               generate_release_notes: true
-            })
-            return data.id
+            });
+            return data.id;
 
   publish-tauri:
     permissions:
@@ -72,6 +81,7 @@ jobs:
     with:
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
+      ref: ${{ github.sha }}
       build-args: ${{ matrix.args }}
       sign-binaries: false
       asset-prefix: "yanyu"

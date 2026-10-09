@@ -279,3 +279,45 @@ bun run tauri dev
 # Or compile a release binary without the installer/signing step:
 bun run tauri build --no-bundle
 ```
+
+## Publishing GitHub Releases
+
+The `Release` workflow reuses the cross-platform build workflow and uploads installers
+as assets on a GitHub Release. It builds macOS (Apple Silicon and Intel), Windows
+(x64 and ARM64), and Linux (x64 and ARM64).
+
+### Publish from the GitHub Releases page
+
+1. Update the application version in `src-tauri/tauri.conf.json`, `package.json`,
+   and `src-tauri/Cargo.toml`. Keep `src-tauri/Cargo.lock` consistent with the Rust version.
+2. Merge the version change and this workflow into the commit you want to release.
+3. Create a tag that matches the Tauri version, such as `v0.9.8`, on that commit.
+4. Create and publish a Release for that tag in GitHub, either stable or prerelease.
+5. Wait for the `Release` workflow to finish in Actions. Download installers from
+   the Release's **Assets** section.
+
+The workflow builds the tagged commit and uploads to the Release you published.
+A mismatched tag fails before builds start. Saving a draft does not trigger builds.
+The Release is public before installers finish uploading. Some assets may appear
+before other platforms finish. If a build fails, rerun the failed jobs in Actions.
+
+### Build a draft before publishing
+
+For a Release with installers ready at publication, run **Actions → Release → Run
+workflow** on the desired commit's branch. The workflow creates a draft Release with
+its application version and uploads the installers. Check that all build jobs pass,
+then publish the draft from the Releases page. Publishing it also triggers the Release
+workflow again, so this route currently rebuilds the packages.
+
+### Signing and download access
+
+Release builds currently use `sign-binaries: false`. macOS uses an ad-hoc signature
+without Apple notarization. Windows installers do not use a publisher certificate.
+Users may encounter operating-system security warnings. Trusted distribution requires
+Apple Developer signing/notarization and Windows code-signing credentials, configured
+as repository secrets before enabling `sign-binaries` in the release workflow.
+
+The workflow uses GitHub's built-in `GITHUB_TOKEN` with `contents: write` to upload
+assets. No personal access token is required. The repository must be public for people
+without repository access to download its releases. These installers do not enable
+in-app automatic updates (`createUpdaterArtifacts` is currently disabled).
