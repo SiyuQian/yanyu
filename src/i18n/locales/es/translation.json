@@ -187,6 +187,9 @@
         "none": "No hay atajos configurados",
         "notFound": "Atajo no encontrado",
         "pressKeys": "Presiona teclas...",
+        "add": "Añadir atajo",
+        "remove": "Eliminar atajo",
+        "reset": "Restablecer atajo",
         "bindings": {
           "transcribe": {
             "name": "Atajo de transcripción",

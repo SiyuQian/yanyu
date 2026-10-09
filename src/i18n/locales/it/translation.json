@@ -187,6 +187,9 @@
         "none": "Nessuna scorciatoia configurata",
         "notFound": "Scorciatoia non trovata",
         "pressKeys": "Premi i tasti...",
+        "add": "Aggiungi scorciatoia",
+        "remove": "Rimuovi scorciatoia",
+        "reset": "Ripristina scorciatoia",
         "bindings": {
           "transcribe": {
             "name": "Scorciatoia Trascrizione",

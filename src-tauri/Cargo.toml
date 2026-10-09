@@ -1,6 +1,6 @@
 [package]
 name = "yanyu"
-version = "0.9.8"
+version = "0.0.1"
 description = "言语 · Yanyu - Local speech to text"
 authors = ["SiyuQian", "cjpais"]
 edition = "2021"
