@@ -230,7 +230,10 @@
           "push_to_talk": "Records while you hold the shortcut",
           "toggle": "Tap the shortcut to start recording, tap again to stop"
         }
-      }
+      },
+      "pageDescription": "Configure shortcuts, recognition language, and recording preferences.",
+      "shortcutsTitle": "Shortcuts",
+      "recognitionTitle": "Recognition"
     },
     "models": {
       "title": "Transcription Models",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Audio Feedback",
-        "description": "Play sound when recording starts and stops"
+        "description": "Play sound when recording starts and stops",
+        "disabledHint": "Enable audio feedback to adjust playback device and volume."
       },
       "outputDevice": {
         "title": "Output Device",

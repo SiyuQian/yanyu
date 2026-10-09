@@ -250,7 +250,10 @@
           "push_to_talk": "Enregistre tant que le raccourci est maintenu",
           "toggle": "Appuyez sur le raccourci pour démarrer l'enregistrement, appuyez à nouveau pour arrêter"
         }
-      }
+      },
+      "pageDescription": "Configurez les raccourcis, la langue de reconnaissance et les préférences d’enregistrement.",
+      "shortcutsTitle": "Raccourcis",
+      "recognitionTitle": "Reconnaissance"
     },
     "sound": {
       "title": "Son",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Signal sonore",
-        "description": "Jouer un son au début et à la fin de l'enregistrement"
+        "description": "Jouer un son au début et à la fin de l'enregistrement",
+        "disabledHint": "Activez les signaux sonores pour régler le périphérique de lecture et le volume."
       },
       "outputDevice": {
         "title": "Périphérique de sortie",

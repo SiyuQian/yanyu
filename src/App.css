@@ -108,3 +108,101 @@
   stroke: var(--color-logo-stroke);
   stroke-width: 1;
 }
+
+/* Keep settings surfaces independent of the recording overlay's palette. */
+.settings-shell {
+  --color-background: #f7f9f8;
+  --settings-card: #ffffff;
+  --settings-sidebar: #f0f4f2;
+  --settings-accent: #0f766e;
+  background: var(--color-background);
+}
+
+@media (prefers-color-scheme: dark) {
+  .settings-shell {
+    --color-background: #181b1b;
+    --settings-card: #202525;
+    --settings-sidebar: #151919;
+    --settings-accent: #62d4c7;
+  }
+}
+
+:root[data-theme="light"] .settings-shell {
+  --color-background: #f7f9f8;
+  --settings-card: #ffffff;
+  --settings-sidebar: #f0f4f2;
+  --settings-accent: #0f766e;
+}
+
+:root[data-theme="dark"] .settings-shell {
+  --color-background: #181b1b;
+  --settings-card: #202525;
+  --settings-sidebar: #151919;
+  --settings-accent: #62d4c7;
+}
+
+.settings-sidebar,
+.settings-footer {
+  background: var(--settings-sidebar);
+}
+
+.settings-sidebar [aria-current="page"] {
+  color: var(--settings-accent);
+  background: color-mix(in srgb, var(--settings-accent) 14%, transparent);
+}
+
+.settings-card {
+  background: var(--settings-card);
+}
+
+.settings-card h2 > span {
+  color: var(--settings-accent);
+}
+
+.dictation-settings .setting-row {
+  min-height: 52px;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.dictation-settings .setting-row > .relative {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.dictation-settings .setting-row p {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.dictation-settings .setting-control {
+  min-height: 34px;
+  border-radius: 7px;
+  border-color: color-mix(in srgb, var(--color-text) 18%, transparent);
+  background: color-mix(in srgb, var(--color-text) 3%, transparent);
+  font-weight: 500;
+}
+
+.dictation-settings .setting-control:hover:not(:disabled) {
+  border-color: var(--settings-accent);
+}
+
+.dictation-settings .reset-button {
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+.dictation-settings input[type="range"]:disabled {
+  filter: grayscale(1);
+}
+
+@media (max-width: 760px) {
+  .dictation-settings .setting-row {
+    flex-wrap: wrap;
+  }
+
+  .dictation-settings .setting-row > .relative {
+    margin-inline-start: auto;
+  }
+}

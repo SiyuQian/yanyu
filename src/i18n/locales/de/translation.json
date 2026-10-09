@@ -250,7 +250,10 @@
           "push_to_talk": "Nimmt auf, solange die Tastenkombination gedrückt bleibt",
           "toggle": "Tastenkombination antippen, um die Aufnahme zu starten, erneut antippen zum Stoppen"
         }
-      }
+      },
+      "pageDescription": "Tastenkürzel, Erkennungssprache und Aufnahmeoptionen konfigurieren.",
+      "shortcutsTitle": "Tastenkürzel",
+      "recognitionTitle": "Erkennung"
     },
     "sound": {
       "title": "Ton",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Audio-Feedback",
-        "description": "Ton bei Start und Ende der Aufnahme abspielen"
+        "description": "Ton bei Start und Ende der Aufnahme abspielen",
+        "disabledHint": "Aktiviere die akustische Rückmeldung, um Wiedergabegerät und Lautstärke anzupassen."
       },
       "outputDevice": {
         "title": "Ausgabegerät",

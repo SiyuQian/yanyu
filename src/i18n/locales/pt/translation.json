@@ -230,7 +230,10 @@
           "push_to_talk": "Grava enquanto você mantém o atalho pressionado",
           "toggle": "Toque no atalho para começar a gravar, toque novamente para parar"
         }
-      }
+      },
+      "pageDescription": "Configure os atalhos, o idioma de reconhecimento e as preferências de gravação.",
+      "shortcutsTitle": "Atalhos",
+      "recognitionTitle": "Reconhecimento"
     },
     "models": {
       "title": "Modelos de Transcrição",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Feedback de Áudio",
-        "description": "Reproduzir som quando a gravação iniciar e parar"
+        "description": "Reproduzir som quando a gravação iniciar e parar",
+        "disabledHint": "Ative o retorno sonoro para ajustar o dispositivo de reprodução e o volume."
       },
       "outputDevice": {
         "title": "Dispositivo de Saída",

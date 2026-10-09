@@ -230,7 +230,10 @@
           "push_to_talk": "Merekam selama Anda menahan pintasan",
           "toggle": "Ketuk pintasan untuk mulai merekam, lalu ketuk lagi untuk berhenti"
         }
-      }
+      },
+      "pageDescription": "Atur pintasan, bahasa pengenalan, dan preferensi perekaman.",
+      "shortcutsTitle": "Pintasan",
+      "recognitionTitle": "Pengenalan"
     },
     "models": {
       "title": "Model Transkripsi",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Umpan Balik Audio",
-        "description": "Putar suara saat perekaman dimulai dan dihentikan"
+        "description": "Putar suara saat perekaman dimulai dan dihentikan",
+        "disabledHint": "Aktifkan umpan balik audio untuk mengatur perangkat pemutaran dan volume."
       },
       "outputDevice": {
         "title": "Perangkat Keluaran",

@@ -250,7 +250,10 @@
           "push_to_talk": "Nahrává, dokud držíte zkratku",
           "toggle": "Klepněte na zkratku pro zahájení nahrávání, klepněte znovu pro zastavení"
         }
-      }
+      },
+      "pageDescription": "Nastavte klávesové zkratky, jazyk rozpoznávání a předvolby nahrávání.",
+      "shortcutsTitle": "Klávesové zkratky",
+      "recognitionTitle": "Rozpoznávání"
     },
     "sound": {
       "title": "Zvuk",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Zvuková odezva",
-        "description": "Přehrát zvuk při zahájení a ukončení nahrávání"
+        "description": "Přehrát zvuk při zahájení a ukončení nahrávání",
+        "disabledHint": "Zapněte zvukovou odezvu a upravte zařízení pro přehrávání a hlasitost."
       },
       "outputDevice": {
         "title": "Výstupní zařízení",

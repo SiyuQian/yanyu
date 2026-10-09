@@ -230,7 +230,10 @@
           "push_to_talk": "단축키를 누르고 있는 동안 녹음합니다",
           "toggle": "단축키를 탭하면 녹음을 시작하고, 다시 탭하면 중지합니다"
         }
-      }
+      },
+      "pageDescription": "단축키, 인식 언어 및 녹음 환경설정을 구성하세요.",
+      "shortcutsTitle": "단축키",
+      "recognitionTitle": "음성 인식"
     },
     "sound": {
       "title": "사운드",
@@ -248,7 +251,8 @@
       },
       "audioFeedback": {
         "label": "오디오 피드백",
-        "description": "녹음 시작 및 정지 시 소리 재생"
+        "description": "녹음 시작 및 정지 시 소리 재생",
+        "disabledHint": "재생 장치와 볼륨을 조절하려면 알림음을 켜세요."
       },
       "outputDevice": {
         "title": "출력 장치",

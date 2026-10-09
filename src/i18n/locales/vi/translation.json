@@ -250,7 +250,10 @@
           "push_to_talk": "Ghi âm trong lúc bạn giữ phím tắt",
           "toggle": "Nhấn phím tắt để bắt đầu ghi âm, nhấn lại để dừng"
         }
-      }
+      },
+      "pageDescription": "Thiết lập phím tắt, ngôn ngữ nhận dạng và tùy chọn ghi âm.",
+      "shortcutsTitle": "Phím tắt",
+      "recognitionTitle": "Nhận dạng"
     },
     "sound": {
       "title": "Âm thanh",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Phản hồi âm thanh",
-        "description": "Phát âm thanh khi bắt đầu và kết thúc ghi âm"
+        "description": "Phát âm thanh khi bắt đầu và kết thúc ghi âm",
+        "disabledHint": "Bật phản hồi âm thanh để điều chỉnh thiết bị phát và âm lượng."
       },
       "outputDevice": {
         "title": "Thiết bị đầu ra",

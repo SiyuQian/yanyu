@@ -250,7 +250,10 @@
           "push_to_talk": "ショートカットを押している間だけ録音します",
           "toggle": "ショートカットをタップすると録音を開始し、もう一度タップすると停止します"
         }
-      }
+      },
+      "pageDescription": "ショートカット、認識言語、録音設定を変更します。",
+      "shortcutsTitle": "ショートカット",
+      "recognitionTitle": "音声認識"
     },
     "sound": {
       "title": "サウンド",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "オーディオフィードバック",
-        "description": "録音の開始と停止時にサウンドを再生"
+        "description": "録音の開始と停止時にサウンドを再生",
+        "disabledHint": "通知音を有効にすると、再生デバイスと音量を調整できます。"
       },
       "outputDevice": {
         "title": "出力デバイス",

@@ -250,7 +250,10 @@
           "push_to_talk": "Nagrywa, dopóki trzymasz skrót",
           "toggle": "Dotknij skrótu, aby rozpocząć nagrywanie, dotknij ponownie, aby zatrzymać"
         }
-      }
+      },
+      "pageDescription": "Skonfiguruj skróty, język rozpoznawania i preferencje nagrywania.",
+      "shortcutsTitle": "Skróty",
+      "recognitionTitle": "Rozpoznawanie"
     },
     "sound": {
       "title": "Dźwięk",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Informacja dźwiękowa",
-        "description": "Odtwarzaj dźwięk przy rozpoczęciu i zakończeniu nagrywania"
+        "description": "Odtwarzaj dźwięk przy rozpoczęciu i zakończeniu nagrywania",
+        "disabledHint": "Włącz sygnały dźwiękowe, aby dostosować urządzenie odtwarzające i głośność."
       },
       "outputDevice": {
         "title": "Urządzenie wyjściowe",

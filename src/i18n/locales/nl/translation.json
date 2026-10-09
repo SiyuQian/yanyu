@@ -230,7 +230,10 @@
           "push_to_talk": "Neemt op zolang je de sneltoets ingedrukt houdt",
           "toggle": "Tik op de sneltoets om de opname te starten, tik opnieuw om te stoppen"
         }
-      }
+      },
+      "pageDescription": "Stel sneltoetsen, herkenningstaal en opnamevoorkeuren in.",
+      "shortcutsTitle": "Sneltoetsen",
+      "recognitionTitle": "Herkenning"
     },
     "models": {
       "title": "Transcriptiemodellen",
@@ -268,7 +271,8 @@
       },
       "audioFeedback": {
         "label": "Geluidsfeedback",
-        "description": "Geluid afspelen wanneer de opname start en stopt"
+        "description": "Geluid afspelen wanneer de opname start en stopt",
+        "disabledHint": "Schakel geluidsfeedback in om het afspeelapparaat en het volume aan te passen."
       },
       "outputDevice": {
         "title": "Afspeelapparaat",

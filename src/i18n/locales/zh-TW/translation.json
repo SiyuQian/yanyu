@@ -192,11 +192,11 @@
         "reset": "重設快捷鍵",
         "bindings": {
           "transcribe": {
-            "name": "轉錄快捷鍵",
+            "name": "聽寫快捷鍵",
             "description": "用於錄製和轉錄語音的鍵盤快捷鍵"
           },
           "cancel": {
-            "name": "取消快捷鍵",
+            "name": "取消聽寫",
             "description": "用於取消目前錄製的鍵盤快捷鍵"
           },
           "transcribe_with_post_process": {
@@ -211,14 +211,14 @@
         }
       },
       "language": {
-        "title": "語言",
+        "title": "辨識語言",
         "description": "選擇語音辨識的語言。選擇自動將自動判定語言，選擇特定語言可以提高該語言的準確度",
         "searchPlaceholder": "搜尋語言...",
         "noResults": "未找到語言",
         "auto": "自動"
       },
       "shortcutActivation": {
-        "title": "快捷鍵行為",
+        "title": "觸發方式",
         "description": "選擇轉錄快捷鍵開始和停止錄音的方式。",
         "options": {
           "holdOrToggle": "自動",
@@ -230,7 +230,10 @@
           "push_to_talk": "按住快捷鍵期間錄音",
           "toggle": "輕按快捷鍵開始錄音，再次輕按停止"
         }
-      }
+      },
+      "pageDescription": "設定快捷鍵、辨識語言與錄音偏好。",
+      "shortcutsTitle": "快捷鍵",
+      "recognitionTitle": "辨識"
     },
     "models": {
       "title": "轉錄模型",
@@ -267,17 +270,18 @@
         "channel": "聲道 {{n}}"
       },
       "audioFeedback": {
-        "label": "聲音回饋",
-        "description": "錄製開始和停止時播放聲音"
+        "label": "提示音",
+        "description": "錄製開始和停止時播放聲音",
+        "disabledHint": "開啟提示音後可調整播放裝置和音量。"
       },
       "outputDevice": {
-        "title": "輸出裝置",
+        "title": "播放裝置",
         "description": "選擇用於聲音回饋的音訊輸出裝置",
         "placeholder": "選擇輸出裝置...",
         "loading": "載入中..."
       },
       "volume": {
-        "title": "音量",
+        "title": "提示音音量",
         "description": "調整聲音回饋的音量"
       }
     },

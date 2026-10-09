@@ -212,11 +212,11 @@
         "reset": "重置快捷键",
         "bindings": {
           "transcribe": {
-            "name": "转录快捷键",
+            "name": "听写快捷键",
             "description": "用于录制和转录语音的键盘快捷键。"
           },
           "cancel": {
-            "name": "取消快捷键",
+            "name": "取消听写",
             "description": "用于取消当前录制的键盘快捷键。"
           },
           "transcribe_with_post_process": {
@@ -231,14 +231,14 @@
         }
       },
       "language": {
-        "title": "语言",
+        "title": "识别语言",
         "description": "选择语音识别的语言。自动将自动确定语言，选择特定语言可以提高该语言的准确度。",
         "searchPlaceholder": "搜索语言...",
         "noResults": "未找到语言",
         "auto": "自动"
       },
       "shortcutActivation": {
-        "title": "快捷键行为",
+        "title": "触发方式",
         "description": "选择转录快捷键开始和停止录音的方式。",
         "options": {
           "holdOrToggle": "自动",
@@ -250,7 +250,10 @@
           "push_to_talk": "按住快捷键期间录音",
           "toggle": "轻按快捷键开始录音，再次轻按停止"
         }
-      }
+      },
+      "pageDescription": "设置快捷键、识别语言与录音偏好。",
+      "shortcutsTitle": "快捷键",
+      "recognitionTitle": "识别"
     },
     "sound": {
       "title": "声音",
@@ -267,17 +270,18 @@
         "channel": "通道 {{n}}"
       },
       "audioFeedback": {
-        "label": "音频反馈",
-        "description": "录制开始和停止时播放声音"
+        "label": "提示音",
+        "description": "录制开始和停止时播放声音",
+        "disabledHint": "开启提示音后可调整播放设备和音量。"
       },
       "outputDevice": {
-        "title": "输出设备",
+        "title": "播放设备",
         "description": "选择用于反馈声音的音频输出设备",
         "placeholder": "选择输出设备...",
         "loading": "加载中..."
       },
       "volume": {
-        "title": "音量",
+        "title": "提示音音量",
         "description": "调整音频反馈的音量"
       }
     },
