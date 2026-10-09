@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Secure Input ले सर्टकटहरू रोकेको छ"
   },
   "sidebar": {
-    "general": "सामान्य",
+    "general": "श्रुतलेखन",
     "models": "मोडेलहरू",
     "advanced": "उन्नत",
-    "postProcessing": "पोस्ट प्रोसेस",
-    "history": "हिस्ट्री",
+    "postProcessing": "शैली",
+    "history": "अन्तर्दृष्टि",
+    "dictionary": "शब्दकोश",
     "debug": "डिबग",
     "about": "बारेमा"
   },

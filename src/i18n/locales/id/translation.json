@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Pintasan diblokir oleh Secure Input"
   },
   "sidebar": {
-    "general": "Umum",
+    "general": "Dikte",
     "models": "Model",
     "advanced": "Lanjutan",
-    "postProcessing": "Pascaproses",
-    "history": "Riwayat",
+    "postProcessing": "Gaya",
+    "history": "Wawasan",
+    "dictionary": "Kamus",
     "debug": "Debug",
     "about": "Tentang"
   },

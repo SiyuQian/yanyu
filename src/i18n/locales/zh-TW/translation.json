@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ 快捷鍵被 Secure Input 阻擋"
   },
   "sidebar": {
-    "general": "一般",
+    "general": "聽寫",
     "models": "模型",
     "advanced": "進階",
-    "postProcessing": "後處理",
-    "history": "歷史紀錄",
+    "postProcessing": "風格",
+    "history": "洞察",
+    "dictionary": "詞典",
     "debug": "偵錯",
     "about": "關於"
   },

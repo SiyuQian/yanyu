@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Zkratky blokuje Secure Input"
   },
   "sidebar": {
-    "general": "Obecné",
+    "general": "Diktování",
     "models": "Modely",
     "advanced": "Pokročilé",
-    "postProcessing": "Následné zpracování",
-    "history": "Historie",
+    "postProcessing": "Styl",
+    "history": "Přehledy",
+    "dictionary": "Slovník",
     "debug": "Ladění",
     "about": "O aplikaci"
   },

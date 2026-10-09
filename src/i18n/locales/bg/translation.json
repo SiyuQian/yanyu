@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Бързите клавиши са блокирани от Secure Input"
   },
   "sidebar": {
-    "general": "Общи",
+    "general": "Диктовка",
     "models": "Модели",
     "advanced": "Разширени",
-    "postProcessing": "Постобработка",
-    "history": "История",
+    "postProcessing": "Стил",
+    "history": "Статистика",
+    "dictionary": "Речник",
     "debug": "Отстраняване",
     "about": "За приложението"
   },

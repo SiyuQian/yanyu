@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Shortcuts blocked by Secure Input"
   },
   "sidebar": {
-    "general": "General",
+    "general": "Dictation",
     "models": "Models",
     "advanced": "Advanced",
-    "postProcessing": "Post Process",
-    "history": "History",
+    "postProcessing": "Style",
+    "history": "Insights",
+    "dictionary": "Dictionary",
     "debug": "Debug",
     "about": "About"
   },

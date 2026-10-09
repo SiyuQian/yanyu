@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Dreceres blocades per l'entrada segura"
   },
   "sidebar": {
-    "general": "General",
+    "general": "Dictat",
     "models": "Models",
     "advanced": "Avançat",
-    "postProcessing": "Postprocessament",
-    "history": "Historial",
+    "postProcessing": "Estil",
+    "history": "Estadístiques",
+    "dictionary": "Diccionari",
     "debug": "Depuració",
     "about": "Quant a"
   },

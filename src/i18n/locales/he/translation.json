@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ קיצורי המקשים חסומים על ידי Secure Input"
   },
   "sidebar": {
-    "general": "כללי",
+    "general": "הכתבה",
     "models": "מודלים",
     "advanced": "מתקדם",
-    "postProcessing": "עיבוד משלים",
-    "history": "היסטוריה",
+    "postProcessing": "סגנון",
+    "history": "תובנות",
+    "dictionary": "מילון",
     "debug": "ניפוי שגיאות",
     "about": "אודות"
   },

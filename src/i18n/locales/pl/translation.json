@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Skróty zablokowane przez Secure Input"
   },
   "sidebar": {
-    "general": "Ogólne",
+    "general": "Dyktowanie",
     "models": "Modele",
     "advanced": "Zaawansowane",
-    "postProcessing": "Postproces",
-    "history": "Historia",
+    "postProcessing": "Styl",
+    "history": "Statystyki",
+    "dictionary": "Słownik",
     "debug": "Debugowanie",
     "about": "O programie"
   },

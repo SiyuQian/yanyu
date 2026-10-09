@@ -10,10 +10,11 @@
     "secureInputWarning": "⚠ الاختصارات محجوبة بواسطة Secure Input"
   },
   "sidebar": {
-    "general": "عام",
+    "general": "الإملاء",
     "advanced": "متقدم",
-    "postProcessing": "معالجة لاحقة",
-    "history": "السجل",
+    "postProcessing": "الأسلوب",
+    "history": "الرؤى",
+    "dictionary": "القاموس",
     "debug": "تصحيح الأخطاء",
     "about": "حول",
     "models": "النماذج"

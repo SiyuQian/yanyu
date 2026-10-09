@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Sneltoetsen geblokkeerd door Secure Input"
   },
   "sidebar": {
-    "general": "Algemeen",
+    "general": "Dicteren",
     "models": "Modellen",
     "advanced": "Geavanceerd",
-    "postProcessing": "Naverwerking",
-    "history": "Geschiedenis",
+    "postProcessing": "Stijl",
+    "history": "Inzichten",
+    "dictionary": "Woordenboek",
     "debug": "Probleemoplossing",
     "about": "Over Yanyu"
   },

@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Сочетания клавиш заблокированы Secure Input"
   },
   "sidebar": {
-    "general": "Общие",
+    "general": "Диктовка",
     "models": "Модели",
     "advanced": "Продвинутые",
-    "postProcessing": "Постобработка",
-    "history": "История",
+    "postProcessing": "Стиль",
+    "history": "Статистика",
+    "dictionary": "Словарь",
     "debug": "Отладка",
     "about": "О программе"
   },
