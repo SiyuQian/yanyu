@@ -187,6 +187,9 @@
         "none": "Kısayol yapılandırılmadı",
         "notFound": "Kısayol bulunamadı",
         "pressKeys": "Tuşlara basın...",
+        "add": "Kısayol ekle",
+        "remove": "Kısayolu kaldır",
+        "reset": "Kısayolu sıfırla",
         "bindings": {
           "transcribe": {
             "name": "Transkripsiyon Kısayolu",

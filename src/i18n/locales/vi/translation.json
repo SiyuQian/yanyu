@@ -187,6 +187,9 @@
         "none": "Chưa cấu hình phím tắt",
         "notFound": "Không tìm thấy phím tắt",
         "pressKeys": "Nhấn phím...",
+        "add": "Thêm phím tắt",
+        "remove": "Xóa phím tắt",
+        "reset": "Đặt lại phím tắt",
         "bindings": {
           "transcribe": {
             "name": "Phím tắt chuyển đổi",

@@ -167,6 +167,9 @@
         "none": "Belum ada pintasan yang diatur",
         "notFound": "Pintasan tidak ditemukan",
         "pressKeys": "Tekan tombol...",
+        "add": "Tambah pintasan",
+        "remove": "Hapus pintasan",
+        "reset": "Atur ulang pintasan",
         "bindings": {
           "transcribe": {
             "name": "Pintasan Transkripsi",

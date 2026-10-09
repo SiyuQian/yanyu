@@ -187,6 +187,9 @@
         "none": "Keine Tastenkürzel konfiguriert",
         "notFound": "Tastenkürzel nicht gefunden",
         "pressKeys": "Tasten drücken...",
+        "add": "Tastenkürzel hinzufügen",
+        "remove": "Tastenkürzel entfernen",
+        "reset": "Tastenkürzel zurücksetzen",
         "bindings": {
           "transcribe": {
             "name": "Transkriptions-Tastenkürzel",

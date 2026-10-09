@@ -167,6 +167,9 @@
         "none": "Geen sneltoetsen geconfigureerd",
         "notFound": "Sneltoets niet gevonden",
         "pressKeys": "Druk op toetsen...",
+        "add": "Sneltoets toevoegen",
+        "remove": "Sneltoets verwijderen",
+        "reset": "Sneltoets herstellen",
         "bindings": {
           "transcribe": {
             "name": "Sneltoets voor dicteren",

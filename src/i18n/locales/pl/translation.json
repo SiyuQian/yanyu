@@ -187,6 +187,9 @@
         "none": "Brak skonfigurowanych skrótów",
         "notFound": "Nie znaleziono skrótu",
         "pressKeys": "Naciśnij klawisze...",
+        "add": "Dodaj skrót",
+        "remove": "Usuń skrót",
+        "reset": "Przywróć skrót",
         "bindings": {
           "transcribe": {
             "name": "Skrót transkrypcji",

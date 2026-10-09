@@ -187,6 +187,9 @@
         "none": "Žádné zkratky nejsou nastavené",
         "notFound": "Zkratka nenalezena",
         "pressKeys": "Stiskněte klávesy...",
+        "add": "Přidat zkratku",
+        "remove": "Odebrat zkratku",
+        "reset": "Obnovit zkratku",
         "bindings": {
           "transcribe": {
             "name": "Zkratka přepisu",
