@@ -4,6 +4,7 @@ use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, S
 use crate::audio_toolkit::{is_microphone_access_denied, is_no_input_device_error, VadPolicy};
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
+use crate::managers::local_polishing::{eligible as should_polish_locally, LocalPolishingManager};
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::TranscriptionManager;
@@ -426,6 +427,11 @@ impl ShortcutAction for TranscribeAction {
         let plan_started = Instant::now();
         let settings = get_settings(app);
         let is_always_on = settings.always_on_microphone;
+        if settings.local_polishing_enabled && !self.post_process {
+            if let Some(manager) = app.try_state::<Arc<LocalPolishingManager>>() {
+                manager.preload();
+            }
+        }
 
         let selected_model_info = app
             .state::<Arc<ModelManager>>()
@@ -601,6 +607,7 @@ impl ShortcutAction for TranscribeAction {
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
         let post_process = self.post_process;
+        let local_polishing_enabled = get_settings(app).local_polishing_enabled;
         let cancel_generation = rm.cancel_generation();
 
         tauri::async_runtime::spawn(async move {
@@ -706,7 +713,30 @@ impl ShortcutAction for TranscribeAction {
                                 }
                             }
                             let Some(processed) = complete_unless_cancelled(
-                                process_transcription_output(&ah, &transcription, post_process),
+                                async {
+                                    let mut processed = process_transcription_output(
+                                        &ah,
+                                        &transcription,
+                                        post_process,
+                                    )
+                                    .await;
+                                    if should_polish_locally(
+                                        &transcription,
+                                        local_polishing_enabled,
+                                        post_process,
+                                    ) {
+                                        if let Some(manager) =
+                                            ah.try_state::<Arc<LocalPolishingManager>>()
+                                        {
+                                            if let Some(text) = manager.polish(&transcription).await
+                                            {
+                                                processed.post_processed_text = Some(text.clone());
+                                                processed.final_text = text;
+                                            }
+                                        }
+                                    }
+                                    processed
+                                },
                                 || rm.was_cancelled_since(cancel_generation),
                             )
                             .await

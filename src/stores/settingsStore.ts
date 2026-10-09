@@ -83,6 +83,10 @@ const DEFAULT_AUDIO_DEVICE: AudioDevice = {
 const settingUpdaters: {
   [K in keyof Settings]?: (value: Settings[K]) => Promise<unknown>;
 } = {
+  local_polishing_enabled: async (value) => {
+    const result = await commands.setLocalPolishingEnabled(value as boolean);
+    if (result.status === "error") throw new Error(result.error);
+  },
   always_on_microphone: (value) =>
     commands.updateMicrophoneMode(value as boolean),
   audio_feedback: (value) =>
