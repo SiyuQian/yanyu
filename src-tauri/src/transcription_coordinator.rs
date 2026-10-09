@@ -307,7 +307,11 @@ impl CoordinatorState {
             // different binding pressed while recording — rather than silently
             // replacing the remembered press and breaking its parity.
             if let Some(pending) = &self.pending_press {
-                if pending.binding_id != input.binding_id {
+                if pending.binding_id != input.binding_id
+                    && !(pending.locked
+                        && transcribe_action_id(&pending.binding_id)
+                            == transcribe_action_id(&input.binding_id))
+                {
                     debug!(
                         "Ignoring input for '{}': '{}' is already pending",
                         input.binding_id, pending.binding_id
@@ -353,13 +357,18 @@ impl CoordinatorState {
                         locked,
                     ));
                 }
-                Stage::Recording(id) if id == &input.binding_id => {
+                Stage::Recording(id)
+                    if id == &input.binding_id
+                        || ((self.is_locked() || input.mode == ShortcutActivation::Toggle)
+                            && transcribe_action_id(id)
+                                == transcribe_action_id(&input.binding_id)) =>
+                {
                     // A locked session ends on the next press. In toggle mode
                     // every press ends it, even if the recording began under a
                     // hold mode (the setting changed mid-recording) — otherwise
                     // nothing but Escape could stop it.
                     if self.is_locked() || input.mode == ShortcutActivation::Toggle {
-                        return Some(self.begin_processing(input.binding_id, input.hotkey_string));
+                        return Some(self.begin_processing(id.clone(), input.hotkey_string));
                     }
                     // The key is still held (its release will end this
                     // recording), so a repeated press means nothing.
@@ -535,7 +544,25 @@ pub struct TranscriptionCoordinator {
 }
 
 pub fn is_transcribe_binding(id: &str) -> bool {
-    id == "transcribe" || id == "transcribe_with_post_process"
+    matches!(
+        transcribe_action_id(id),
+        "transcribe" | "transcribe_with_post_process"
+    )
+}
+
+/// Identify user-added shortcuts without accepting arbitrary action IDs.
+pub fn is_additional_transcribe_binding(id: &str) -> bool {
+    id.strip_prefix("transcribe_alt_")
+        .is_some_and(|suffix| !suffix.is_empty() && suffix.bytes().all(|c| c.is_ascii_digit()))
+}
+
+/// Resolve alternate shortcuts to their shared action while retaining their recording identity.
+pub fn transcribe_action_id(id: &str) -> &str {
+    if is_additional_transcribe_binding(id) {
+        "transcribe"
+    } else {
+        id
+    }
 }
 
 impl TranscriptionCoordinator {
@@ -687,7 +714,7 @@ fn run_effect(app: &AppHandle, state: &mut CoordinatorState, effect: Effect) {
 /// Execute a start effect; returns whether recording actually began, so the
 /// state machine can roll back its optimistic transition on failure.
 fn start(app: &AppHandle, binding_id: &str, hotkey_string: &str) -> bool {
-    let Some(action) = ACTION_MAP.get(binding_id) else {
+    let Some(action) = ACTION_MAP.get(transcribe_action_id(binding_id)) else {
         warn!("No action in ACTION_MAP for '{binding_id}'");
         return false;
     };
@@ -702,7 +729,7 @@ fn start(app: &AppHandle, binding_id: &str, hotkey_string: &str) -> bool {
 }
 
 fn stop(app: &AppHandle, binding_id: &str, hotkey_string: &str) {
-    let Some(action) = ACTION_MAP.get(binding_id) else {
+    let Some(action) = ACTION_MAP.get(transcribe_action_id(binding_id)) else {
         warn!("No action in ACTION_MAP for '{binding_id}'");
         return;
     };
@@ -712,6 +739,75 @@ fn stop(app: &AppHandle, binding_id: &str, hotkey_string: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn additional_shortcut_is_a_transcribe_binding() {
+        assert!(is_transcribe_binding("transcribe_alt_1"));
+        assert!(!is_transcribe_binding("transcribe_alt_invalid"));
+    }
+
+    #[test]
+    fn another_transcribe_shortcut_stops_a_toggle_recording() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        assert!(matches!(
+            state.on_input(toggle_input_for("transcribe", false), now),
+            Some(Effect::Start { .. })
+        ));
+        assert!(matches!(
+            state.on_input(
+                toggle_input_for("transcribe_alt_1", false),
+                now + Duration::from_millis(100)
+            ),
+            Some(Effect::Stop { binding_id, .. }) if binding_id == "transcribe"
+        ));
+    }
+
+    #[test]
+    fn another_shortcut_cancels_a_pending_toggle_start() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        drive_into_processing(&mut state, now);
+        state.on_input(toggle_input_for("transcribe_alt_1", false), now + ms(200));
+        state.on_input(toggle_input_for("transcribe", false), now + ms(300));
+        assert!(state.on_processing_finished().is_none());
+        assert_eq!(state.stage, Stage::Idle);
+    }
+
+    #[test]
+    fn another_shortcut_stops_a_locked_auto_recording() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        let mode = ShortcutActivation::HoldOrToggle;
+        state.on_input(input(mode, true), now);
+        state.on_input(input(mode, false), now + ms(100));
+        state.on_grace_expired();
+        let mut alternate = input(mode, true);
+        alternate.binding_id = "transcribe_alt_1".into();
+        assert!(matches!(
+            state.on_input(alternate, now + ms(500)),
+            Some(Effect::Stop { binding_id, .. }) if binding_id == "transcribe"
+        ));
+    }
+
+    #[test]
+    fn releasing_another_shortcut_does_not_stop_push_to_talk() {
+        let mut state = CoordinatorState::new();
+        let now = Instant::now();
+        state.on_input(ptt_input(true), now);
+        let mut release = ptt_input(false);
+        release.binding_id = "transcribe_alt_1".into();
+        assert!(state
+            .on_input(release, now + Duration::from_millis(100))
+            .is_none());
+        assert!(state.on_grace_expired().is_none());
+        assert_eq!(state.stage, Stage::Recording("transcribe".into()));
+        state.on_input(ptt_input(false), now + Duration::from_millis(200));
+        assert!(matches!(
+            state.on_grace_expired(),
+            Some(Effect::Stop { .. })
+        ));
+    }
 
     #[test]
     fn push_to_talk_release_while_recording_defers_release() {

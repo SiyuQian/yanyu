@@ -167,6 +167,9 @@
         "none": "未設定快捷鍵",
         "notFound": "未找到快捷鍵",
         "pressKeys": "請按鍵...",
+        "add": "新增快捷鍵",
+        "remove": "刪除快捷鍵",
+        "reset": "重設快捷鍵",
         "bindings": {
           "transcribe": {
             "name": "轉錄快捷鍵",

@@ -355,65 +355,26 @@ export const useSettingsStore = create<SettingsStore>()(
       }
     },
 
-    // Update a specific binding
+    // Apply the backend's binding only after registration succeeds.
     updateBinding: async (id, binding) => {
-      const { settings, setUpdating } = get();
+      const { setUpdating } = get();
       const updateKey = `binding_${id}`;
-      const originalBinding = settings?.bindings?.[id]?.current_binding;
-
       setUpdating(updateKey, true);
-
       try {
-        // Optimistic update
+        const result = await commands.changeBinding(id, binding);
+        if (result.status === "error") throw new Error(result.error);
+        if (!result.data.success || !result.data.binding) {
+          throw new Error(result.data.error || "Failed to update binding");
+        }
+        const updatedBinding = result.data.binding;
         set((state) => ({
           settings: state.settings
             ? {
                 ...state.settings,
-                bindings: {
-                  ...state.settings.bindings,
-                  [id]: {
-                    ...state.settings.bindings?.[id]!,
-                    current_binding: binding,
-                  },
-                },
+                bindings: { ...state.settings.bindings, [id]: updatedBinding },
               }
             : null,
         }));
-
-        const result = await commands.changeBinding(id, binding);
-
-        // Check if the command executed successfully
-        if (result.status === "error") {
-          throw new Error(result.error);
-        }
-
-        // Check if the binding change was successful
-        if (!result.data.success) {
-          throw new Error(result.data.error || "Failed to update binding");
-        }
-      } catch (error) {
-        console.error(`Failed to update binding ${id}:`, error);
-
-        // Rollback on error
-        if (originalBinding && get().settings) {
-          set((state) => ({
-            settings: state.settings
-              ? {
-                  ...state.settings,
-                  bindings: {
-                    ...state.settings.bindings,
-                    [id]: {
-                      ...state.settings.bindings?.[id]!,
-                      current_binding: originalBinding,
-                    },
-                  },
-                }
-              : null,
-          }));
-        }
-
-        // Re-throw to let the caller know it failed
-        throw error;
       } finally {
         setUpdating(updateKey, false);
       }

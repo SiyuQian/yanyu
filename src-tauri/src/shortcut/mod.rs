@@ -26,6 +26,7 @@ use crate::settings::{
     LLMPrompt, OverlayPosition, OverlayStyle, PasteMethod, ShortcutActivation, ShortcutBinding,
     SoundTheme, Theme, TypingTool, VadBackend, APPLE_INTELLIGENCE_PROVIDER_ID,
 };
+use crate::transcription_coordinator::is_additional_transcribe_binding;
 use crate::tray;
 
 // Note: Commands are accessed via shortcut::handy_keys:: in lib.rs
@@ -173,8 +174,16 @@ pub fn change_binding(
     let mut settings = settings::get_settings(&app);
 
     // Get the binding to modify, or create it from defaults if it doesn't exist
+    let existing_binding = settings.bindings.get(&id).cloned();
     let binding_to_modify = match settings.bindings.get(&id) {
         Some(binding) => binding.clone(),
+        None if is_additional_transcribe_binding(&id) => {
+            let mut additional = settings::get_default_settings().bindings["transcribe"].clone();
+            additional.id = id.clone();
+            additional.default_binding = binding.clone();
+            additional.current_binding = binding.clone();
+            additional
+        }
         None => {
             // Try to get the default binding for this id
             let default_settings = settings::get_default_settings();
@@ -199,6 +208,13 @@ pub fn change_binding(
         }
     };
 
+    validate_binding_change(
+        &settings.bindings,
+        &id,
+        &binding,
+        settings.keyboard_implementation,
+    )?;
+
     // If this is the cancel binding, just update the settings and return
     // It's managed dynamically, so we don't register/unregister here
     if id == "cancel" {
@@ -215,18 +231,10 @@ pub fn change_binding(
         }
     }
 
-    // Unregister the existing binding
-    if let Err(e) = unregister_shortcut(&app, binding_to_modify.clone()) {
-        let error_msg = format!("Failed to unregister shortcut: {}", e);
-        error!("change_binding error: {}", error_msg);
-    }
-
-    // Validate the new shortcut for the current keyboard implementation
-    if let Err(e) = validate_shortcut_for_implementation(&binding, settings.keyboard_implementation)
-    {
-        warn!("change_binding validation error: {}", e);
-        restore_registration(&app, &binding_to_modify);
-        return Err(e);
+    if let Some(previous) = &existing_binding {
+        if let Err(e) = unregister_shortcut(&app, previous.clone()) {
+            debug!("Could not unregister previous shortcut: {}", e);
+        }
     }
 
     // Create an updated binding
@@ -237,7 +245,9 @@ pub fn change_binding(
     if let Err(e) = register_shortcut(&app, updated_binding.clone()) {
         let error_msg = format!("Failed to register shortcut: {}", e);
         error!("change_binding error: {}", error_msg);
-        restore_registration(&app, &binding_to_modify);
+        if let Some(previous) = &existing_binding {
+            restore_registration(&app, previous);
+        }
         return Ok(BindingResponse {
             success: false,
             binding: None,
@@ -276,6 +286,21 @@ fn restore_registration(app: &AppHandle, binding: &ShortcutBinding) {
 pub fn reset_binding(app: AppHandle, id: String) -> Result<BindingResponse, String> {
     let binding = settings::get_stored_binding(&settings::get_settings(&app), &id)?;
     change_binding(app, id, binding.default_binding)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn remove_transcribe_binding(app: AppHandle, id: String) -> Result<(), String> {
+    if !is_additional_transcribe_binding(&id) {
+        return Err("Only additional transcribe shortcuts can be removed".into());
+    }
+    let mut settings = get_settings(&app);
+    let binding = settings::get_stored_binding(&settings, &id)?;
+    unregister_shortcut(&app, binding)?;
+    settings.bindings.remove(&id);
+    settings::write_settings(&app, settings);
+    crate::secure_input::reconcile_fallback(&app);
+    Ok(())
 }
 
 /// Unregister every binding while the user is recording a new shortcut in
@@ -364,6 +389,8 @@ pub fn change_keyboard_implementation_setting(
             reset_bindings: vec![],
         });
     }
+
+    validate_bindings_for_implementation(&current_settings.bindings, new_impl)?;
 
     info!(
         "Switching keyboard implementation from {:?} to {:?}",
@@ -481,16 +508,70 @@ fn unregister_all_shortcuts(app: &AppHandle, implementation: KeyboardImplementat
     }
 }
 
+fn validate_binding_change(
+    bindings: &std::collections::HashMap<String, ShortcutBinding>,
+    id: &str,
+    binding: &str,
+    implementation: KeyboardImplementation,
+) -> Result<(), String> {
+    validate_shortcut_for_implementation(binding, implementation)?;
+    // Capture suspends registrations, so check persisted bindings for conflicts too.
+    for (other_id, other) in bindings {
+        if other_id == id {
+            continue;
+        }
+        let conflicts = match implementation {
+            KeyboardImplementation::Tauri => {
+                binding
+                    .parse::<tauri_plugin_global_shortcut::Shortcut>()
+                    .ok()
+                    == other
+                        .current_binding
+                        .parse::<tauri_plugin_global_shortcut::Shortcut>()
+                        .ok()
+            }
+            KeyboardImplementation::HandyKeys => {
+                binding.parse::<::handy_keys::Hotkey>().ok()
+                    == other.current_binding.parse::<::handy_keys::Hotkey>().ok()
+            }
+        };
+        if conflicts {
+            return Err(format!("Shortcut '{}' is already in use", binding));
+        }
+    }
+    Ok(())
+}
+
+fn validate_bindings_for_implementation(
+    bindings: &std::collections::HashMap<String, ShortcutBinding>,
+    implementation: KeyboardImplementation,
+) -> Result<(), String> {
+    let mut candidates = bindings.clone();
+    for (id, binding) in &mut candidates {
+        if let Err(error) =
+            validate_shortcut_for_implementation(&binding.current_binding, implementation)
+        {
+            if is_additional_transcribe_binding(id) || id == "cancel" {
+                return Err(format!("Shortcut '{}': {}", binding.current_binding, error));
+            }
+            binding.current_binding = binding.default_binding.clone();
+        }
+    }
+    for (id, binding) in &candidates {
+        validate_binding_change(&candidates, id, &binding.current_binding, implementation)?;
+    }
+    Ok(())
+}
+
 /// Register all shortcuts for a specific implementation, validating and resetting invalid ones
 fn register_all_shortcuts_for_implementation(
     app: &AppHandle,
     implementation: KeyboardImplementation,
 ) -> Vec<String> {
     let mut reset_bindings = Vec::new();
-    let default_bindings = settings::get_default_settings().bindings;
     let mut current_settings = settings::get_settings(app);
 
-    for (id, default_binding) in &default_bindings {
+    for (id, stored_binding) in current_settings.bindings.clone() {
         // Skip cancel shortcut as it's dynamically registered
         if id == "cancel" {
             continue;
@@ -501,11 +582,7 @@ fn register_all_shortcuts_for_implementation(
             continue;
         }
 
-        let mut binding = current_settings
-            .bindings
-            .get(id)
-            .cloned()
-            .unwrap_or_else(|| default_binding.clone());
+        let mut binding = stored_binding;
 
         // Validate the shortcut for the target implementation
         if let Err(e) =
@@ -517,7 +594,7 @@ fn register_all_shortcuts_for_implementation(
             );
 
             // Reset to default
-            binding.current_binding = default_binding.current_binding.clone();
+            binding.current_binding = binding.default_binding.clone();
             current_settings
                 .bindings
                 .insert(id.clone(), binding.clone());
@@ -1477,6 +1554,68 @@ pub async fn get_available_accelerators(
 mod tests {
     use handy_keys::Hotkey;
     use tauri_plugin_global_shortcut::Shortcut;
+
+    #[test]
+    fn switch_rejects_an_incompatible_dynamic_cancel_binding() {
+        let mut bindings = crate::settings::get_default_settings().bindings;
+        bindings.get_mut("cancel").unwrap().current_binding = "fn".into();
+        assert!(super::validate_bindings_for_implementation(
+            &bindings,
+            crate::settings::KeyboardImplementation::Tauri
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn switch_rejects_collision_with_a_reset_default() {
+        let mut bindings = crate::settings::get_default_settings().bindings;
+        let primary = bindings.get_mut("transcribe").unwrap();
+        let default_binding = primary.default_binding.clone();
+        primary.current_binding = "fn".into();
+        let mut additional = primary.clone();
+        additional.id = "transcribe_alt_1".into();
+        additional.current_binding = default_binding;
+        bindings.insert(additional.id.clone(), additional);
+        assert!(super::validate_bindings_for_implementation(
+            &bindings,
+            crate::settings::KeyboardImplementation::Tauri
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn binding_changes_reject_normalized_conflicts_including_cancel() {
+        let mut bindings = crate::settings::get_default_settings().bindings;
+        let mut additional = bindings["transcribe"].clone();
+        additional.id = "transcribe_alt_1".into();
+        additional.current_binding = "ctrl+k".into();
+        bindings.insert(additional.id.clone(), additional);
+        for implementation in [
+            crate::settings::KeyboardImplementation::Tauri,
+            crate::settings::KeyboardImplementation::HandyKeys,
+        ] {
+            for id in ["transcribe", "cancel", "transcribe_alt_2"] {
+                assert!(
+                    super::validate_binding_change(&bindings, id, "control+k", implementation)
+                        .is_err()
+                );
+            }
+            assert!(super::validate_binding_change(
+                &bindings,
+                "transcribe_alt_1",
+                "control+k",
+                implementation
+            )
+            .is_ok());
+            assert!(super::validate_binding_change(
+                &bindings,
+                "transcribe_alt_2",
+                "ctrl+j",
+                implementation
+            )
+            .is_ok());
+        }
+    }
 
     #[test]
     fn compound_shortcut_keys_parse_on_both_backends() {
