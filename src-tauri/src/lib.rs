@@ -9,6 +9,7 @@ mod chinese_script;
 pub mod cli;
 mod clipboard;
 mod commands;
+mod correction;
 pub mod engine_supervisor;
 mod helpers;
 mod input;
@@ -658,6 +659,10 @@ pub fn run(cli_args: CliArgs) {
 
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
+            correction::get_correction_session,
+            correction::save_correction_draft,
+            correction::apply_correction,
+            correction::close_correction,
             commands::local_polishing::get_local_polishing_status,
             commands::local_polishing::set_local_polishing_enabled,
             commands::local_polishing::download_local_polishing_model,

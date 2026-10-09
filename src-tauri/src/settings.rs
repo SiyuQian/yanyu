@@ -919,6 +919,20 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_post_process_shortcut.to_string(),
         },
     );
+    #[cfg(target_os = "macos")]
+    let correction_shortcut = "option+shift+c";
+    #[cfg(not(target_os = "macos"))]
+    let correction_shortcut = "ctrl+alt+c";
+    bindings.insert(
+        "correct_last".into(),
+        ShortcutBinding {
+            id: "correct_last".into(),
+            name: "Correct last dictation".into(),
+            description: "Edit the latest delivered text and remember vocabulary.".into(),
+            default_binding: correction_shortcut.into(),
+            current_binding: correction_shortcut.into(),
+        },
+    );
     bindings.insert(
         "cancel".to_string(),
         ShortcutBinding {

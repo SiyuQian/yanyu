@@ -222,6 +222,10 @@
           "transcribe_with_post_process": {
             "name": "Son İşlem Kısayolu",
             "description": "İsteğe bağlı: Transkripsiyonunuza her zaman yapay zekâ ile son işlem uygulayan özel bir kısayol tuşu."
+          },
+          "correct_last": {
+            "name": "Correct last dictation",
+            "description": "Edit the latest delivered text and explicitly remember vocabulary."
           }
         },
         "errors": {
@@ -757,5 +761,32 @@
     "name": "言语",
     "wordmark": "YANYU",
     "version": "言语 · Yanyu v{{version}}"
+  },
+  "correction": {
+    "title": "Correct last dictation",
+    "hint": "Enter applies · Shift+Enter adds a line · Escape closes. Select a corrected word to remember it.",
+    "text": "Corrected text",
+    "remember": "Remember selected word",
+    "selected": "Remember: {{word}}",
+    "apply": "Apply correction",
+    "close": "Close",
+    "empty": "No delivered text yet. Dictate first.",
+    "outcomes": {
+      "replaced": "Replaced the verified original text.",
+      "copied": "Copied the correction. The original target could not be verified; paste it yourself.",
+      "uncertain_copied": "Copied the correction. Replacement could not be confirmed; check the original target before pasting."
+    },
+    "errors": {
+      "generic": "Correction failed. Your draft is preserved.",
+      "stale_session": "A newer dictation exists. Your draft is preserved; copy your edits before loading the latest dictation.",
+      "invalid_word": "Select a new word or short phrase in the corrected text (up to 80 characters).",
+      "copy_failed": "Clipboard write failed. Your draft is preserved.",
+      "empty_text": "Enter corrected text first.",
+      "too_long": "The correction is too long. Keep it under 32768 UTF-16 units.",
+      "state_failed": "Correction state is unavailable. Your draft is preserved.",
+      "window_failed": "Could not close the editor. Your draft is preserved.",
+      "learning_failed": "Output completed, but saving vocabulary failed. Your draft is preserved."
+    },
+    "loadLatest": "Load latest (discard draft)"
   }
 }

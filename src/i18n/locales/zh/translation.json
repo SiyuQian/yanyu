@@ -222,6 +222,10 @@
           "transcribe_with_post_process": {
             "name": "后处理快捷键",
             "description": "可选：一个专用快捷键，始终对您的转录应用 AI 后处理。"
+          },
+          "correct_last": {
+            "name": "修改上次听写",
+            "description": "编辑最近输出的文字并明确记住词语。"
           }
         },
         "errors": {
@@ -757,5 +761,32 @@
     "name": "言语",
     "wordmark": "YANYU",
     "version": "言语 · Yanyu v{{version}}"
+  },
+  "correction": {
+    "title": "修改上次听写",
+    "hint": "Enter 应用 · Shift+Enter 换行 · Escape 关闭。选中纠正后的词语即可记住。",
+    "text": "纠正后的文字",
+    "remember": "记住选中的词语",
+    "selected": "记住：{{word}}",
+    "apply": "应用纠正",
+    "close": "关闭",
+    "empty": "还没有输出文字，请先听写。",
+    "outcomes": {
+      "replaced": "已替换经验证的原始文字。",
+      "copied": "已复制纠正后的文字。无法验证原输入位置，请自行粘贴。",
+      "uncertain_copied": "已复制纠正后的文字。无法确认替换结果，请检查原输入位置后再粘贴。"
+    },
+    "errors": {
+      "generic": "纠正失败，草稿已保留。",
+      "stale_session": "已有更新的听写。草稿已保留；请先复制修改，再选择加载最近听写。",
+      "invalid_word": "请在纠正后的文字中选择新的词语或短语（最多 80 个字符）。",
+      "copy_failed": "复制失败，草稿已保留。",
+      "empty_text": "请先输入纠正后的文字。",
+      "too_long": "文字过长，请保持在 32768 个 UTF-16 单元以内。",
+      "state_failed": "纠正状态不可用，草稿已保留。",
+      "window_failed": "无法关闭编辑器，草稿已保留。",
+      "learning_failed": "文字已输出，但词汇保存失败。草稿已保留。"
+    },
+    "loadLatest": "加载最近听写（丢弃草稿）"
   }
 }
