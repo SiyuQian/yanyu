@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -8,7 +8,11 @@ test.beforeEach(async ({ page }) => {
     let learningFail = false;
     let deliveryOutcome = "copied";
     let generation = 1;
+    // Queued backend results and recorded apply arguments for retry scenarios.
+    const results: string[] = [];
+    const applied: Record<string, unknown>[] = [];
     Object.assign(window, {
+      __applied: applied,
       __TAURI_INTERNALS__: {
         transformCallback: () => 1,
         invoke: async (command: string, args: Record<string, unknown>) => {
@@ -27,6 +31,10 @@ test.beforeEach(async ({ page }) => {
             return null;
           }
           if (command === "apply_correction") {
+            applied.push(args);
+            const next = results.shift();
+            if (next?.startsWith("throw:")) throw next.slice(6);
+            if (next) return next;
             if (args.generation !== generation) throw "stale_session";
             if (fail) throw "copy_failed";
             draft = args.draft as string;
@@ -38,6 +46,10 @@ test.beforeEach(async ({ page }) => {
           if (command === "test_learning_fail") {
             learningFail = args.fail !== false;
             deliveryOutcome = (args.outcome as string) || "copied";
+            return null;
+          }
+          if (command === "test_results") {
+            results.push(...(args.results as string[]));
             return null;
           }
           if (command === "test_fail") {
@@ -175,3 +187,101 @@ for (const [outcome, message] of [
     await expect(editor).toHaveValue("Hello Yanyu");
   });
 }
+
+const queueResults = (page: Page, results: string[]) =>
+  page.evaluate(
+    (results) =>
+      (
+        window as unknown as {
+          __TAURI_INTERNALS__: {
+            invoke: (command: string, args: object) => Promise<unknown>;
+          };
+        }
+      ).__TAURI_INTERNALS__.invoke("test_results", { results }),
+    results,
+  );
+const appliedWords = (page: Page) =>
+  page.evaluate(() =>
+    (window as unknown as { __applied: { word: unknown }[] }).__applied.map(
+      (args) => args.word,
+    ),
+  );
+const rememberYanyu = async (page: Page) => {
+  const editor = page.getByRole("textbox", { name: "Corrected text" });
+  await editor.fill("Hello Yanyu");
+  await editor.press("End");
+  for (let index = 0; index < 5; index++) await editor.press("Shift+ArrowLeft");
+  await page.getByRole("button", { name: "Remember selected word" }).click();
+};
+
+test("learning retry reports the original delivery outcome once learning succeeds", async ({
+  page,
+}) => {
+  await rememberYanyu(page);
+  await queueResults(page, ["replaced_learning_failed", "replaced"]);
+  await page.getByRole("button", { name: "Apply correction" }).click();
+  await expect(page.getByRole("alert")).toContainText("saving vocabulary");
+  await page.getByRole("button", { name: "Apply correction" }).click();
+  await expect(page.getByRole("status")).toContainText("Replaced");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByText("Remember: Yanyu")).toHaveCount(0);
+  expect(await appliedWords(page)).toEqual(["Yanyu", "Yanyu"]);
+});
+
+test("invalid optional word reports learning separately and can be cleared", async ({
+  page,
+}) => {
+  await rememberYanyu(page);
+  await queueResults(page, ["replaced_invalid_word", "replaced"]);
+  await page.getByRole("button", { name: "Apply correction" }).click();
+  await expect(page.getByRole("status")).toContainText("Replaced");
+  await expect(page.getByRole("alert")).toContainText(
+    "selected word was not remembered",
+  );
+  await expect(page.getByRole("alert")).not.toContainText("UTF-16");
+  await page.getByRole("button", { name: "Clear selected word" }).click();
+  await expect(page.getByText("Remember: Yanyu")).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await page.getByRole("button", { name: "Apply correction" }).click();
+  await expect(page.getByRole("status")).toContainText("Replaced");
+  expect(await appliedWords(page)).toEqual(["Yanyu", null]);
+});
+
+test("clear selected word only appears while a word is staged", async ({
+  page,
+}) => {
+  await expect(
+    page.getByRole("button", { name: "Clear selected word" }),
+  ).toHaveCount(0);
+  await rememberYanyu(page);
+  await expect(
+    page.getByRole("button", { name: "Clear selected word" }),
+  ).toBeVisible();
+});
+
+test("editing clears an obsolete learning alert", async ({ page }) => {
+  await rememberYanyu(page);
+  await queueResults(page, ["copied_learning_failed"]);
+  await page.getByRole("button", { name: "Apply correction" }).click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "Corrected text" })
+    .fill("Hello Yanyu!");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("uncertain write with clipboard failure warns that the target may have changed", async ({
+  page,
+}) => {
+  const editor = page.getByRole("textbox", { name: "Corrected text" });
+  await editor.fill("Hello Yanyu");
+  await queueResults(page, ["throw:uncertain_copy_failed", "uncertain_copied"]);
+  await editor.press("Enter");
+  await expect(page.getByRole("alert")).toContainText("may have changed");
+  await expect(editor).toHaveValue("Hello Yanyu");
+  await editor.press("Enter");
+  await expect(page.getByRole("status")).toContainText(
+    "check the original target",
+  );
+  await expect(page.getByRole("status")).not.toContainText("paste it yourself");
+});

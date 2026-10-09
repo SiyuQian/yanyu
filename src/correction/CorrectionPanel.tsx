@@ -18,6 +18,9 @@ export default function CorrectionPanel() {
   const dirty = useRef(false);
   const current = useRef(session);
   current.current = session;
+  // Edits make delivery and learning alerts obsolete; a newer dictation stays reported.
+  const clearObsoleteError = () =>
+    setError((previous) => (previous === "stale_session" ? previous : ""));
 
   useEffect(() => {
     let active = true;
@@ -81,10 +84,12 @@ export default function CorrectionPanel() {
         session.word,
       );
       if (result.status === "error") throw result.error;
-      const learningFailed = result.data.endsWith("_learning_failed");
-      setOutcome(result.data.replace(/_learning_failed$/, ""));
-      if (learningFailed) {
-        setError("learning_failed");
+      // Delivery and optional learning are reported independently.
+      const [, delivered, learningError] =
+        /^(.*?)(?:_(learning_failed|invalid_word))?$/.exec(result.data) ?? [];
+      setOutcome(delivered);
+      if (learningError) {
+        setError(learningError);
       } else {
         setSession({ ...session, word: null });
         dirty.current = false;
@@ -130,6 +135,7 @@ export default function CorrectionPanel() {
               setSession({ ...session, draft: event.target.value, word: null });
               setSelection("");
               setOutcome("");
+              clearObsoleteError();
             }}
             onSelect={(event) => {
               const node = event.currentTarget;
@@ -169,9 +175,23 @@ export default function CorrectionPanel() {
               {t("correction.remember")}
             </Button>
             {session.word && (
-              <span className="text-sm">
-                {t("correction.selected", { word: session.word })}
-              </span>
+              <>
+                <span className="text-sm">
+                  {t("correction.selected", { word: session.word })}
+                </span>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => {
+                    dirty.current = true;
+                    setSession({ ...session, word: null });
+                    clearObsoleteError();
+                  }}
+                >
+                  {t("correction.clearWord")}
+                </Button>
+              </>
             )}
           </div>
           <div className="flex gap-2">

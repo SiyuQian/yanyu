@@ -9,21 +9,23 @@ pub fn inserted_value(value: &str, start: usize, length: usize, text: &str) -> O
 }
 
 /// Validate an explicitly selected vocabulary term before persistence.
-pub fn validate_word(word: &str, output: &str, existing: &[String]) -> Result<String, String> {
+/// Returns `Ok(None)` when the term is already remembered.
+pub fn validate_word(
+    word: &str,
+    output: &str,
+    existing: &[String],
+) -> Result<Option<String>, String> {
     if word.chars().any(char::is_control) {
         return Err("invalid_word".into());
     }
     let word = word.split_whitespace().collect::<Vec<_>>().join(" ");
-    if word.is_empty()
-        || word.encode_utf16().count() > 50
-        || !output.contains(&word)
-        || existing
-            .iter()
-            .any(|old| old.to_lowercase() == word.to_lowercase())
-    {
+    if word.is_empty() || word.encode_utf16().count() > 50 || !output.contains(&word) {
         return Err("invalid_word".into());
     }
-    Ok(word)
+    let known = existing
+        .iter()
+        .any(|old| old.to_lowercase() == word.to_lowercase());
+    Ok((!known).then_some(word))
 }
 
 /// Permit mutation only for the exact verified target and unchanged contents.
@@ -49,15 +51,18 @@ mod tests {
     fn learned_terms_use_settings_length_and_whitespace_without_stripping_names() {
         assert_eq!(
             validate_word("  Ada   Lovelace  ", "Ada Lovelace", &[]),
-            Ok("Ada Lovelace".into())
+            Ok(Some("Ada Lovelace".into()))
         );
         assert!(validate_word("Ada   Lovelace", "Ada   Lovelace", &[]).is_err());
         for word in ["O'Connor", "Smith, Jr.", "<name>", "quoted \"name\""] {
-            assert_eq!(validate_word(word, word, &[]), Ok(word.into()));
+            assert_eq!(validate_word(word, word, &[]), Ok(Some(word.into())));
         }
         assert!(validate_word(&"😀".repeat(26), &"😀".repeat(26), &[]).is_err());
         assert!(validate_word(&"a".repeat(51), &"a".repeat(51), &[]).is_err());
-        assert!(validate_word("Ada   Lovelace", "Ada Lovelace", &["Ada Lovelace".into()]).is_err());
+        assert_eq!(
+            validate_word("Ada   Lovelace", "Ada Lovelace", &["Ada Lovelace".into()]),
+            Ok(None)
+        );
     }
 
     #[test]
@@ -80,10 +85,13 @@ mod tests {
 
     #[test]
     fn learning_requires_an_explicit_short_term_in_corrected_output() {
-        assert_eq!(validate_word("新词", "使用新词", &[]), Ok("新词".into()));
+        assert_eq!(
+            validate_word("新词", "使用新词", &[]),
+            Ok(Some("新词".into()))
+        );
         assert!(validate_word("", "hello", &[]).is_err());
         assert!(validate_word("other", "hello", &[]).is_err());
-        assert!(validate_word("hello", "hello", &["Hello".into()]).is_err());
+        assert_eq!(validate_word("hello", "hello", &["Hello".into()]), Ok(None));
         assert!(validate_word("a\nb", "a\nb", &[]).is_err());
         assert!(validate_word(&"a".repeat(81), &"a".repeat(81), &[]).is_err());
     }

@@ -768,6 +768,7 @@
     "text": "Corrected text",
     "remember": "Remember selected word",
     "selected": "Remember: {{word}}",
+    "clearWord": "Clear selected word",
     "apply": "Apply correction",
     "close": "Close",
     "empty": "No delivered text yet. Dictate first.",
@@ -779,10 +780,11 @@
     "errors": {
       "generic": "Correction failed. Your draft is preserved.",
       "stale_session": "A newer dictation exists. Your draft is preserved; copy your edits before loading the latest dictation.",
-      "invalid_word": "Select a new word or short phrase in the corrected text (up to 50 UTF-16 units).",
+      "invalid_word": "Output completed, but the selected word was not remembered. Select a shorter term from the corrected text, or clear the selected word.",
       "copy_failed": "Clipboard write failed. Your draft is preserved.",
+      "uncertain_copy_failed": "Replacement could not be confirmed and the clipboard write failed. The original target may have changed; check it before trying again. Your draft is preserved.",
       "empty_text": "Enter corrected text first.",
-      "too_long": "The correction is too long. Keep it under 32768 UTF-16 units.",
+      "too_long": "The correction is too long. Shorten it and try again.",
       "state_failed": "Correction state is unavailable. Your draft is preserved.",
       "window_failed": "Could not close the editor. Your draft is preserved.",
       "learning_failed": "Output completed, but saving vocabulary failed. Your draft is preserved."
