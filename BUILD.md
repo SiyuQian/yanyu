@@ -291,7 +291,7 @@ as assets on a GitHub Release. It builds macOS (Apple Silicon and Intel), Window
 1. Update the application version in `src-tauri/tauri.conf.json`, `package.json`,
    and `src-tauri/Cargo.toml`. Keep `src-tauri/Cargo.lock` consistent with the Rust version.
 2. Merge the version change and this workflow into the commit you want to release.
-3. Create a tag that matches the Tauri version, such as `v0.9.8`, on that commit.
+3. Create a tag that matches the Tauri version, such as `0.0.1` or `v0.0.1`, on that commit.
 4. Create and publish a Release for that tag in GitHub, either stable or prerelease.
 5. Wait for the `Release` workflow to finish in Actions. Download installers from
    the Release's **Assets** section.
@@ -321,3 +321,8 @@ The workflow uses GitHub's built-in `GITHUB_TOKEN` with `contents: write` to upl
 assets. No personal access token is required. The repository must be public for people
 without repository access to download its releases. These installers do not enable
 in-app automatic updates (`createUpdaterArtifacts` is currently disabled).
+
+Yanyu uses its own application version, starting at `0.0.1`, independently of
+upstream Handy. Release tags accept the application version with an optional `v`
+prefix. Existing tags still refer to their original commits. Rerunning an old
+Release job does not include version or workflow fixes merged afterward.
