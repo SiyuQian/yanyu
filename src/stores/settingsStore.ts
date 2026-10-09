@@ -577,7 +577,7 @@ export const useSettingsStore = create<SettingsStore>()(
     },
 
     // Check whether update checks are locked by system configuration
-    // (e.g. HANDY_DISABLE_UPDATER, set by the Nix package)
+    // (disabled until Yanyu release signing is configured)
     loadUpdateChecksLocked: async () => {
       try {
         const locked = await commands.isUpdateChecksLocked();
