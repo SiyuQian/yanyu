@@ -167,6 +167,9 @@
         "none": "No shortcuts configured",
         "notFound": "Shortcut not found",
         "pressKeys": "Press keys...",
+        "add": "Add shortcut",
+        "remove": "Remove shortcut",
+        "reset": "Reset shortcut",
         "bindings": {
           "transcribe": {
             "name": "Transcribe Shortcut",
