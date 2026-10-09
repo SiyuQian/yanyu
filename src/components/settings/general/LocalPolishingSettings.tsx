@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Sparkles } from "lucide-react";
 import { commands, type LocalPolishingStatus } from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -62,7 +63,11 @@ export function LocalPolishingSettings() {
   const downloading = status?.phase === "downloading";
 
   return (
-    <SettingsGroup title={t("settings.localPolishing.title")}>
+    <SettingsGroup
+      variant="card"
+      icon={<Sparkles size={20} />}
+      title={t("settings.localPolishing.title")}
+    >
       <ToggleSwitch
         checked={getSetting("local_polishing_enabled") ?? false}
         onChange={(enabled) =>
@@ -75,7 +80,7 @@ export function LocalPolishingSettings() {
         descriptionMode="inline"
         grouped
       />
-      <div className="px-4 py-3 space-y-3">
+      <div className="py-3 space-y-3">
         <p className="text-sm text-text/70" role="status" aria-live="polite">
           {t(`settings.localPolishing.states.${status?.phase ?? "loading"}`)}
         </p>
