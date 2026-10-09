@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Secure Input으로 단축키가 차단됨"
   },
   "sidebar": {
-    "general": "일반",
+    "general": "받아쓰기",
     "models": "모델",
     "advanced": "고급",
-    "postProcessing": "후처리",
-    "history": "히스토리",
+    "postProcessing": "스타일",
+    "history": "인사이트",
+    "dictionary": "사전",
     "debug": "디버그",
     "about": "정보"
   },

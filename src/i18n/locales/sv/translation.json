@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Kortkommandon blockeras av Secure Input"
   },
   "sidebar": {
-    "general": "Allmänt",
+    "general": "Diktering",
     "models": "Modeller",
     "advanced": "Avancerat",
-    "postProcessing": "Efterbearbetning",
-    "history": "Historik",
+    "postProcessing": "Stil",
+    "history": "Insikter",
+    "dictionary": "Ordlista",
     "debug": "Felsökning",
     "about": "Om"
   },

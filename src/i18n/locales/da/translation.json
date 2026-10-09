@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Genveje blokeret af Secure Input"
   },
   "sidebar": {
-    "general": "Generelt",
+    "general": "Diktering",
     "models": "Modeller",
     "advanced": "Avanceret",
-    "postProcessing": "Efterbehandling",
-    "history": "Historik",
+    "postProcessing": "Stil",
+    "history": "Indsigt",
+    "dictionary": "Ordbog",
     "debug": "Fejlfinding",
     "about": "Om"
   },

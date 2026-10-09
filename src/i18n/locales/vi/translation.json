@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Phím tắt bị Secure Input chặn"
   },
   "sidebar": {
-    "general": "Chung",
+    "general": "Đọc chính tả",
     "models": "Mô hình",
     "advanced": "Nâng cao",
-    "postProcessing": "Xử lý sau",
-    "history": "Lịch sử",
+    "postProcessing": "Phong cách",
+    "history": "Thống kê",
+    "dictionary": "Từ điển",
     "debug": "Gỡ lỗi",
     "about": "Giới thiệu"
   },

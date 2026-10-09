@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Raccourcis bloqués par Secure Input"
   },
   "sidebar": {
-    "general": "Général",
+    "general": "Dictée",
     "models": "Modèles",
     "advanced": "Avancé",
-    "postProcessing": "Post-traitement",
-    "history": "Historique",
+    "postProcessing": "Style",
+    "history": "Statistiques",
+    "dictionary": "Dictionnaire",
     "debug": "Débogage",
     "about": "À propos"
   },

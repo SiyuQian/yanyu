@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Комбінації клавіш заблоковано Secure Input"
   },
   "sidebar": {
-    "general": "Загальні",
+    "general": "Диктування",
     "models": "Моделі",
     "advanced": "Розширені",
-    "postProcessing": "Постобробка",
-    "history": "Історія",
+    "postProcessing": "Стиль",
+    "history": "Статистика",
+    "dictionary": "Словник",
     "debug": "Дебаг",
     "about": "Інфо"
   },
