@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Tastenkürzel durch Secure Input blockiert"
   },
   "sidebar": {
-    "general": "Allgemein",
+    "general": "Diktat",
     "models": "Modelle",
     "advanced": "Erweitert",
-    "postProcessing": "Nachbearbeitung",
-    "history": "Verlauf",
+    "postProcessing": "Stil",
+    "history": "Statistiken",
+    "dictionary": "Wörterbuch",
     "debug": "Debug",
     "about": "Info"
   },
@@ -206,6 +207,9 @@
         "none": "Keine Tastenkürzel konfiguriert",
         "notFound": "Tastenkürzel nicht gefunden",
         "pressKeys": "Tasten drücken...",
+        "add": "Tastenkürzel hinzufügen",
+        "remove": "Tastenkürzel entfernen",
+        "reset": "Tastenkürzel zurücksetzen",
         "bindings": {
           "transcribe": {
             "name": "Transkriptions-Tastenkürzel",

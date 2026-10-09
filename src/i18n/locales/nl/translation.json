@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Sneltoetsen geblokkeerd door Secure Input"
   },
   "sidebar": {
-    "general": "Algemeen",
+    "general": "Dicteren",
     "models": "Modellen",
     "advanced": "Geavanceerd",
-    "postProcessing": "Naverwerking",
-    "history": "Geschiedenis",
+    "postProcessing": "Stijl",
+    "history": "Inzichten",
+    "dictionary": "Woordenboek",
     "debug": "Probleemoplossing",
     "about": "Over Yanyu"
   },
@@ -186,6 +187,9 @@
         "none": "Geen sneltoetsen geconfigureerd",
         "notFound": "Sneltoets niet gevonden",
         "pressKeys": "Druk op toetsen...",
+        "add": "Sneltoets toevoegen",
+        "remove": "Sneltoets verwijderen",
+        "reset": "Sneltoets herstellen",
         "bindings": {
           "transcribe": {
             "name": "Sneltoets voor dicteren",

@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Kortkommandon blockeras av Secure Input"
   },
   "sidebar": {
-    "general": "Allmänt",
+    "general": "Diktering",
     "models": "Modeller",
     "advanced": "Avancerat",
-    "postProcessing": "Efterbearbetning",
-    "history": "Historik",
+    "postProcessing": "Stil",
+    "history": "Insikter",
+    "dictionary": "Ordlista",
     "debug": "Felsökning",
     "about": "Om"
   },
@@ -186,6 +187,9 @@
         "none": "Inga kortkommandon konfigurerade",
         "notFound": "Kortkommando hittades inte",
         "pressKeys": "Tryck på tangenter...",
+        "add": "Lägg till kortkommando",
+        "remove": "Ta bort kortkommando",
+        "reset": "Återställ kortkommando",
         "bindings": {
           "transcribe": {
             "name": "Kortkommando för transkribering",

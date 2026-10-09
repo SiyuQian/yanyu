@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Atajos bloqueados por Secure Input"
   },
   "sidebar": {
-    "general": "General",
+    "general": "Dictado",
     "models": "Modelos",
     "advanced": "Avanzado",
-    "postProcessing": "Post proceso",
-    "history": "Historial",
+    "postProcessing": "Estilo",
+    "history": "Estadísticas",
+    "dictionary": "Diccionario",
     "debug": "Depuración",
     "about": "Acerca de"
   },
@@ -206,6 +207,9 @@
         "none": "No hay atajos configurados",
         "notFound": "Atajo no encontrado",
         "pressKeys": "Presiona teclas...",
+        "add": "Añadir atajo",
+        "remove": "Eliminar atajo",
+        "reset": "Restablecer atajo",
         "bindings": {
           "transcribe": {
             "name": "Atajo de transcripción",

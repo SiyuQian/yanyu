@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Genveje blokeret af Secure Input"
   },
   "sidebar": {
-    "general": "Generelt",
+    "general": "Diktering",
     "models": "Modeller",
     "advanced": "Avanceret",
-    "postProcessing": "Efterbehandling",
-    "history": "Historik",
+    "postProcessing": "Stil",
+    "history": "Indsigt",
+    "dictionary": "Ordbog",
     "debug": "Fejlfinding",
     "about": "Om"
   },
@@ -186,6 +187,9 @@
         "none": "Ingen genveje konfigureret",
         "notFound": "Genvej ikke fundet",
         "pressKeys": "Tryk på ønskede taster...",
+        "add": "Tilføj genvej",
+        "remove": "Fjern genvej",
+        "reset": "Nulstil genvej",
         "bindings": {
           "transcribe": {
             "name": "Transskriptionsgenvej",

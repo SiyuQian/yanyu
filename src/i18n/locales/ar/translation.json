@@ -10,10 +10,11 @@
     "secureInputWarning": "⚠ الاختصارات محجوبة بواسطة Secure Input"
   },
   "sidebar": {
-    "general": "عام",
+    "general": "الإملاء",
     "advanced": "متقدم",
-    "postProcessing": "معالجة لاحقة",
-    "history": "السجل",
+    "postProcessing": "الأسلوب",
+    "history": "الرؤى",
+    "dictionary": "القاموس",
     "debug": "تصحيح الأخطاء",
     "about": "حول",
     "models": "النماذج"
@@ -183,6 +184,9 @@
         "none": "لا توجد اختصارات مجهزة",
         "notFound": "الاختصار غير موجود",
         "pressKeys": "اضغط على المفاتيح...",
+        "add": "إضافة اختصار",
+        "remove": "إزالة الاختصار",
+        "reset": "إعادة تعيين الاختصار",
         "bindings": {
           "transcribe": {
             "name": "اختصار التفريغ الصوتي",

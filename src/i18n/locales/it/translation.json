@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Scorciatoie bloccate da Secure Input"
   },
   "sidebar": {
-    "general": "Generale",
+    "general": "Dettatura",
     "models": "Modelli",
     "advanced": "Avanzate",
-    "postProcessing": "Post-Elaborazione",
-    "history": "Cronologia",
+    "postProcessing": "Stile",
+    "history": "Statistiche",
+    "dictionary": "Dizionario",
     "debug": "Debug",
     "about": "Informazioni"
   },
@@ -206,6 +207,9 @@
         "none": "Nessuna scorciatoia configurata",
         "notFound": "Scorciatoia non trovata",
         "pressKeys": "Premi i tasti...",
+        "add": "Aggiungi scorciatoia",
+        "remove": "Rimuovi scorciatoia",
+        "reset": "Ripristina scorciatoia",
         "bindings": {
           "transcribe": {
             "name": "Scorciatoia Trascrizione",

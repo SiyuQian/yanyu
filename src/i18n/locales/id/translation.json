@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Pintasan diblokir oleh Secure Input"
   },
   "sidebar": {
-    "general": "Umum",
+    "general": "Dikte",
     "models": "Model",
     "advanced": "Lanjutan",
-    "postProcessing": "Pascaproses",
-    "history": "Riwayat",
+    "postProcessing": "Gaya",
+    "history": "Wawasan",
+    "dictionary": "Kamus",
     "debug": "Debug",
     "about": "Tentang"
   },
@@ -186,6 +187,9 @@
         "none": "Belum ada pintasan yang diatur",
         "notFound": "Pintasan tidak ditemukan",
         "pressKeys": "Tekan tombol...",
+        "add": "Tambah pintasan",
+        "remove": "Hapus pintasan",
+        "reset": "Atur ulang pintasan",
         "bindings": {
           "transcribe": {
             "name": "Pintasan Transkripsi",

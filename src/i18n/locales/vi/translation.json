@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Phím tắt bị Secure Input chặn"
   },
   "sidebar": {
-    "general": "Chung",
+    "general": "Đọc chính tả",
     "models": "Mô hình",
     "advanced": "Nâng cao",
-    "postProcessing": "Xử lý sau",
-    "history": "Lịch sử",
+    "postProcessing": "Phong cách",
+    "history": "Thống kê",
+    "dictionary": "Từ điển",
     "debug": "Gỡ lỗi",
     "about": "Giới thiệu"
   },
@@ -206,6 +207,9 @@
         "none": "Chưa cấu hình phím tắt",
         "notFound": "Không tìm thấy phím tắt",
         "pressKeys": "Nhấn phím...",
+        "add": "Thêm phím tắt",
+        "remove": "Xóa phím tắt",
+        "reset": "Đặt lại phím tắt",
         "bindings": {
           "transcribe": {
             "name": "Phím tắt chuyển đổi",

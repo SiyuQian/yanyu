@@ -9742,7 +9742,7 @@ checksum = "b9cc00251562a284751c9973bace760d86c0276c471b4be569fe6b068ee97a56"
 
 [[package]]
 name = "yanyu"
-version = "0.9.8"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "candle-core",

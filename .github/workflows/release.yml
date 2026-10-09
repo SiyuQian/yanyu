@@ -30,8 +30,8 @@ jobs:
             const tag = `v${version}`;
             if (context.eventName === 'release') {
               const release = context.payload.release;
-              if (release.tag_name !== tag) {
-                throw new Error(`Release tag ${release.tag_name} must match application version ${tag}`);
+              if (release.tag_name !== version && release.tag_name !== tag) {
+                throw new Error(`Release tag ${release.tag_name} must match application version ${version} (optional v prefix)`);
               }
               return release.id;
             }

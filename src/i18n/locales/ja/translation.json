@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Secure Input でショートカットがブロック中"
   },
   "sidebar": {
-    "general": "一般",
+    "general": "音声入力",
     "models": "モデル",
     "advanced": "詳細設定",
-    "postProcessing": "後処理",
-    "history": "履歴",
+    "postProcessing": "スタイル",
+    "history": "インサイト",
+    "dictionary": "辞書",
     "debug": "デバッグ",
     "about": "概要"
   },
@@ -206,6 +207,9 @@
         "none": "ショートカットが設定されていません",
         "notFound": "ショートカットが見つかりません",
         "pressKeys": "キーを押してください…",
+        "add": "ショートカットを追加",
+        "remove": "ショートカットを削除",
+        "reset": "ショートカットをリセット",
         "bindings": {
           "transcribe": {
             "name": "文字起こしのショートカット",

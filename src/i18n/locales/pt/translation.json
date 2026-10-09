@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Atalhos bloqueados pelo Secure Input"
   },
   "sidebar": {
-    "general": "Geral",
+    "general": "Ditado",
     "models": "Modelos",
     "advanced": "Avançado",
-    "postProcessing": "Pós-Processamento",
-    "history": "Histórico",
+    "postProcessing": "Estilo",
+    "history": "Estatísticas",
+    "dictionary": "Dicionário",
     "debug": "Depuração",
     "about": "Sobre"
   },
@@ -186,6 +187,9 @@
         "none": "Nenhum atalho configurado",
         "notFound": "Atalho não encontrado",
         "pressKeys": "Pressione as teclas...",
+        "add": "Adicionar atalho",
+        "remove": "Remover atalho",
+        "reset": "Redefinir atalho",
         "bindings": {
           "transcribe": {
             "name": "Atalho de Transcrição",

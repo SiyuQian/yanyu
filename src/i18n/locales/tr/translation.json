@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Kısayollar Secure Input tarafından engelleniyor"
   },
   "sidebar": {
-    "general": "Genel",
+    "general": "Dikte",
     "models": "Modeller",
     "advanced": "Gelişmiş",
-    "postProcessing": "Son İşlem",
-    "history": "Geçmiş",
+    "postProcessing": "Stil",
+    "history": "İçgörüler",
+    "dictionary": "Sözlük",
     "debug": "Hata Ayıklama",
     "about": "Hakkında"
   },
@@ -206,6 +207,9 @@
         "none": "Kısayol yapılandırılmadı",
         "notFound": "Kısayol bulunamadı",
         "pressKeys": "Tuşlara basın...",
+        "add": "Kısayol ekle",
+        "remove": "Kısayolu kaldır",
+        "reset": "Kısayolu sıfırla",
         "bindings": {
           "transcribe": {
             "name": "Transkripsiyon Kısayolu",

@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Dreceres blocades per l'entrada segura"
   },
   "sidebar": {
-    "general": "General",
+    "general": "Dictat",
     "models": "Models",
     "advanced": "Avançat",
-    "postProcessing": "Postprocessament",
-    "history": "Historial",
+    "postProcessing": "Estil",
+    "history": "Estadístiques",
+    "dictionary": "Diccionari",
     "debug": "Depuració",
     "about": "Quant a"
   },
@@ -186,6 +187,9 @@
         "none": "No hi ha cap drecera configurada",
         "notFound": "No s'ha trobat la drecera",
         "pressKeys": "Premeu les tecles...",
+        "add": "Afegeix una drecera",
+        "remove": "Elimina la drecera",
+        "reset": "Restableix la drecera",
         "bindings": {
           "transcribe": {
             "name": "Drecera de transcripció",

@@ -10,11 +10,12 @@
     "secureInputWarning": "⚠ Secure Input으로 단축키가 차단됨"
   },
   "sidebar": {
-    "general": "일반",
+    "general": "받아쓰기",
     "models": "모델",
     "advanced": "고급",
-    "postProcessing": "후처리",
-    "history": "히스토리",
+    "postProcessing": "스타일",
+    "history": "인사이트",
+    "dictionary": "사전",
     "debug": "디버그",
     "about": "정보"
   },
@@ -186,6 +187,9 @@
         "none": "설정된 단축키 없음",
         "notFound": "단축키를 찾을 수 없음",
         "pressKeys": "키를 눌러주세요...",
+        "add": "단축키 추가",
+        "remove": "단축키 제거",
+        "reset": "단축키 초기화",
         "bindings": {
           "transcribe": {
             "name": "음성 텍스트 변환 단축키",
