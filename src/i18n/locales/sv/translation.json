@@ -211,7 +211,10 @@
           "push_to_talk": "Spelar in så länge du håller genvägen nedtryckt",
           "toggle": "Tryck på genvägen för att starta inspelningen, tryck igen för att stoppa"
         }
-      }
+      },
+      "pageDescription": "Anpassa kortkommandon, igenkänningsspråk och inspelningsinställningar.",
+      "shortcutsTitle": "Kortkommandon",
+      "recognitionTitle": "Igenkänning"
     },
     "models": {
       "title": "Transkriptionsmodeller",
@@ -249,7 +252,8 @@
       },
       "audioFeedback": {
         "label": "Ljudåterkoppling",
-        "description": "Spela upp ljud när inspelningen startar och stoppar"
+        "description": "Spela upp ljud när inspelningen startar och stoppar",
+        "disabledHint": "Aktivera ljudåterkoppling för att justera uppspelningsenhet och volym."
       },
       "outputDevice": {
         "title": "Utmatningsenhet",
