@@ -1,0 +1,90 @@
+import { test, expect } from "@playwright/test";
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const settings = JSON.parse(
+      localStorage.getItem("local-polishing-test") ||
+        '{"local_polishing_enabled":false,"post_process_enabled":false}',
+    );
+    let phase = "missing";
+    Object.assign(window, {
+      __TAURI_OS_PLUGIN_INTERNALS__: { os_type: "macos", platform: "macos" },
+      __TAURI_INTERNALS__: {
+        invoke: async (command: string, args?: { enabled: boolean }) => {
+          if (command === "get_app_settings") return settings;
+          if (command === "get_local_polishing_status") {
+            return {
+              phase,
+              progress: phase === "downloading" ? 0.5 : 0,
+              error: null,
+              downloaded: false,
+              supported: true,
+            };
+          }
+          if (command === "set_local_polishing_enabled") {
+            settings.local_polishing_enabled = args?.enabled ?? false;
+            localStorage.setItem(
+              "local-polishing-test",
+              JSON.stringify(settings),
+            );
+          }
+          if (command === "download_local_polishing_model")
+            phase = "downloading";
+          if (command === "cancel_local_polishing_download") phase = "missing";
+          if (command === "delete_local_polishing_model") {
+            settings.local_polishing_enabled = false;
+            phase = "missing";
+          }
+          if (command === "change_post_process_enabled_setting")
+            throw new Error("Legacy postprocessing must remain unchanged");
+          return null;
+        },
+      },
+    });
+  });
+  await page.route(/\/src\/main\.tsx(?:\?.*)?$/, (route) =>
+    route.fulfill({
+      contentType: "application/javascript",
+      body: `
+      import React from '/node_modules/.vite/deps/react.js';
+      import ReactDOM from '/node_modules/.vite/deps/react-dom_client.js';
+      import { LocalPolishingSettings } from '/src/components/settings/general/LocalPolishingSettings.tsx';
+      import { useSettingsStore } from '/src/stores/settingsStore.ts';
+      import '/src/i18n/index.ts';
+      import '/src/App.css';
+      const settings = await window.__TAURI_INTERNALS__.invoke('get_app_settings');
+      useSettingsStore.setState({ settings, isLoading: false });
+      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(LocalPolishingSettings));
+    `,
+    }),
+  );
+  await page.goto("/");
+});
+
+test("polishing is accessible and independent of disabled legacy postprocessing", async ({
+  page,
+}) => {
+  const toggle = page.getByRole("checkbox", {
+    name: "Lightly polish Voice Input",
+  });
+  await expect(toggle).not.toBeChecked();
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(toggle).toBeChecked();
+  await page.reload();
+  await expect(toggle).toBeChecked();
+});
+
+test("download progress and cancellation are reachable while polishing is off", async ({
+  page,
+}) => {
+  await page
+    .getByRole("button", { name: "Download Qwen3-0.6B (651 MB)" })
+    .click();
+  await expect(
+    page.getByRole("progressbar", { name: "Model download progress" }),
+  ).toHaveAttribute("value", "0.5");
+  await page.getByRole("button", { name: "Cancel download" }).click();
+  await expect(page.getByRole("status")).toHaveText("Model not downloaded");
+  await expect(page.getByRole("checkbox")).not.toBeChecked();
+});

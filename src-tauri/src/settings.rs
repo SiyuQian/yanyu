@@ -456,6 +456,8 @@ pub struct AppSettings {
     pub auto_submit_key: AutoSubmitKey,
     #[serde(default = "default_post_process_enabled")]
     pub post_process_enabled: bool,
+    #[serde(default)]
+    pub local_polishing_enabled: bool,
     #[serde(default = "default_post_process_provider_id")]
     pub post_process_provider_id: String,
     #[serde(default = "default_post_process_providers")]
@@ -963,6 +965,7 @@ pub fn get_default_settings() -> AppSettings {
         auto_submit: default_auto_submit(),
         auto_submit_key: AutoSubmitKey::default(),
         post_process_enabled: default_post_process_enabled(),
+        local_polishing_enabled: false,
         post_process_provider_id: default_post_process_provider_id(),
         post_process_providers: default_post_process_providers(),
         post_process_api_keys: default_post_process_api_keys(),
@@ -1272,6 +1275,13 @@ pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeri
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_polishing_defaults_off_for_new_and_existing_stores() {
+        assert!(!get_default_settings().local_polishing_enabled);
+        let settings: AppSettings = serde_json::from_value(serde_json::json!({})).unwrap();
+        assert!(!settings.local_polishing_enabled);
+    }
 
     #[test]
     fn stored_binding_returns_the_requested_binding() {

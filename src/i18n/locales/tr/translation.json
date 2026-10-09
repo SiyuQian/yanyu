@@ -155,6 +155,25 @@
     "legacy": "Eski"
   },
   "settings": {
+    "localPolishing": {
+      "title": "Local polishing",
+      "label": "Lightly polish Voice Input",
+      "description": "Qwen3-0.6B runs on this Mac. Fix punctuation and capitalization while preserving words and language. If it is not ready or takes over 500 ms, keep the original transcript. Long transcripts skip polishing. Turning this off releases the loaded model.",
+      "download": "Download Qwen3-0.6B (651 MB)",
+      "cancel": "Cancel download",
+      "delete": "Delete model",
+      "progress": "Model download progress",
+      "error": "Local polishing is unavailable. Your original transcript will be kept. Delete and download the model again, or turn polishing off and on.",
+      "states": {
+        "missing": "Model not downloaded",
+        "downloaded": "Model downloaded · polishing off",
+        "loading": "Loading and warming the model…",
+        "ready": "Ready",
+        "downloading": "Downloading and verifying model…",
+        "error": "Model error",
+        "unsupported": "Requires an Apple Silicon Mac"
+      }
+    },
     "modelSettings": {
       "title": "{{model}} Ayarları"
     },

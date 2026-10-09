@@ -215,6 +215,13 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
+    let polishing_manager = managers::local_polishing::LocalPolishingManager::new(
+        crate::portable::app_data_dir(app_handle)
+            .expect("Failed to locate local polishing directory")
+            .join("local-polishing/qwen3-0.6b"),
+    );
+    app_handle.manage(polishing_manager.clone());
+    polishing_manager.set_enabled(settings::get_settings(app_handle).local_polishing_enabled);
     app_handle.manage(tray::TrayState::new());
 
     // Note: Shortcuts are NOT initialized here.
@@ -651,6 +658,11 @@ pub fn run(cli_args: CliArgs) {
 
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
+            commands::local_polishing::get_local_polishing_status,
+            commands::local_polishing::set_local_polishing_enabled,
+            commands::local_polishing::download_local_polishing_model,
+            commands::local_polishing::cancel_local_polishing_download,
+            commands::local_polishing::delete_local_polishing_model,
             shortcut::change_binding,
             shortcut::reset_binding,
             shortcut::remove_transcribe_binding,
