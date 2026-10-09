@@ -251,7 +251,7 @@ export const HistorySettings: React.FC = () => {
                 key={entry.id}
                 entry={entry}
                 onToggleSaved={() => toggleSaved(entry.id)}
-                onCopyText={() => copyToClipboard(entry.transcription_text)}
+                onCopyText={() => copyToClipboard(getDisplayText(entry))}
                 getAudioUrl={getAudioUrl}
                 deleteAudio={deleteAudioEntry}
                 retryTranscription={retryHistoryEntry}
@@ -287,6 +287,10 @@ export const HistorySettings: React.FC = () => {
   );
 };
 
+// The pasted text: the polished result when polishing produced one.
+const getDisplayText = (entry: HistoryEntry) =>
+  entry.post_processed_text?.trim() || entry.transcription_text;
+
 interface HistoryEntryProps {
   entry: HistoryEntry;
   onToggleSaved: () => void;
@@ -309,6 +313,9 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const [retrying, setRetrying] = useState(false);
 
   const hasTranscription = entry.transcription_text.trim().length > 0;
+  const displayText = getDisplayText(entry);
+  const originalText =
+    displayText !== entry.transcription_text ? entry.transcription_text : null;
 
   const handleLoadAudio = useCallback(
     () => getAudioUrl(entry.file_name),
@@ -435,9 +442,20 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         {retrying
           ? t("settings.history.transcribing")
           : hasTranscription
-            ? entry.transcription_text
+            ? displayText
             : t("settings.history.transcriptionFailed")}
       </p>
+
+      {!retrying && originalText && (
+        <div className="border-l-2 border-mid-gray/30 pl-3 -mt-2 pb-2">
+          <p className="text-xs text-mid-gray mb-1">
+            {t("settings.history.beforePolishing")}
+          </p>
+          <p className="text-sm text-text/50 select-text cursor-text whitespace-pre-wrap break-words">
+            {originalText}
+          </p>
+        </div>
+      )}
 
       <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
     </div>
