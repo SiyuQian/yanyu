@@ -88,7 +88,7 @@ const TranscribeShortcuts: React.FC<ShortcutInputProps> = (props) => {
       grouped={props.grouped}
       disabled={props.disabled}
     >
-      <div className="flex flex-col items-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {["transcribe", ...additionalIds, draftId].map((id) => (
           <div key={id} className="flex items-center gap-1">
             <ShortcutInput
