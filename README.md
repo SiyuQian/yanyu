@@ -26,7 +26,7 @@ bun install
 bun run tauri dev
 ```
 
-首次开发需要按 [AGENTS.md](AGENTS.md) 准备 Silero VAD 模型。个人录音和训练数据应保存在本地，不要提交到这个公开仓库。
+项目导航见 [AGENTS.md](AGENTS.md)，架构说明见 [ARCHITECTURE.md](ARCHITECTURE.md)，完整开发参考见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。首次开发需按开发参考准备 Silero VAD 模型。个人录音和训练数据应保存在本地，不要提交到这个公开仓库。
 
 ## 许可证与署名
 
