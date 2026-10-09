@@ -187,6 +187,9 @@
         "none": "Aucun raccourci configuré",
         "notFound": "Raccourci non trouvé",
         "pressKeys": "Appuyez sur les touches...",
+        "add": "Ajouter un raccourci",
+        "remove": "Supprimer le raccourci",
+        "reset": "Réinitialiser le raccourci",
         "bindings": {
           "transcribe": {
             "name": "Raccourci de Transcription",
