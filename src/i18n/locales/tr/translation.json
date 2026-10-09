@@ -231,7 +231,10 @@
           "push_to_talk": "Kısayolu basılı tuttuğunuz sürece kaydeder",
           "toggle": "Kaydı başlatmak için kısayola dokunun, durdurmak için tekrar dokunun"
         }
-      }
+      },
+      "pageDescription": "Kısayolları, tanıma dilini ve kayıt tercihlerini yapılandırın.",
+      "shortcutsTitle": "Kısayollar",
+      "recognitionTitle": "Tanıma"
     },
     "sound": {
       "title": "Ses",
@@ -249,7 +252,8 @@
       },
       "audioFeedback": {
         "label": "Sesli Geri Bildirim",
-        "description": "Kayıt başladığında ve bittiğinde ses çalar"
+        "description": "Kayıt başladığında ve bittiğinde ses çalar",
+        "disabledHint": "Oynatma cihazını ve ses düzeyini ayarlamak için sesli geri bildirimi etkinleştirin."
       },
       "outputDevice": {
         "title": "Çıkış Cihazı",

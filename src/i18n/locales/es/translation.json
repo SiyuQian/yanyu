@@ -231,7 +231,10 @@
           "push_to_talk": "Graba mientras mantienes pulsado el atajo",
           "toggle": "Toca el atajo para empezar a grabar, tócalo de nuevo para detener"
         }
-      }
+      },
+      "pageDescription": "Configura los atajos, el idioma de reconocimiento y las preferencias de grabación.",
+      "shortcutsTitle": "Atajos",
+      "recognitionTitle": "Reconocimiento"
     },
     "sound": {
       "title": "Sonido",
@@ -249,7 +252,8 @@
       },
       "audioFeedback": {
         "label": "Retroalimentación de audio",
-        "description": "Reproducir sonido cuando la grabación inicia y se detiene"
+        "description": "Reproducir sonido cuando la grabación inicia y se detiene",
+        "disabledHint": "Activa los avisos sonoros para ajustar el dispositivo de reproducción y el volumen."
       },
       "outputDevice": {
         "title": "Dispositivo de salida",

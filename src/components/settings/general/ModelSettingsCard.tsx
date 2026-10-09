@@ -1,4 +1,5 @@
 import React from "react";
+import { Globe2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { LanguageSelector } from "../LanguageSelector";
@@ -24,9 +25,12 @@ export const ModelSettingsCard: React.FC = () => {
 
   return (
     <SettingsGroup
-      title={t("settings.modelSettings.title", {
-        model: currentModelInfo.name,
-      })}
+      variant="card"
+      icon={<Globe2 size={20} />}
+      title={t("settings.general.recognitionTitle")}
+      accessory={
+        <span className="text-xs text-text/60">{currentModelInfo.name}</span>
+      }
     >
       {showLanguageSelector && (
         <LanguageSelector

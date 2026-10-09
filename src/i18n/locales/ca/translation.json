@@ -211,7 +211,10 @@
           "push_to_talk": "Enregistreu mentre manteniu premuda la drecera",
           "toggle": "Premeu la drecera per iniciar l'enregistrament i torneu-la a prémer per aturar-lo"
         }
-      }
+      },
+      "pageDescription": "Configura les dreceres, la llengua de reconeixement i les preferències de gravació.",
+      "shortcutsTitle": "Dreceres",
+      "recognitionTitle": "Reconeixement"
     },
     "models": {
       "title": "Models de transcripció",
@@ -249,7 +252,8 @@
       },
       "audioFeedback": {
         "label": "Avisos sonors",
-        "description": "Reprodueix un so quan s'inicia i s'atura l'enregistrament"
+        "description": "Reprodueix un so quan s'inicia i s'atura l'enregistrament",
+        "disabledHint": "Activa els avisos sonors per ajustar el dispositiu de reproducció i el volum."
       },
       "outputDevice": {
         "title": "Dispositiu de sortida",

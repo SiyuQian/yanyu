@@ -121,33 +121,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const isActive = activeSection === section.id;
 
     return (
-      <div
+      <button
+        type="button"
         key={section.id}
-        className={`flex gap-3 items-center px-3 py-2 w-full rounded-xl cursor-pointer transition-colors ${
-          isActive ? "bg-mid-gray/15" : "hover:bg-mid-gray/10"
+        aria-current={isActive ? "page" : undefined}
+        className={`flex gap-3 items-center px-3 py-2.5 w-full rounded-lg text-start cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background-ui ${
+          isActive
+            ? "bg-background-ui/15 text-background-ui"
+            : "text-text/65 hover:bg-mid-gray/10 hover:text-text"
         }`}
         onClick={() => onSectionChange(section.id)}
       >
         <Icon width={20} height={20} strokeWidth={1.75} className="shrink-0" />
-        <p
-          className="text-[15px] font-medium truncate"
+        <span
+          className="text-sm font-medium truncate"
           title={t(section.labelKey)}
         >
           {t(section.labelKey)}
-        </p>
-      </div>
+        </span>
+      </button>
     );
   };
 
   return (
-    <div className="flex flex-col w-48 h-full border-e border-mid-gray/20 px-3 pb-3">
-      <YanyuLogo width={120} className="m-4 self-center" />
-      <div className="flex flex-col w-full gap-1 pt-2">
+    <nav
+      aria-label={t("app.name")}
+      className="settings-sidebar flex flex-col w-44 shrink-0 h-full border-e border-mid-gray/15 px-3 pb-4"
+    >
+      <YanyuLogo width={120} className="my-6 self-center" />
+      <div className="flex flex-col w-full gap-1 pt-1">
         {availableSections.filter((s) => !s.secondary).map(renderItem)}
       </div>
-      <div className="flex flex-col w-full gap-1 mt-auto pt-2 border-t border-mid-gray/20">
+      <div className="flex flex-col w-full gap-1 mt-auto pt-3 border-t border-mid-gray/15">
         {availableSections.filter((s) => s.secondary).map(renderItem)}
       </div>
-    </div>
+    </nav>
   );
 };

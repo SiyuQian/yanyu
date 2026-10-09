@@ -231,7 +231,10 @@
           "push_to_talk": "Registra finché tieni premuta la scorciatoia",
           "toggle": "Tocca la scorciatoia per avviare la registrazione, tocca di nuovo per fermarla"
         }
-      }
+      },
+      "pageDescription": "Configura le scorciatoie, la lingua di riconoscimento e le preferenze di registrazione.",
+      "shortcutsTitle": "Scorciatoie",
+      "recognitionTitle": "Riconoscimento"
     },
     "sound": {
       "title": "Suono",
@@ -249,7 +252,8 @@
       },
       "audioFeedback": {
         "label": "Feedback Audio",
-        "description": "Riproduci un suono quando la registrazione inizia e finisce"
+        "description": "Riproduci un suono quando la registrazione inizia e finisce",
+        "disabledHint": "Attiva i segnali sonori per regolare il dispositivo di riproduzione e il volume."
       },
       "outputDevice": {
         "title": "Dispositivo di Output",

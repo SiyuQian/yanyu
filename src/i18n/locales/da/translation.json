@@ -211,7 +211,10 @@
           "push_to_talk": "Optager, mens du holder genvejen nede",
           "toggle": "Tryk på genvejen for at starte optagelsen, tryk igen for at stoppe"
         }
-      }
+      },
+      "pageDescription": "Indstil genveje, genkendelsessprog og optageindstillinger.",
+      "shortcutsTitle": "Genveje",
+      "recognitionTitle": "Genkendelse"
     },
     "models": {
       "title": "Transskriptionsmodeller",
@@ -249,7 +252,8 @@
       },
       "audioFeedback": {
         "label": "Lydfeedback",
-        "description": "Afspil lyd, når optagelse starter og stopper"
+        "description": "Afspil lyd, når optagelse starter og stopper",
+        "disabledHint": "Aktivér lydfeedback for at justere afspilningsenhed og lydstyrke."
       },
       "outputDevice": {
         "title": "Outputenhed",
