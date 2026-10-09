@@ -52,6 +52,7 @@ Prepare `src-tauri/resources/models/silero_vad_v4.onnx` before desktop developme
 - CLI flags are runtime overrides and must not modify persisted settings. Check: review; see [architecture](ARCHITECTURE.md).
 - Keep personal recordings and training data local; never commit them to this public repository. Check: review, [security](docs/SECURITY.md).
 - Preserve the MIT copyright and license notices when distributing code or substantial portions. Check: review, [license](LICENSE).
+- `README.md` is the English source; keep `README.zh-CN.md` synchronized with it and retain language-switch links at the top of both files. Check: review and documentation link checks.
 - All PR titles, descriptions, and comments must be entirely in English, regardless of the conversation language. Check: review before publishing.
 - Before opening any PR, issue or discussion, read and strictly follow the relevant repository template, including every mandatory section. Check: review.
 - For PRs, read [the PR template](.github/PULL_REQUEST_TEMPLATE.md). If a human-written section is required, leave a clear TODO and ask the human to fill it; never invent their voice. Check: review.
