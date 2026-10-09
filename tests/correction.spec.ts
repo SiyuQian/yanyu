@@ -5,6 +5,8 @@ test.beforeEach(async ({ page }) => {
     let draft = "Hello old name";
     let word: string | null = null;
     let fail = false;
+    let learningFail = false;
+    let deliveryOutcome = "copied";
     let generation = 1;
     Object.assign(window, {
       __TAURI_INTERNALS__: {
@@ -28,9 +30,16 @@ test.beforeEach(async ({ page }) => {
             if (args.generation !== generation) throw "stale_session";
             if (fail) throw "copy_failed";
             draft = args.draft as string;
-            return "copied";
+            return learningFail
+              ? `${deliveryOutcome}_learning_failed`
+              : "copied";
           }
           if (command === "close_correction") return null;
+          if (command === "test_learning_fail") {
+            learningFail = args.fail !== false;
+            deliveryOutcome = (args.outcome as string) || "copied";
+            return null;
+          }
           if (command === "test_fail") {
             fail = true;
             return null;
@@ -46,14 +55,14 @@ test.beforeEach(async ({ page }) => {
 
 test("edits latest delivered text and clearly reports copy fallback", async ({
   page,
-}) => {
+}, testInfo) => {
   const editor = page.getByRole("textbox", { name: "Corrected text" });
   await expect(editor).toHaveValue("Hello old name");
   await editor.fill("Hello Yanyu");
   await editor.press("Enter");
   await expect(page.getByRole("status")).toContainText("Copied");
   await page.screenshot({
-    path: "work/agent-runs/20261009T202649Z-personal-vocabulary/correction-ui.png",
+    path: testInfo.outputPath("correction-ui.png"),
   });
 });
 
@@ -133,3 +142,36 @@ test("stale drafts stay visible until explicitly replaced by latest dictation", 
     .click();
   await expect(editor).toHaveValue("New delivered text");
 });
+
+for (const [outcome, message] of [
+  ["replaced", "Replaced"],
+  ["copied", "Copied"],
+  ["uncertain_copied", "Replacement could not be confirmed"],
+]) {
+  test(`learning failure retains ${outcome} outcome and selected word for retry`, async ({
+    page,
+  }) => {
+    const editor = page.getByRole("textbox", { name: "Corrected text" });
+    await editor.fill("Hello Yanyu");
+    await editor.press("End");
+    for (let index = 0; index < 5; index++)
+      await editor.press("Shift+ArrowLeft");
+    await page.getByRole("button", { name: "Remember selected word" }).click();
+    await page.evaluate(
+      (outcome) =>
+        (
+          window as unknown as {
+            __TAURI_INTERNALS__: {
+              invoke: (command: string, args: object) => Promise<unknown>;
+            };
+          }
+        ).__TAURI_INTERNALS__.invoke("test_learning_fail", { outcome }),
+      outcome,
+    );
+    await page.getByRole("button", { name: "Apply correction" }).click();
+    await expect(page.getByRole("status")).toContainText(message);
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.getByText("Remember: Yanyu")).toBeVisible();
+    await expect(editor).toHaveValue("Hello Yanyu");
+  });
+}

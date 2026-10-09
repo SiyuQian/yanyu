@@ -81,9 +81,14 @@ export default function CorrectionPanel() {
         session.word,
       );
       if (result.status === "error") throw result.error;
-      setOutcome(result.data);
-      setSession({ ...session, word: null });
-      dirty.current = false;
+      const learningFailed = result.data.endsWith("_learning_failed");
+      setOutcome(result.data.replace(/_learning_failed$/, ""));
+      if (learningFailed) {
+        setError("learning_failed");
+      } else {
+        setSession({ ...session, word: null });
+        dirty.current = false;
+      }
     } catch (e) {
       setError(String(e));
     } finally {
@@ -155,7 +160,7 @@ export default function CorrectionPanel() {
             <Button
               variant="secondary"
               size="sm"
-              disabled={busy || !selection || selection.length > 80}
+              disabled={busy || !selection || selection.length > 50}
               onClick={() => {
                 dirty.current = true;
                 setSession({ ...session, word: selection });

@@ -2,7 +2,7 @@
 mod guards;
 #[cfg(target_os = "macos")]
 mod macos;
-use crate::settings::{get_settings, write_settings, ClipboardHandling, PasteMethod};
+use crate::settings::{get_settings, ClipboardHandling, PasteMethod};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
@@ -50,7 +50,11 @@ impl State {
         target: Option<Target>,
         success: bool,
         trailing_space: bool,
+        editor_focused: bool,
     ) {
+        if editor_focused {
+            return;
+        }
         self.target = None;
         self.eligible = false;
         if !success {
@@ -79,6 +83,21 @@ impl State {
         Ok(())
     }
 }
+fn learn_word(
+    settings: &mut crate::settings::AppSettings,
+    word: String,
+    save: impl FnOnce(&crate::settings::AppSettings) -> Result<(), String>,
+    notify: impl FnOnce(),
+) -> bool {
+    settings.custom_words.push(word);
+    if save(settings).is_err() {
+        settings.custom_words.pop();
+        return false;
+    }
+    notify();
+    true
+}
+
 static STATE: Lazy<Mutex<State>> = Lazy::new(|| Mutex::new(State::default()));
 
 /// Capture the target immediately before the existing delivery operation.
@@ -114,6 +133,8 @@ pub fn delivered(app: &AppHandle, text: String, target: Option<Target>, success:
         target,
         success && has_output,
         settings.append_trailing_space,
+        app.get_webview_window("correction")
+            .is_some_and(|window| window.is_focused().unwrap_or(false)),
     );
 }
 
@@ -273,14 +294,41 @@ pub async fn apply_correction(
             }
         };
         if let Some(word) = learned {
-            settings.custom_words.push(word);
-            write_settings(&app, settings);
-            app.store(crate::portable::store_path(
-                crate::settings::SETTINGS_STORE_PATH,
-            ))
-            .map_err(|_| "learning_failed")?
-            .save()
-            .map_err(|_| "learning_failed")?;
+            let saved = learn_word(
+                &mut settings,
+                word,
+                |settings| {
+                    let store = app
+                        .store(crate::portable::store_path(
+                            crate::settings::SETTINGS_STORE_PATH,
+                        ))
+                        .map_err(|_| "learning_failed")?;
+                    let previous = store.get("settings");
+                    store.set(
+                        "settings",
+                        serde_json::to_value(settings).map_err(|_| "learning_failed")?,
+                    );
+                    let saved = store.save().map_err(|_| "learning_failed".into());
+                    if saved.is_err() {
+                        // Roll back the cached store as well, so the selected word remains retryable.
+                        if let Some(previous) = previous {
+                            store.set("settings", previous);
+                        }
+                    }
+                    saved
+                },
+                || {
+                    if let Err(error) = app.emit(
+                        "settings-changed",
+                        serde_json::json!({ "setting": "custom_words" }),
+                    ) {
+                        log::warn!("Could not notify settings windows after learning: {error}");
+                    }
+                },
+            );
+            if !saved {
+                return Ok(format!("{outcome}_learning_failed"));
+            }
             if let Some(session) = &mut state.session {
                 session.word = None;
             }
@@ -295,17 +343,85 @@ mod tests {
     use super::*;
 
     #[test]
+    fn dictation_into_editor_preserves_the_original_session_and_draft() {
+        let mut state = State::default();
+        state.record("original".into(), None, true, false, false);
+        let generation = state.generation;
+        state
+            .save(generation, "my draft".into(), Some("draft".into()))
+            .unwrap();
+        state.eligible = true;
+        state.record("spoken correction".into(), None, true, false, true);
+        assert_eq!(state.generation, generation);
+        assert_eq!(state.session.as_ref().unwrap().draft, "my draft");
+        assert_eq!(
+            state.session.as_ref().unwrap().word.as_deref(),
+            Some("draft")
+        );
+        assert!(state.eligible);
+    }
+
+    #[test]
+    fn learning_notifies_other_windows_only_after_persistence() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.custom_words = vec!["existing".into()];
+        let saved = std::cell::Cell::new(false);
+        let notified = std::cell::Cell::new(false);
+        assert!(learn_word(
+            &mut settings,
+            "learned".into(),
+            |settings| {
+                assert_eq!(settings.custom_words, ["existing", "learned"]);
+                saved.set(true);
+                Ok(())
+            },
+            || {
+                assert!(saved.get());
+                notified.set(true);
+            }
+        ));
+        assert!(notified.get());
+        assert_eq!(settings.custom_words, ["existing", "learned"]);
+    }
+
+    #[test]
+    fn failed_learning_rolls_back_and_can_be_retried() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.custom_words = vec!["existing".into()];
+        let attempted = std::cell::Cell::new(false);
+        assert!(!learn_word(
+            &mut settings,
+            "learned".into(),
+            |_| {
+                attempted.set(true);
+                Err("disk full".into())
+            },
+            || panic!("failed persistence must not notify")
+        ));
+        assert!(attempted.get());
+        assert_eq!(settings.custom_words, ["existing"]);
+        assert!(guards::validate_word("learned", "learned", &settings.custom_words).is_ok());
+        assert!(learn_word(
+            &mut settings,
+            "learned".into(),
+            |_| Ok(()),
+            || {}
+        ));
+        assert_eq!(settings.custom_words, ["existing", "learned"]);
+    }
+
+    #[test]
     fn final_delivered_text_survives_output_failure_without_replacement_eligibility() {
         let mut state = State::default();
-        state.record("polished final text".into(), None, true, true);
+        state.record("polished final text".into(), None, true, true, false);
         assert_eq!(state.session.as_ref().unwrap().draft, "polished final text");
         let generation = state.generation;
         state.eligible = true;
-        state.record("failed output".into(), None, false, false);
+        state.record("failed output".into(), None, false, false, false);
         assert_eq!(state.session.as_ref().unwrap().draft, "polished final text");
         assert_eq!(state.generation, generation);
         assert!(!state.eligible);
-        state.record("new delivery".into(), None, true, false);
+        state.record("new delivery".into(), None, true, false, false);
         assert_ne!(state.generation, generation);
         assert_eq!(state.session.as_ref().unwrap().draft, "new delivery");
     }

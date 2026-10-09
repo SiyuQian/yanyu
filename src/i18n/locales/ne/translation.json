@@ -779,7 +779,7 @@
     "errors": {
       "generic": "Correction failed. Your draft is preserved.",
       "stale_session": "A newer dictation exists. Your draft is preserved; copy your edits before loading the latest dictation.",
-      "invalid_word": "Select a new word or short phrase in the corrected text (up to 80 characters).",
+      "invalid_word": "Select a new word or short phrase in the corrected text (up to 50 UTF-16 units).",
       "copy_failed": "Clipboard write failed. Your draft is preserved.",
       "empty_text": "Enter corrected text first.",
       "too_long": "The correction is too long. Keep it under 32768 UTF-16 units.",

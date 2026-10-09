@@ -230,7 +230,8 @@ impl Target {
         if selected(self.element.0) != Some(self.range)
             || text_attr(self.element.0, "AXValue").as_deref() != Some(&self.expected)
         {
-            return None;
+            // Selection already changed. Report uncertainty even if no text was written.
+            return Some(false);
         }
         let written = set(self.element.0, "AXSelectedText", replacement.0);
         let confirmed = written && text_attr(self.element.0, "AXValue").as_deref() == Some(&next);

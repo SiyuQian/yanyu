@@ -10,18 +10,20 @@ pub fn inserted_value(value: &str, start: usize, length: usize, text: &str) -> O
 
 /// Validate an explicitly selected vocabulary term before persistence.
 pub fn validate_word(word: &str, output: &str, existing: &[String]) -> Result<String, String> {
-    let word = word.trim();
+    if word.chars().any(char::is_control) {
+        return Err("invalid_word".into());
+    }
+    let word = word.split_whitespace().collect::<Vec<_>>().join(" ");
     if word.is_empty()
-        || word.chars().count() > 80
-        || word.chars().any(char::is_control)
-        || !output.contains(word)
+        || word.encode_utf16().count() > 50
+        || !output.contains(&word)
         || existing
             .iter()
             .any(|old| old.to_lowercase() == word.to_lowercase())
     {
         return Err("invalid_word".into());
     }
-    Ok(word.to_string())
+    Ok(word)
 }
 
 /// Permit mutation only for the exact verified target and unchanged contents.
@@ -42,6 +44,21 @@ pub fn opening_eligible(editor_focused: bool, eligible: bool, same_target: bool)
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn learned_terms_use_settings_length_and_whitespace_without_stripping_names() {
+        assert_eq!(
+            validate_word("  Ada   Lovelace  ", "Ada Lovelace", &[]),
+            Ok("Ada Lovelace".into())
+        );
+        assert!(validate_word("Ada   Lovelace", "Ada   Lovelace", &[]).is_err());
+        for word in ["O'Connor", "Smith, Jr.", "<name>", "quoted \"name\""] {
+            assert_eq!(validate_word(word, word, &[]), Ok(word.into()));
+        }
+        assert!(validate_word(&"😀".repeat(26), &"😀".repeat(26), &[]).is_err());
+        assert!(validate_word(&"a".repeat(51), &"a".repeat(51), &[]).is_err());
+        assert!(validate_word("Ada   Lovelace", "Ada Lovelace", &["Ada Lovelace".into()]).is_err());
+    }
 
     #[test]
     fn reopening_only_preserves_eligibility_when_the_editor_has_focus() {
