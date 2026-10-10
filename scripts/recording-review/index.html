@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/ui.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p data-t="local"></p>
+        <h1 data-t="title"></h1>
+        <p data-t="privacy"></p>
+      </header>
+      <p id="status" role="status" aria-live="polite"></p>
+      <p id="progress"></p>
+      <label for="sample" data-t="recording"></label
+      ><select id="sample"></select>
+      <nav>
+        <button id="previous" data-t="previous"></button
+        ><button id="next" data-t="next"></button>
+      </nav>
+      <audio controls preload="metadata"></audio>
+      <section>
+        <h2 data-t="original"></h2>
+        <p id="original" class="transcript"></p>
+        <h2 data-t="processed"></h2>
+        <p id="processed" class="transcript"></p>
+      </section>
+      <aside>
+        <h2 data-t="suggestions"></h2>
+        <p data-t="provisional"></p>
+        <p id="suggestion"></p>
+      </aside>
+      <form>
+        <label for="judgment" data-t="judgment"></label
+        ><select id="judgment">
+          <option value="unreviewed" data-t="unreviewed"></option>
+          <option value="confirmed" data-t="confirmed"></option>
+          <option value="rejected" data-t="rejected"></option>
+          <option value="uncertain" data-t="uncertain"></option>
+        </select>
+        <label for="reference" data-t="reference"></label
+        ><textarea id="reference" maxlength="20000" rows="4"></textarea>
+        <label for="preferred" data-t="preferred"></label
+        ><textarea id="preferred" maxlength="20000" rows="3"></textarea>
+        <label for="notes" data-t="notes"></label
+        ><textarea id="notes" maxlength="20000" rows="3"></textarea>
+        <button id="save" type="submit" data-t="save"></button>
+      </form>
+    </main>
+  </body>
+</html>
