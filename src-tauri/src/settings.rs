@@ -373,6 +373,10 @@ impl std::ops::DerefMut for SecretMap {
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 #[serde(default)]
 pub struct AppSettings {
+    #[serde(default)]
+    pub personalization: crate::personalization::PersonalizationProfile,
+    #[serde(default)]
+    pub processing_mode: crate::personalization::ProcessingMode,
     /// Internal settings schema marker for one-time migrations. Fresh installs
     /// start at the current version; existing stores missing this key are
     /// treated as version 0 and migrated forward.
@@ -964,6 +968,8 @@ pub fn get_default_settings() -> AppSettings {
         clipboard_handling: ClipboardHandling::default(),
         auto_submit: default_auto_submit(),
         auto_submit_key: AutoSubmitKey::default(),
+        personalization: Default::default(),
+        processing_mode: Default::default(),
         post_process_enabled: default_post_process_enabled(),
         local_polishing_enabled: false,
         post_process_provider_id: default_post_process_provider_id(),
@@ -1275,6 +1281,15 @@ pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeri
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn personalization_defaults_preserve_legacy_behavior() {
+        let settings: AppSettings = serde_json::from_value(serde_json::json!({})).unwrap();
+        let value = serde_json::to_value(settings).unwrap();
+        assert_eq!(value["processing_mode"], "legacy");
+        assert_eq!(value["personalization"]["enabled"], false);
+        assert_eq!(value["personalization"]["invitation_dismissed"], false);
+    }
 
     #[test]
     fn local_polishing_defaults_off_for_new_and_existing_stores() {

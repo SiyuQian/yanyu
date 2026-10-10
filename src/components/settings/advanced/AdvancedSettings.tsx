@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
+import { commands } from "@/bindings";
+import { Button } from "@/components/ui/Button";
+import { PostProcessingSettingsPrompts } from "../post-processing/PostProcessingSettings";
 import { useTranslation } from "react-i18next";
 import { ShowOverlay } from "../ShowOverlay";
 import { ModelUnloadTimeoutSetting } from "../ModelUnloadTimeout";
@@ -26,7 +29,22 @@ import { VadBackendSelector } from "../VadBackendSelector";
 
 export const AdvancedSettings: React.FC = () => {
   const { t } = useTranslation();
-  const { getSetting } = useSettings();
+  const { getSetting, refreshSettings } = useSettings();
+  const [modeError, setModeError] = useState(false);
+  const [modeBusy, setModeBusy] = useState(false);
+  const switchMode = async () => {
+    setModeBusy(true);
+    setModeError(false);
+    try {
+      const result = await commands.setProcessingMode("legacy");
+      if (result.status === "error") throw new Error(result.error);
+      await refreshSettings(true);
+    } catch {
+      setModeError(true);
+    } finally {
+      setModeBusy(false);
+    }
+  };
   const experimentalEnabled = getSetting("experimental_enabled") || false;
 
   return (
@@ -62,9 +80,20 @@ export const AdvancedSettings: React.FC = () => {
         />
       </SettingsGroup>
 
+      <SettingsGroup title={t("settings.postProcessing.prompts.title")}>
+        <p className="text-sm py-3">{t("personalization.advancedGuidance")}</p>
+        {modeError && <p role="alert">{t("personalization.error")}</p>}
+        <Button
+          disabled={modeBusy || getSetting("processing_mode") !== "generated"}
+          onClick={() => void switchMode()}
+        >
+          {t("personalization.customMode")}
+        </Button>
+        <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
+        <PostProcessingSettingsPrompts />
+      </SettingsGroup>
       {experimentalEnabled && (
         <SettingsGroup title={t("settings.advanced.groups.experimental")}>
-          <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
           <KeyboardImplementationSelector
             descriptionMode="tooltip"
             grouped={true}

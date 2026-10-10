@@ -172,6 +172,8 @@ enum Command {
     Input(InputEvent),
     Cancel { recording_was_active: bool },
     ProcessingFinished,
+    ReservePreview(Sender<bool>),
+    ReleasePreview,
 }
 
 /// Decide whether a key-up should be deferred (so auto-repeat can cancel it)
@@ -217,6 +219,7 @@ fn classify_ptt_event(
 /// * hold-or-toggle — a release after a long hold stops; a release after a
 ///   short tap locks the session, and the next press stops
 struct CoordinatorState {
+    preview_owned: bool,
     stage: Stage,
     hold: Option<Hold>,
     last_press: Option<Instant>,
@@ -227,6 +230,7 @@ struct CoordinatorState {
 impl CoordinatorState {
     fn new() -> Self {
         Self {
+            preview_owned: false,
             stage: Stage::Idle,
             hold: None,
             last_press: None,
@@ -247,7 +251,22 @@ impl CoordinatorState {
             || self.pending_press.as_ref().is_some_and(|p| p.locked)
     }
 
+    fn reserve_preview(&mut self) -> bool {
+        if self.stage != Stage::Idle || self.preview_owned {
+            return false;
+        }
+        self.preview_owned = true;
+        true
+    }
+
+    fn release_preview(&mut self) {
+        self.preview_owned = false;
+    }
+
     fn on_input(&mut self, input: InputEvent, now: Instant) -> Option<Effect> {
+        if self.preview_owned {
+            return None;
+        }
         let pending_release_binding = self
             .pending_release
             .as_ref()
@@ -601,6 +620,13 @@ impl TranscriptionCoordinator {
                         Command::Cancel {
                             recording_was_active,
                         } => state.on_cancel(recording_was_active),
+                        Command::ReservePreview(reply) => {
+                            let reserved = state.reserve_preview();
+                            if reply.send(reserved).is_err() && reserved {
+                                state.release_preview();
+                            }
+                        }
+                        Command::ReleasePreview => state.release_preview(),
                         Command::ProcessingFinished => {
                             if let Some(effect) = state.on_processing_finished() {
                                 run_effect(&app, &mut state, effect);
@@ -676,6 +702,24 @@ impl TranscriptionCoordinator {
         }
     }
 
+    /// Atomically reserve the idle pipeline for a preview until capture and processing drain.
+    pub fn reserve_preview(&self) -> Result<(), String> {
+        let (tx, rx) = mpsc::channel();
+        self.tx
+            .send(Command::ReservePreview(tx))
+            .map_err(|e| e.to_string())?;
+        if rx.recv().map_err(|e| e.to_string())? {
+            Ok(())
+        } else {
+            Err("The dictation pipeline is busy".into())
+        }
+    }
+
+    /// Release preview ownership after recording and processing finish.
+    pub fn release_preview(&self) {
+        let _ = self.tx.send(Command::ReleasePreview);
+    }
+
     pub fn notify_cancel(&self, recording_was_active: bool) {
         if self
             .tx
@@ -739,6 +783,17 @@ fn stop(app: &AppHandle, binding_id: &str, hotkey_string: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn preview_reservation_excludes_shortcuts_until_processing_drains() {
+        let mut state = CoordinatorState::new();
+        assert!(state.reserve_preview());
+        assert!(!state.reserve_preview());
+        assert!(state.on_input(toggle_input(true), Instant::now()).is_none());
+        state.release_preview();
+        assert!(state.on_input(toggle_input(true), Instant::now()).is_some());
+        assert!(!state.reserve_preview());
+    }
 
     #[test]
     fn additional_shortcut_is_a_transcribe_binding() {

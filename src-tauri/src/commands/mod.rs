@@ -2,6 +2,7 @@ pub mod audio;
 pub mod history;
 pub mod local_polishing;
 pub mod models;
+pub mod personalization;
 pub mod transcription;
 
 use crate::settings::{
