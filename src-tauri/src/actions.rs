@@ -783,7 +783,15 @@ impl ShortcutAction for TranscribeAction {
                                         return;
                                     }
 
-                                    match utils::paste(final_text, ah_clone.clone()) {
+                                    let target = crate::correction::capture(&ah_clone, &final_text);
+                                    let result = utils::paste(final_text.clone(), ah_clone.clone());
+                                    crate::correction::delivered(
+                                        &ah_clone,
+                                        final_text,
+                                        target,
+                                        result.is_ok(),
+                                    );
+                                    match result {
                                         Ok(()) => debug!(
                                             "Text pasted successfully in {:?}",
                                             paste_time.elapsed()
@@ -886,6 +894,16 @@ impl ShortcutAction for TestAction {
     }
 }
 
+struct CorrectionAction;
+impl ShortcutAction for CorrectionAction {
+    fn start(&self, app: &AppHandle, _: &str, _: &str) {
+        if let Err(error) = crate::correction::open(app) {
+            log::warn!("Correction shortcut: {error}");
+        }
+    }
+    fn stop(&self, _: &AppHandle, _: &str, _: &str) {}
+}
+
 // Static Action Map
 pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::new(|| {
     let mut map = HashMap::new();
@@ -906,6 +924,10 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         "test".to_string(),
         Arc::new(TestAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "correct_last".into(),
+        Arc::new(CorrectionAction) as Arc<dyn ShortcutAction>,
     );
     map
 });

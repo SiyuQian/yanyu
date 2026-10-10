@@ -919,6 +919,20 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_post_process_shortcut.to_string(),
         },
     );
+    #[cfg(target_os = "macos")]
+    let correction_shortcut = "command+option+shift+c";
+    #[cfg(not(target_os = "macos"))]
+    let correction_shortcut = "ctrl+shift+f8";
+    bindings.insert(
+        "correct_last".into(),
+        ShortcutBinding {
+            id: "correct_last".into(),
+            name: "Correct last dictation".into(),
+            description: "Edit the latest delivered text and remember vocabulary.".into(),
+            default_binding: correction_shortcut.into(),
+            current_binding: correction_shortcut.into(),
+        },
+    );
     bindings.insert(
         "cancel".to_string(),
         ShortcutBinding {
@@ -1275,6 +1289,33 @@ pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeri
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn correction_defaults_parse_in_both_shortcut_backends() {
+        for raw in ["command+option+shift+c", "ctrl+shift+f8"] {
+            assert!(raw
+                .parse::<tauri_plugin_global_shortcut::Shortcut>()
+                .is_ok());
+            assert!(raw.parse::<handy_keys::Hotkey>().is_ok());
+        }
+        let binding = get_default_settings()
+            .bindings
+            .remove("correct_last")
+            .unwrap();
+        #[cfg(target_os = "macos")]
+        assert_eq!(binding.default_binding, "command+option+shift+c");
+        #[cfg(not(target_os = "macos"))]
+        assert_eq!(binding.default_binding, "ctrl+shift+f8");
+        let mut settings = get_default_settings();
+        settings
+            .bindings
+            .get_mut("correct_last")
+            .unwrap()
+            .current_binding = "ctrl+f9".into();
+        let restored: AppSettings =
+            serde_json::from_value(serde_json::to_value(settings).unwrap()).unwrap();
+        assert_eq!(restored.bindings["correct_last"].current_binding, "ctrl+f9");
+    }
 
     #[test]
     fn local_polishing_defaults_off_for_new_and_existing_stores() {

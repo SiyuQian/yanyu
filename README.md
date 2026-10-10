@@ -37,3 +37,9 @@ See [AGENTS.md](AGENTS.md) for the project map, [ARCHITECTURE.md](ARCHITECTURE.m
 This project uses the [MIT License](LICENSE). It retains upstream author CJ Pais's copyright notice and the complete license text. Preserve these notices when distributing the code or substantial portions of it.
 
 The MIT code license does not grant rights to Handy's name, logos, or brand assets. See the [upstream README](https://github.com/cjpais/Handy#license) for branding information.
+
+### Personal vocabulary correction prototype
+
+Normal dictation stays unobtrusive. Use **Correct last dictation** in Settings → Dictation to configure the shortcut (macOS: Command+Option+Shift+C; other platforms: Ctrl+Shift+F8). It opens the latest successfully delivered text, including polished output, without depending on a saved recording. Edit, select a corrected word or short phrase, and choose **Remember selected word** before applying. Enter applies, Shift+Enter inserts a line, and Escape closes while preserving the draft. Delete remembered terms in the existing custom vocabulary settings.
+
+On macOS, replacement requires a readable, supported accessibility text control and a verified unchanged insertion in the same target. Reading app text does not always work. Unsupported or changed targets, clipboard-only output, auto-submit and other platforms copy the correction with a visible outcome instead. Check the target if replacement cannot be confirmed. Vocabulary stays local and uses the existing custom-word path, including Whisper prompts where supported. It does not train models or guarantee Chinese recognition accuracy, and it does not apply broad Chinese homophone substitutions.
