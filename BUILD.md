@@ -116,6 +116,36 @@ bun run tauri build
 
 This compiles a release binary and generates platform-specific bundles (deb, rpm, AppImage on Linux; dmg on macOS; msi on Windows).
 
+## macOS Local Install (after each rebuild or release)
+
+Run these steps each time you build a new version and want it in `/Applications`.
+
+1. Update to the commit you want: `git checkout main && git pull`.
+2. Build only the app bundle. Unset `CFLAGS` first: a global `CFLAGS=-std=c++17`
+   breaks the C build of `ring` (`invalid argument '-std=c++17' not allowed with 'C'`).
+   ```bash
+   unset CFLAGS
+   bun run tauri build --bundles app
+   ```
+   Output: `src-tauri/target/release/bundle/macos/Yanyu.app` (about 5 minutes on a cold build).
+3. Quit Yanyu, then replace the installed app:
+   ```bash
+   osascript -e 'tell application id "com.siyuqian.yanyu" to quit' || true
+   pkill -f /Applications/Yanyu.app || true
+   rm -rf /Applications/Yanyu.app
+   cp -R src-tauri/target/release/bundle/macos/Yanyu.app /Applications/Yanyu.app
+   codesign --verify --deep --strict /Applications/Yanyu.app && echo sig-ok
+   ```
+4. Clear the stale Accessibility grant (the ad-hoc `cdhash` changes on every build, see
+   [Troubleshooting](#macos-accessibility-remains-enabled-after-a-local-rebuild)), then open the app:
+   ```bash
+   tccutil reset Accessibility com.siyuqian.yanyu
+   open /Applications/Yanyu.app
+   ```
+5. Grant permissions when prompted: **Accessibility** (System Settings > Privacy & Security >
+   Accessibility, switch Yanyu on) and **Microphone**. If Yanyu stays on `Waiting...`,
+   quit and reopen it after enabling Accessibility.
+
 ## Linux Install (from source)
 
 The raw binary (`src-tauri/target/release/yanyu`) cannot run standalone — it needs Tauri resource files (tray icons, sounds, VAD model) to be co-located at the expected path.
