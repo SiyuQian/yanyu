@@ -54,6 +54,7 @@ export function PersonalizationSettings() {
   const [trialPhase, setTrialPhase] = useState<
     "idle" | "starting" | "recording" | "processing"
   >("idle");
+  const [trialLocalRoute, setTrialLocalRoute] = useState<boolean | null>(null);
   const [trial, setTrial] = useState<TrialResult | null>(null);
   const trialId = useRef<string | null>(null);
   const mounted = useRef(true);
@@ -123,12 +124,16 @@ export function PersonalizationSettings() {
     const id = crypto.getRandomValues(new Uint32Array(4)).join("-");
     trialId.current = id;
     setTrial(null);
+    setTrialLocalRoute(null);
     setError(false);
     setTrialPhase("starting");
     try {
       const result = await commands.startPersonalizationTrial(id);
       if (result.status === "error") throw new Error(result.error);
-      if (mounted.current && trialId.current === id) setTrialPhase("recording");
+      if (mounted.current && trialId.current === id) {
+        setTrialLocalRoute(result.data);
+        setTrialPhase("recording");
+      }
     } catch {
       if (mounted.current && trialId.current === id) {
         setError(true);
@@ -269,7 +274,7 @@ export function PersonalizationSettings() {
                   : ""}
               </p>
             )}
-            {pending && (
+            {(pending || trialPhase !== "idle" || trial) && (
               <>
                 <p className="text-sm text-text/70">
                   {t("personalization.configuredOnly")}
@@ -291,16 +296,20 @@ export function PersonalizationSettings() {
                 {!status?.asr_ready && (
                   <p className="text-sm">{t("personalization.needsAsr")}</p>
                 )}
-                <p className="text-sm text-text/70">
-                  {t(
-                    localPolishing
-                      ? "personalization.localTrialInfo"
-                      : "personalization.trialInfo",
-                  )}
-                </p>
+                {(trialPhase === "idle" || trialLocalRoute !== null) && (
+                  <p className="text-sm text-text/70">
+                    {t(
+                      (trialPhase === "idle" ? localPolishing : trialLocalRoute)
+                        ? "personalization.localTrialInfo"
+                        : "personalization.trialInfo",
+                    )}
+                  </p>
+                )}
                 {trialPhase === "idle" ? (
                   <Button
-                    disabled={!status?.active || !status?.asr_ready || busy}
+                    disabled={
+                      !pending || !status?.active || !status?.asr_ready || busy
+                    }
                     onClick={() => void startTrial()}
                   >
                     {t("personalization.record")}
@@ -336,7 +345,7 @@ export function PersonalizationSettings() {
                     <p role="status" className="text-sm">
                       {t(
                         trial.processing_succeeded
-                          ? localPolishing
+                          ? trial.local_route
                             ? "personalization.localTrialSucceeded"
                             : "personalization.trialSucceeded"
                           : "personalization.trialFallback",

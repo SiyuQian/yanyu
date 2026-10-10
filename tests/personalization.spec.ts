@@ -6,12 +6,13 @@ test.beforeEach(async ({ page }) => {
       localStorage.getItem("profile-test") ||
         '{"personalization":{"enabled":false,"invitation_dismissed":false,"uses":[],"domain":null,"other_domain":""},"processing_mode":"legacy","post_process_prompts":[{"id":"saved","name":"Saved","prompt":"Translate to French"}],"post_process_selected_prompt_id":"saved"}',
     );
+    let trialLocalRoute = false;
     Object.assign(window, {
       __TAURI_OS_PLUGIN_INTERNALS__: { os_type: "macos", platform: "macos" },
       __TAURI_INTERNALS__: {
         invoke: async (
           command: string,
-          args?: { profile?: unknown; mode?: string },
+          args?: { profile?: unknown; mode?: string; enabled?: boolean },
         ) => {
           if (command === "get_app_settings") {
             if (
@@ -63,16 +64,27 @@ test.beforeEach(async ({ page }) => {
             localStorage.getItem("reject-trial-cancel")
           )
             throw new Error("Cancel rejected");
+          if (command === "set_local_polishing_enabled")
+            settings.local_polishing_enabled = args?.enabled;
           if (command === "start_personalization_trial") {
+            if (localStorage.getItem("enable-local-at-start"))
+              settings.local_polishing_enabled = true;
+            trialLocalRoute = !!settings.local_polishing_enabled;
             localStorage.setItem("trial-started", "true");
+            return trialLocalRoute;
           }
           if (command === "stop_personalization_trial")
             return {
+              local_route: trialLocalRoute,
               original: "嗯，我我我想写代码，但不要改文件。",
-              processed: localStorage.getItem("trial-fallback")
-                ? "嗯，我我我想写代码，但不要改文件。"
-                : "我想写代码，但不要改文件。",
-              processing_succeeded: !localStorage.getItem("trial-fallback"),
+              processed:
+                localStorage.getItem("trial-fallback") ||
+                (trialLocalRoute && !settings.local_polishing_enabled)
+                  ? "嗯，我我我想写代码，但不要改文件。"
+                  : "我想写代码，但不要改文件。",
+              processing_succeeded:
+                !localStorage.getItem("trial-fallback") &&
+                (!trialLocalRoute || !!settings.local_polishing_enabled),
             };
           if (
             command.includes("paste") ||
@@ -370,4 +382,101 @@ test("local readiness refreshes after the model becomes ready and reports trial 
   await expect(
     page.getByRole("status").filter({ hasText: /Processing was skipped/ }),
   ).toContainText("Original recognition is preserved.");
+});
+
+test("trial provenance survives route toggles and keeps disabled local controls visible", async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const settings = JSON.parse(localStorage.getItem("profile-test")!);
+    settings.processing_mode = "generated";
+    settings.personalization.enabled = true;
+    settings.personalization.invitation_dismissed = true;
+    localStorage.setItem("profile-test", JSON.stringify(settings));
+    localStorage.setItem("ready-profile", "true");
+  });
+  await page.reload();
+  const toggle = page.getByRole("checkbox", {
+    name: "Polish voice input locally",
+  });
+  const externalInfo = page.getByText(/recording and stopping sends/);
+  const externalSuccess = page
+    .getByRole("status")
+    .filter({ hasText: /Service returned a result/ });
+  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Stop and compare" }).waitFor();
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(externalInfo).toBeVisible();
+  await page.getByRole("button", { name: "Stop and compare" }).click();
+  await expect(externalSuccess).toBeVisible();
+  await expect(
+    page.getByText(
+      /Recording and stopping processes recognized text on this Mac/,
+    ),
+  ).toBeVisible();
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(externalSuccess).toBeVisible();
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(externalSuccess).toBeVisible();
+  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Stop and compare" }).waitFor();
+  await page.evaluate(async () => {
+    const { useSettingsStore } = await import("/src/stores/settingsStore.ts");
+    useSettingsStore.setState((state) => ({
+      settings: { ...state.settings!, processing_mode: "legacy" },
+    }));
+  });
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(
+    page.getByRole("button", { name: "Stop and compare" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /Recording and stopping processes recognized text on this Mac/,
+    ),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Stop and compare" }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: /Processing was skipped/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("嗯，我我我想写代码，但不要改文件。", { exact: true }),
+  ).toHaveCount(2);
+  await expect(
+    page.getByRole("button", { name: "Record a trial" }),
+  ).toBeDisabled();
+});
+
+test("active disclosure uses the backend start response when settings change at start", async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const settings = JSON.parse(localStorage.getItem("profile-test")!);
+    settings.processing_mode = "generated";
+    settings.personalization.enabled = true;
+    settings.personalization.invitation_dismissed = true;
+    localStorage.setItem("profile-test", JSON.stringify(settings));
+    localStorage.setItem("ready-profile", "true");
+    localStorage.setItem("enable-local-at-start", "true");
+  });
+  await page.reload();
+  await page.getByRole("button", { name: "Record a trial" }).click();
+  await expect(
+    page.getByRole("button", { name: "Stop and compare" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /Recording and stopping processes recognized text on this Mac/,
+    ),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Stop and compare" }).click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: /Local polishing returned a usable result/ }),
+  ).toBeVisible();
 });

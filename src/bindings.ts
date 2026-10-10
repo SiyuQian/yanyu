@@ -50,15 +50,16 @@ async setProcessingMode(mode: ProcessingMode) : Promise<Result<null, string>> {
 }
 },
 /**
- * Report selected service configuration and installed ASR prerequisites.
+ * Report local model or external service readiness and installed ASR prerequisites.
  */
 async getPersonalizationStatus() : Promise<PersonalizationStatus> {
     return await TAURI_INVOKE("get_personalization_status");
 },
 /**
  * Reserve the idle dictation pipeline and start a bounded preview recording.
+ * Return true for the retained local route, or false for the external route.
  */
-async startPersonalizationTrial(id: string) : Promise<Result<null, string>> {
+async startPersonalizationTrial(id: string) : Promise<Result<boolean, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("start_personalization_trial", { id }) };
 } catch (e) {
@@ -1351,7 +1352,7 @@ export type TranscribeAcceleratorSetting = "auto" | "cpu" | "gpu"
 /**
  * Ephemeral recognition and processing results for a preview comparison.
  */
-export type TrialResult = { original: string; processed: string; processing_succeeded: boolean }
+export type TrialResult = { original: string; processed: string; processing_succeeded: boolean; local_route: boolean }
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
 export type VadBackend = "silero" | "earshot"
 export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_access: PermissionAccess; device_access: PermissionAccess; app_access: PermissionAccess; desktop_app_access: PermissionAccess }

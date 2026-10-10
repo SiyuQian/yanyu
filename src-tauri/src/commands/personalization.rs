@@ -36,6 +36,7 @@ pub struct TrialResult {
     pub original: String,
     pub processed: String,
     pub processing_succeeded: bool,
+    pub local_route: bool,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -223,7 +224,8 @@ impl Drop for TrialGuard {
 #[tauri::command]
 #[specta::specta]
 /// Reserve the idle dictation pipeline and start a bounded preview recording.
-pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<(), String> {
+/// Return true for the retained local route, or false for the external route.
+pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<bool, String> {
     if id.is_empty() || id.len() > 80 {
         return Err("Invalid trial identifier".into());
     }
@@ -232,6 +234,7 @@ pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<(
     if !status.active || !status.asr_ready {
         return Err("Finish speech recognition and processing setup before the trial".into());
     }
+    let local_route = settings.local_polishing_enabled;
     let cancelled = Arc::new(AtomicBool::new(false));
     {
         let state = app.state::<TrialState>();
@@ -243,7 +246,7 @@ pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<(
             id: id.clone(),
             cancelled: cancelled.clone(),
             phase: Phase::Starting,
-            local_route: settings.local_polishing_enabled,
+            local_route,
         });
     }
     let worker_app = app.clone();
@@ -307,7 +310,8 @@ pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<(
         tokio::time::sleep(Duration::from_secs(MAX_SECONDS)).await;
         let _ = cancel_trial(&timeout_app, &timeout_id, true);
     });
-    worker.await.map_err(|e| e.to_string())?
+    worker.await.map_err(|e| e.to_string())??;
+    Ok(local_route)
 }
 
 #[tauri::command]
@@ -376,6 +380,7 @@ pub async fn stop_personalization_trial(app: AppHandle, id: String) -> Result<Tr
         return Err("Trial cancelled".into());
     }
     Ok(TrialResult {
+        local_route,
         processing_succeeded: processed.is_some(),
         processed: processed.unwrap_or_else(|| original.clone()),
         original,
