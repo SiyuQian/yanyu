@@ -17,6 +17,7 @@ mod managers;
 mod memory;
 mod overlay;
 mod paste_tx;
+mod personalization;
 pub mod portable;
 mod secure_input;
 mod settings;
@@ -658,6 +659,14 @@ pub fn run(cli_args: CliArgs) {
 
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
+            commands::personalization::save_personalization,
+            commands::personalization::dismiss_personalization_invitation,
+            commands::personalization::delete_personalization,
+            commands::personalization::set_processing_mode,
+            commands::personalization::get_personalization_status,
+            commands::personalization::start_personalization_trial,
+            commands::personalization::stop_personalization_trial,
+            commands::personalization::cancel_personalization_trial,
             commands::local_polishing::get_local_polishing_status,
             commands::local_polishing::set_local_polishing_enabled,
             commands::local_polishing::download_local_polishing_model,
@@ -901,6 +910,7 @@ pub fn run(cli_args: CliArgs) {
             MacosLauncher::LaunchAgent,
             Some(vec![]),
         ))
+        .manage(commands::personalization::TrialState::default())
         .manage(cli_args.clone())
         .setup(move |app| {
             #[cfg(target_os = "windows")]
@@ -1076,6 +1086,7 @@ pub fn run(cli_args: CliArgs) {
         })
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
+                commands::personalization::cancel_active_trial(window.app_handle());
                 api.prevent_close();
                 let _res = window.hide();
 

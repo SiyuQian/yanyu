@@ -917,7 +917,7 @@ impl TranscriptionManager {
         let effective_language =
             effective_language_for_model(&settings, self.model_manager.as_ref(), &model_id);
         let run_plan = transcribe_cpp_run_plan(
-            settings.translate_to_english,
+            crate::personalization::effective_translation(&settings),
             &effective_language,
             &languages,
             caps.supports_translate,
@@ -1218,7 +1218,7 @@ impl TranscriptionManager {
         );
 
         let et = std::time::Instant::now();
-        let translation_note = if settings.translate_to_english {
+        let translation_note = if crate::personalization::effective_translation(&settings) {
             " (translated)"
         } else {
             ""
@@ -1296,7 +1296,7 @@ impl TranscriptionManager {
         };
 
         let run_plan = transcribe_cpp_run_plan(
-            settings.translate_to_english,
+            crate::personalization::effective_translation(settings),
             validated_language,
             &languages,
             model_supports_translate,
@@ -1420,7 +1420,7 @@ impl TranscriptionManager {
                     .map(|r| r.text)
                     .map_err(|e| anyhow::anyhow!("GigaAM transcription failed: {}", e)),
                 OnnxEngine::Canary(canary_engine) => {
-                    output_was_translated = settings.translate_to_english;
+                    output_was_translated = crate::personalization::effective_translation(settings);
                     let lang = if validated_language == "auto" {
                         None
                     } else {
@@ -1429,7 +1429,7 @@ impl TranscriptionManager {
                     applied_language_hint = lang.clone();
                     let options = TranscribeOptions {
                         language: lang,
-                        translate: settings.translate_to_english,
+                        translate: crate::personalization::effective_translation(settings),
                         ..Default::default()
                     };
                     canary_engine
@@ -1808,6 +1808,10 @@ fn post_process_transcription_text(
         } else {
             raw
         };
+
+        if crate::personalization::generated_enabled(settings) {
+            return corrected;
+        }
 
         let without_fillers = remove_filler_words(
             &corrected,
@@ -2189,6 +2193,32 @@ mod tests {
             );
         }
         assert_eq!(available_transcribe_accelerators(true), ["cpu"]);
+    }
+
+    #[test]
+    fn generated_cleanup_preserves_emphasis_quotes_and_meaningful_replies() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.processing_mode = crate::personalization::ProcessingMode::Generated;
+        settings.personalization.enabled = true;
+        settings.chinese_script = ChineseScript::AsTranscribed;
+        for text in [
+            "no no no, do not change the code",
+            "yes yes yes",
+            "说‘我我我’，不要翻译",
+            "不是不是不是，不要删条件",
+            "嗯，这是回答，不是口头禅",
+        ] {
+            assert_eq!(
+                post_process_transcription_text(
+                    text.into(),
+                    &settings,
+                    true,
+                    &OutputLanguageEvidence::Unknown,
+                    &[]
+                ),
+                text
+            );
+        }
     }
 
     #[test]

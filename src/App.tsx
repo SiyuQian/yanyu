@@ -85,6 +85,16 @@ function App() {
     return () => document.documentElement.removeAttribute(attribute);
   }, [isShowingOnboarding]);
 
+  useEffect(() => {
+    const navigate = (event: Event) => {
+      if (event instanceof CustomEvent && event.detail === "postprocessing") {
+        setCurrentSection("postprocessing");
+      }
+    };
+    window.addEventListener("yanyu-settings-section", navigate);
+    return () => window.removeEventListener("yanyu-settings-section", navigate);
+  }, []);
+
   // Reset the scroll position whenever the active section changes.
   useLayoutEffect(() => {
     settingsScrollRef.current?.scrollTo({ top: 0 });
