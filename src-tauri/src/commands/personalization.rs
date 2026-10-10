@@ -49,6 +49,7 @@ struct TrialSession {
     id: String,
     cancelled: Arc<AtomicBool>,
     phase: Phase,
+    local_route: bool,
 }
 impl TrialSession {
     fn cancel(&self, capture_only: bool) -> bool {
@@ -132,7 +133,13 @@ pub fn set_processing_mode(app: AppHandle, mode: ProcessingMode) -> Result<(), S
 #[specta::specta]
 /// Report local model or external service readiness and installed ASR prerequisites.
 pub fn get_personalization_status(app: AppHandle) -> PersonalizationStatus {
-    let settings = get_settings(&app);
+    personalization_status(&app, &get_settings(&app))
+}
+
+fn personalization_status(
+    app: &AppHandle,
+    settings: &crate::settings::AppSettings,
+) -> PersonalizationStatus {
     let local_ready = app
         .try_state::<Arc<LocalPolishingManager>>()
         .is_some_and(|manager| {
@@ -140,7 +147,7 @@ pub fn get_personalization_status(app: AppHandle) -> PersonalizationStatus {
             status.supported && status.phase == "ready"
         });
     let (ready, active) = processing_readiness(
-        &settings,
+        settings,
         local_ready,
         !settings.local_polishing_enabled && super::check_apple_intelligence_available(),
     );
@@ -167,6 +174,7 @@ fn processing_readiness(
 }
 
 async fn trial_processing<L, E, LF, EF>(
+    local_route: bool,
     settings: &crate::settings::AppSettings,
     local: L,
     external: E,
@@ -177,8 +185,12 @@ where
     LF: std::future::Future<Output = Option<String>>,
     EF: std::future::Future<Output = Option<String>>,
 {
-    if settings.local_polishing_enabled {
-        local().await
+    if local_route {
+        if settings.local_polishing_enabled {
+            local().await
+        } else {
+            None
+        }
     } else if generated_enabled(settings) {
         external().await
     } else {
@@ -215,7 +227,8 @@ pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<(
     if id.is_empty() || id.len() > 80 {
         return Err("Invalid trial identifier".into());
     }
-    let status = get_personalization_status(app.clone());
+    let settings = get_settings(&app);
+    let status = personalization_status(&app, &settings);
     if !status.active || !status.asr_ready {
         return Err("Finish speech recognition and processing setup before the trial".into());
     }
@@ -230,6 +243,7 @@ pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<(
             id: id.clone(),
             cancelled: cancelled.clone(),
             phase: Phase::Starting,
+            local_route: settings.local_polishing_enabled,
         });
     }
     let worker_app = app.clone();
@@ -300,7 +314,7 @@ pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<(
 #[specta::specta]
 /// Recognize and process captured samples without paste, history or audio persistence.
 pub async fn stop_personalization_trial(app: AppHandle, id: String) -> Result<TrialResult, String> {
-    let cancelled = {
+    let (cancelled, local_route) = {
         let state = app.state::<TrialState>();
         let mut session = state.0.lock().map_err(|e| e.to_string())?;
         let current = session
@@ -308,7 +322,7 @@ pub async fn stop_personalization_trial(app: AppHandle, id: String) -> Result<Tr
             .filter(|s| s.id == id && s.phase == Phase::Capturing)
             .ok_or("No ready trial recording")?;
         current.phase = Phase::Processing;
-        current.cancelled.clone()
+        (current.cancelled.clone(), current.local_route)
     };
     let _guard = TrialGuard(app.clone(), id, true);
     let worker_app = app.clone();
@@ -337,6 +351,7 @@ pub async fn stop_personalization_trial(app: AppHandle, id: String) -> Result<Tr
     let processed = {
         let settings = get_settings(&app);
         let operation = trial_processing(
+            local_route,
             &settings,
             || async {
                 crate::actions::process_transcription_output(&app, &original)
@@ -435,6 +450,7 @@ mod tests {
         settings.processing_mode = ProcessingMode::Generated;
         let local_called = AtomicBool::new(false);
         let output = trial_processing(
+            settings.local_polishing_enabled,
             &settings,
             || {
                 local_called.store(true, Ordering::Release);
@@ -448,11 +464,97 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn local_trial_disabled_during_capture_never_invokes_external() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.personalization.enabled = true;
+        settings.processing_mode = ProcessingMode::Generated;
+        let mut session = TrialSession {
+            id: "local lifecycle".into(),
+            cancelled: Arc::new(AtomicBool::new(false)),
+            phase: Phase::Starting,
+            local_route: settings.local_polishing_enabled,
+        };
+        session.phase = Phase::Capturing;
+        // Both disabling local polishing and deleting its model clear this flag.
+        settings.local_polishing_enabled = false;
+        session.phase = Phase::Processing;
+        let processed = trial_processing(
+            session.local_route,
+            &settings,
+            || async { panic!("Disabled local polishing must preserve the original") },
+            || async { panic!("A local recording must never reach an external service") },
+        )
+        .await;
+        let original = "original transcript";
+        assert!(processed.is_none());
+        assert_eq!(processed.as_deref().unwrap_or(original), original);
+        assert!(!session.cancelled.load(Ordering::Acquire));
+    }
+
+    #[tokio::test]
+    async fn local_trial_uses_current_profile_after_disable_or_delete() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.personalization.enabled = true;
+        settings.personalization.domain = Some(crate::personalization::Domain::Other);
+        settings.personalization.other_domain = "private domain".into();
+        let session = TrialSession {
+            id: "profile lifecycle".into(),
+            cancelled: Arc::new(AtomicBool::new(false)),
+            phase: Phase::Capturing,
+            local_route: settings.local_polishing_enabled,
+        };
+        for deleted in [false, true] {
+            settings.personalization.enabled = false;
+            if deleted {
+                settings.personalization = PersonalizationProfile::default();
+            }
+            let output = trial_processing(
+                session.local_route,
+                &settings,
+                || async {
+                    let data = crate::personalization::local_request_data(&settings, "hello");
+                    assert!(!data.contains("profile_context"));
+                    assert!(!data.contains("private domain"));
+                    Some("local fixture".into())
+                },
+                || async { panic!("Local trial must remain local") },
+            )
+            .await;
+            assert_eq!(output.as_deref(), Some("local fixture"));
+        }
+    }
+
+    #[tokio::test]
+    async fn external_trial_stays_external_after_local_is_enabled() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.processing_mode = ProcessingMode::Generated;
+        settings.personalization.enabled = true;
+        let session = TrialSession {
+            id: "external lifecycle".into(),
+            cancelled: Arc::new(AtomicBool::new(false)),
+            phase: Phase::Capturing,
+            local_route: settings.local_polishing_enabled,
+        };
+        settings.local_polishing_enabled = true;
+        let output = trial_processing(
+            session.local_route,
+            &settings,
+            || async { panic!("External trial must retain its starting route") },
+            || async { Some("external fixture".into()) },
+        )
+        .await;
+        assert_eq!(output.as_deref(), Some("external fixture"));
+    }
+
+    #[tokio::test]
     async fn external_trial_retains_generated_gate_when_local_is_off() {
         let mut settings = crate::settings::get_default_settings();
         settings.processing_mode = ProcessingMode::Generated;
         settings.personalization.enabled = true;
         let output = trial_processing(
+            settings.local_polishing_enabled,
             &settings,
             || async { panic!("External trials must not invoke local polishing") },
             || async { Some("external fixture".into()) },
@@ -461,6 +563,7 @@ mod tests {
         assert_eq!(output.as_deref(), Some("external fixture"));
         settings.personalization.enabled = false;
         assert!(trial_processing(
+            false,
             &settings,
             || async { panic!("disabled") },
             || async { panic!("disabled") }
@@ -475,6 +578,7 @@ mod tests {
             id: "sample".into(),
             cancelled: Arc::new(AtomicBool::new(false)),
             phase: Phase::Processing,
+            local_route: true,
         };
         assert!(!session.cancel(true));
         assert!(!session.cancelled.load(Ordering::Acquire));
@@ -489,6 +593,7 @@ mod tests {
                 id: "sample".into(),
                 cancelled: Arc::new(AtomicBool::new(false)),
                 phase,
+                local_route: true,
             };
             assert!(session.cancel(true));
             assert!(session.cancelled.load(Ordering::Acquire));
