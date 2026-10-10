@@ -42,7 +42,7 @@ struct State {
     target: Option<Target>,
     eligible: bool,
     trailing_space: bool,
-    /// The draft already delivered for this generation and its outcome.
+    /// The draft last delivered for this generation and its outcome.
     delivered: Option<(String, &'static str)>,
     /// A native write may have changed the target, so later copies must not ask for a blind paste.
     uncertain: bool,
@@ -90,7 +90,7 @@ impl State {
     }
 }
 impl State {
-    /// Deliver a draft once per generation and draft, then attempt optional learning.
+    /// Deliver a draft, then attempt optional learning. A replaced draft is never delivered again.
     fn apply(
         &mut self,
         draft: &str,
@@ -101,8 +101,8 @@ impl State {
         learn: impl FnOnce(String) -> bool,
     ) -> Result<String, String> {
         let outcome = match &self.delivered {
-            // Learning retries must not deliver the same text twice.
-            Some((delivered, outcome)) if delivered == draft => *outcome,
+            // A replacement is final. Copies are repeated so the clipboard holds the draft again.
+            Some((delivered, "replaced")) if delivered == draft => "replaced",
             _ => {
                 let text = if self.trailing_space {
                     format!("{draft} ")
@@ -545,11 +545,12 @@ mod tests {
     }
 
     #[test]
-    fn learning_retry_keeps_the_original_outcome_without_delivering_again() {
+    fn learning_retry_keeps_the_original_outcome_without_replacing_again() {
+        // Only a replacement is final. Copied outcomes write the clipboard again on every Apply.
         for (replaced, outcome, copies) in [
             (Some(true), "replaced", 0),
-            (None, "copied", 1),
-            (Some(false), "uncertain_copied", 1),
+            (None, "copied", 3),
+            (Some(false), "uncertain_copied", 3),
         ] {
             let calls = Calls::default();
             let mut state = delivered_state();
@@ -601,14 +602,18 @@ mod tests {
             Ok("copied".into()),
             "dictation into the editor is not a new external delivery"
         );
-        assert_eq!(calls.counts(), (1, 1));
+        assert_eq!(
+            calls.counts(),
+            (1, 2),
+            "the copy repeats, the replacement does not"
+        );
         state.record("Hello Yanyu".into(), None, true, false, false);
         state.eligible = true;
         assert_eq!(
             calls.apply(&mut state, "Hello Yanyu", None, Some(true), true, true),
             Ok("replaced".into())
         );
-        assert_eq!(calls.counts(), (2, 1));
+        assert_eq!(calls.counts(), (2, 2));
     }
 
     #[test]
@@ -674,12 +679,78 @@ mod tests {
             Ok("uncertain_copied".into())
         );
         assert_eq!(calls.counts(), (1, 4));
+        assert_eq!(
+            calls.apply(&mut state, "Changed", None, Some(true), false, true),
+            Err("uncertain_copy_failed".into()),
+            "a repeated copy failure is reported, not hidden by the earlier success"
+        );
+        assert_eq!(
+            calls.apply(&mut state, "Changed", None, Some(true), true, true),
+            Ok("uncertain_copied".into())
+        );
+        assert_eq!(calls.counts(), (1, 6));
 
         let calls = Calls::default();
         let mut state = delivered_state();
         assert_eq!(
             calls.apply(&mut state, "Hello Yanyu", None, None, false, true),
             Err("copy_failed".into())
+        );
+    }
+
+    #[test]
+    fn repeated_apply_recopies_a_copied_draft_but_never_rewrites_a_replacement() {
+        let clipboard = std::cell::RefCell::new(String::new());
+        let replaces = std::cell::Cell::new(0);
+        let apply = |state: &mut State, replaced: Option<bool>, copied: bool| {
+            state.apply(
+                "Hello Yanyu",
+                None,
+                &[],
+                |_| {
+                    replaces.set(replaces.get() + 1);
+                    replaced
+                },
+                |text| {
+                    if copied {
+                        *clipboard.borrow_mut() = text.to_string();
+                    }
+                    copied
+                },
+                |_| true,
+            )
+        };
+
+        let mut state = delivered_state();
+        assert_eq!(apply(&mut state, None, true), Ok("copied".into()));
+        *clipboard.borrow_mut() = "something else".into();
+        assert_eq!(apply(&mut state, Some(true), true), Ok("copied".into()));
+        assert_eq!(
+            *clipboard.borrow(),
+            "Hello Yanyu",
+            "the clipboard holds the draft again"
+        );
+        assert_eq!(
+            apply(&mut state, Some(true), false),
+            Err("copy_failed".into())
+        );
+        assert_eq!(apply(&mut state, Some(true), true), Ok("copied".into()));
+        assert_eq!(
+            replaces.get(),
+            1,
+            "a consumed target is never replaced again"
+        );
+
+        let mut state = delivered_state();
+        assert_eq!(apply(&mut state, Some(true), true), Ok("replaced".into()));
+        *clipboard.borrow_mut() = "something else".into();
+        assert_eq!(apply(&mut state, Some(true), true), Ok("replaced".into()));
+        assert_eq!(apply(&mut state, Some(true), false), Ok("replaced".into()));
+        assert_eq!(replaces.get(), 2);
+        assert_eq!(
+            *clipboard.borrow(),
+            "something else",
+            "no clipboard write after a replacement"
         );
     }
 }

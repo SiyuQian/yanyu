@@ -285,3 +285,21 @@ test("uncertain write with clipboard failure warns that the target may have chan
   );
   await expect(page.getByRole("status")).not.toContainText("paste it yourself");
 });
+
+test("repeated Apply after a copy copies again and reports a new failure accurately", async ({
+  page,
+}) => {
+  const editor = page.getByRole("textbox", { name: "Corrected text" });
+  await editor.fill("Hello Yanyu");
+  await editor.press("Enter");
+  await expect(page.getByRole("status")).toContainText("Copied");
+  await queueResults(page, ["throw:copy_failed"]);
+  await page.getByRole("button", { name: "Apply correction" }).click();
+  await expect(page.getByRole("alert")).toContainText("Clipboard write failed");
+  await expect(page.getByRole("status")).toBeEmpty();
+  await editor.press("Enter");
+  await expect(page.getByRole("status")).toContainText("Copied");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(editor).toHaveValue("Hello Yanyu");
+  expect(await appliedWords(page)).toEqual([null, null, null]);
+});

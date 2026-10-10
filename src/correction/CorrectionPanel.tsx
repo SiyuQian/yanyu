@@ -95,6 +95,8 @@ export default function CorrectionPanel() {
         dirty.current = false;
       }
     } catch (e) {
+      // A failed repeat must not leave an earlier delivery outcome on screen.
+      setOutcome("");
       setError(String(e));
     } finally {
       setBusy(false);
