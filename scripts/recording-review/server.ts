@@ -15,7 +15,7 @@ import {
 } from "node:fs/promises";
 import { openSync, closeSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, resolve, sep, extname } from "node:path";
+import { join, resolve, relative, sep, extname } from "node:path";
 
 export interface Source {
   name: string;
@@ -53,19 +53,24 @@ const repository = resolve(import.meta.dir, "../..");
 function inside(path: string, parent: string) {
   return path === parent || path.startsWith(parent + sep);
 }
-async function privateDirectory(path: string) {
+async function canonicalPath(path: string) {
   const target = resolve(path);
   let ancestor = target;
   for (;;) {
     try {
-      ancestor = await realpath(ancestor);
-      break;
+      return resolve(await realpath(ancestor), relative(ancestor, target));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       ancestor = resolve(ancestor, "..");
     }
   }
-  if (inside(target, repository) || inside(ancestor, repository))
+}
+async function privateDirectory(path: string) {
+  const target = resolve(path);
+  if (
+    inside(target, repository) ||
+    inside(await canonicalPath(target), repository)
+  )
     throw new Error("Private data must stay outside the repository");
   await mkdir(target, { recursive: true, mode: 0o700 });
   if ((await lstat(target)).isSymbolicLink())
@@ -106,9 +111,13 @@ const feedbackSchema = z
 export function validateFeedback(value: unknown): Feedback {
   return feedbackSchema.parse(value);
 }
-function assertSeparate(sources: Source[], dataDirectory: string) {
+async function assertSeparate(sources: Source[], dataDirectory: string) {
+  const target = await canonicalPath(dataDirectory);
   for (const source of sources) {
-    if (inside(resolve(dataDirectory), resolve(source.directory)))
+    if (
+      inside(resolve(dataDirectory), resolve(source.directory)) ||
+      inside(target, await canonicalPath(source.directory))
+    )
       throw new Error("Snapshot must be separate from source data");
   }
 }
@@ -133,7 +142,7 @@ export async function snapshot(
   sources: Source[],
   dataDirectory: string,
 ): Promise<Sample[]> {
-  assertSeparate(sources, dataDirectory);
+  await assertSeparate(sources, dataDirectory);
   await privateDirectory(dataDirectory);
   const audioDirectory = join(dataDirectory, "audio");
   await privateDirectory(audioDirectory);
@@ -214,7 +223,7 @@ export async function createReviewServer(options: {
   dataDirectory: string;
   port?: number;
 }) {
-  assertSeparate(options.sources, options.dataDirectory);
+  await assertSeparate(options.sources, options.dataDirectory);
   await privateDirectory(options.dataDirectory);
   const lockPath = join(options.dataDirectory, "server.lock");
   let lock: number;

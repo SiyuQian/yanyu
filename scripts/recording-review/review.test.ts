@@ -10,6 +10,7 @@ import {
   unlink,
   chmod,
   symlink,
+  readdir,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -65,6 +66,62 @@ const feedback = {
 };
 
 describe("private recording review", () => {
+  test("rejects source ancestor aliases before changing permissions or contents", async () => {
+    const f = await fixture();
+    try {
+      const source = f.sources[0].directory;
+      const alias = join(f.root, "parent-alias");
+      await symlink(f.root, alias);
+      await chmod(source, 0o755);
+      const before = await readdir(source);
+      const database = await readFile(join(source, "history.db"));
+      const recording = await readFile(join(source, "recordings", "same.wav"));
+      for (const sources of [
+        f.sources,
+        [{ name: "Alias", directory: join(alias, "Yanyu") }],
+      ]) {
+        for (const dataDirectory of [
+          join(alias, "Yanyu"),
+          source,
+          join(alias, "Yanyu", "new", "review"),
+          join(source, "new", "review"),
+        ]) {
+          for (const start of [
+            () => snapshot(sources, dataDirectory),
+            () => createReviewServer({ sources, dataDirectory, port: 0 }),
+          ]) {
+            let error: unknown;
+            try {
+              const result = await start();
+              if (!Array.isArray(result)) result.stop(true);
+            } catch (caught) {
+              error = caught;
+            }
+            expect((await stat(source)).mode & 0o777).toBe(0o755);
+            expect(await readdir(source)).toEqual(before);
+            expect(await readFile(join(source, "history.db"))).toEqual(
+              database,
+            );
+            expect(
+              await readFile(join(source, "recordings", "same.wav")),
+            ).toEqual(recording);
+            expect(error instanceof Error).toBe(true);
+            expect((error as Error).message).toBe(
+              "Snapshot must be separate from source data",
+            );
+          }
+        }
+      }
+      expect(
+        await snapshot(
+          [{ name: "Missing", directory: join(alias, "missing") }],
+          f.data,
+        ),
+      ).toEqual([]);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  });
   test("snapshots duplicates and orphans without changing originals, appends and preserves prior samples", async () => {
     const f = await fixture();
     try {
