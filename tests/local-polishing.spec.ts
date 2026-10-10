@@ -7,6 +7,8 @@ test.beforeEach(async ({ page }) => {
         '{"local_polishing_enabled":false,"post_process_enabled":false}',
     );
     let phase = "missing";
+    let supported =
+      localStorage.getItem("local-polishing-supported") !== "false";
     Object.assign(window, {
       __TAURI_OS_PLUGIN_INTERNALS__: { os_type: "macos", platform: "macos" },
       __TAURI_INTERNALS__: {
@@ -18,7 +20,7 @@ test.beforeEach(async ({ page }) => {
               progress: phase === "downloading" ? 0.5 : 0,
               error: null,
               downloaded: false,
-              supported: true,
+              supported,
             };
           }
           if (command === "set_local_polishing_enabled") {
@@ -74,6 +76,20 @@ test("polishing is accessible and uses the unified setting in the custom prompt 
   await expect(toggle).toBeChecked();
   await page.reload();
   await expect(toggle).toBeChecked();
+});
+
+test("prompt toggle is disabled when local polishing is unsupported", async ({
+  page,
+}) => {
+  await page.evaluate(() =>
+    localStorage.setItem("local-polishing-supported", "false"),
+  );
+  await page.reload();
+  await expect(
+    page.getByRole("checkbox", {
+      name: "Process Voice Input with selected prompt",
+    }),
+  ).toBeDisabled();
 });
 
 test("download progress and cancellation are reachable while polishing is off", async ({
