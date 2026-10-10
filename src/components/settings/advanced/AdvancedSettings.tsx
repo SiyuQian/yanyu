@@ -1,6 +1,4 @@
-import React, { useState } from "react";
-import { commands } from "@/bindings";
-import { Button } from "@/components/ui/Button";
+import React from "react";
 import { PostProcessingSettingsPrompts } from "../post-processing/PostProcessingSettings";
 import { useTranslation } from "react-i18next";
 import { ShowOverlay } from "../ShowOverlay";
@@ -13,7 +11,7 @@ import { PasteMethodSetting } from "../PasteMethod";
 import { TypingToolSetting } from "../TypingTool";
 import { ClipboardHandlingSetting } from "../ClipboardHandling";
 import { AutoSubmit } from "../AutoSubmit";
-import { PostProcessingToggle } from "../PostProcessingToggle";
+import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
 import { AppendTrailingSpace } from "../AppendTrailingSpace";
 import { HistoryLimit } from "../HistoryLimit";
 import { RecordingRetentionPeriodSelector } from "../RecordingRetentionPeriod";
@@ -29,22 +27,7 @@ import { VadBackendSelector } from "../VadBackendSelector";
 
 export const AdvancedSettings: React.FC = () => {
   const { t } = useTranslation();
-  const { getSetting, refreshSettings } = useSettings();
-  const [modeError, setModeError] = useState(false);
-  const [modeBusy, setModeBusy] = useState(false);
-  const switchMode = async () => {
-    setModeBusy(true);
-    setModeError(false);
-    try {
-      const result = await commands.setProcessingMode("legacy");
-      if (result.status === "error") throw new Error(result.error);
-      await refreshSettings(true);
-    } catch {
-      setModeError(true);
-    } finally {
-      setModeBusy(false);
-    }
-  };
+  const { getSetting, updateSetting, isUpdating } = useSettings();
   const experimentalEnabled = getSetting("experimental_enabled") || false;
 
   return (
@@ -81,15 +64,17 @@ export const AdvancedSettings: React.FC = () => {
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.postProcessing.prompts.title")}>
-        <p className="text-sm py-3">{t("personalization.advancedGuidance")}</p>
-        {modeError && <p role="alert">{t("personalization.error")}</p>}
-        <Button
-          disabled={modeBusy || getSetting("processing_mode") !== "generated"}
-          onClick={() => void switchMode()}
-        >
-          {t("personalization.customMode")}
-        </Button>
-        <PostProcessingToggle descriptionMode="tooltip" grouped={true} />
+        <ToggleSwitch
+          checked={getSetting("local_polishing_enabled") ?? false}
+          onChange={(enabled) =>
+            updateSetting("local_polishing_enabled", enabled)
+          }
+          isUpdating={isUpdating("local_polishing_enabled")}
+          label={t("settings.localPolishing.label")}
+          description={t("settings.localPolishing.description")}
+          descriptionMode="inline"
+          grouped
+        />
         <PostProcessingSettingsPrompts />
       </SettingsGroup>
       {experimentalEnabled && (

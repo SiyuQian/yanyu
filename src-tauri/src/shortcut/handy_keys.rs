@@ -432,8 +432,8 @@ pub fn init_shortcuts(app: &AppHandle) -> Result<(), String> {
         if id == "cancel" {
             continue;
         }
-        // Skip post-processing shortcut when the feature is disabled
-        if id == "transcribe_with_post_process" && !user_settings.post_process_enabled {
+        // Ignore retired post-processing bindings.
+        if id == "transcribe_with_post_process" || binding.id == "transcribe_with_post_process" {
             continue;
         }
 
@@ -452,6 +452,9 @@ pub fn init_shortcuts(app: &AppHandle) -> Result<(), String> {
 
 /// Register a shortcut
 pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+    if binding.id == "transcribe_with_post_process" {
+        return Err("The dedicated post-processing shortcut was removed".into());
+    }
     let state = app
         .try_state::<HandyKeysState>()
         .ok_or("HandyKeysState not initialized")?;

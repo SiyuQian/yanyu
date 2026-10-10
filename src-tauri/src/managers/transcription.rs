@@ -1809,10 +1809,6 @@ fn post_process_transcription_text(
             raw
         };
 
-        if crate::personalization::generated_enabled(settings) {
-            return corrected;
-        }
-
         let without_fillers = remove_filler_words(
             &corrected,
             &output_language,
@@ -2196,29 +2192,32 @@ mod tests {
     }
 
     #[test]
-    fn generated_cleanup_preserves_emphasis_quotes_and_meaningful_replies() {
+    fn generated_profile_does_not_change_daily_cleanup() {
         let mut settings = crate::settings::get_default_settings();
+        settings.chinese_script = ChineseScript::AsTranscribed;
+        settings.filler_word_removal_enabled = true;
+        settings.custom_filler_words = Some(vec!["um".into()]);
+        let text = "um send the file";
+        let ordinary = post_process_transcription_text(
+            text.into(),
+            &settings,
+            true,
+            &OutputLanguageEvidence::Unknown,
+            &[],
+        );
+        assert_ne!(ordinary, text);
         settings.processing_mode = crate::personalization::ProcessingMode::Generated;
         settings.personalization.enabled = true;
-        settings.chinese_script = ChineseScript::AsTranscribed;
-        for text in [
-            "no no no, do not change the code",
-            "yes yes yes",
-            "说‘我我我’，不要翻译",
-            "不是不是不是，不要删条件",
-            "嗯，这是回答，不是口头禅",
-        ] {
-            assert_eq!(
-                post_process_transcription_text(
-                    text.into(),
-                    &settings,
-                    true,
-                    &OutputLanguageEvidence::Unknown,
-                    &[]
-                ),
-                text
-            );
-        }
+        assert_eq!(
+            post_process_transcription_text(
+                text.into(),
+                &settings,
+                true,
+                &OutputLanguageEvidence::Unknown,
+                &[]
+            ),
+            ordinary
+        );
     }
 
     #[test]

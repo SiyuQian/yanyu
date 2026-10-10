@@ -563,10 +563,7 @@ pub struct TranscriptionCoordinator {
 }
 
 pub fn is_transcribe_binding(id: &str) -> bool {
-    matches!(
-        transcribe_action_id(id),
-        "transcribe" | "transcribe_with_post_process"
-    )
+    transcribe_action_id(id) == "transcribe"
 }
 
 /// Identify user-added shortcuts without accepting arbitrary action IDs.
@@ -577,7 +574,7 @@ pub fn is_additional_transcribe_binding(id: &str) -> bool {
 
 /// Resolve alternate shortcuts to their shared action while retaining their recording identity.
 pub fn transcribe_action_id(id: &str) -> &str {
-    if is_additional_transcribe_binding(id) {
+    if id == "transcribe_with_post_process" || is_additional_transcribe_binding(id) {
         "transcribe"
     } else {
         id
@@ -797,6 +794,10 @@ mod tests {
 
     #[test]
     fn additional_shortcut_is_a_transcribe_binding() {
+        assert_eq!(
+            transcribe_action_id("transcribe_with_post_process"),
+            "transcribe"
+        );
         assert!(is_transcribe_binding("transcribe_alt_1"));
         assert!(!is_transcribe_binding("transcribe_alt_invalid"));
     }
@@ -911,7 +912,7 @@ mod tests {
                 Some("transcribe"),
                 true,
                 true,
-                "transcribe_with_post_process",
+                "transcribe_alt_1",
                 Some("transcribe")
             ),
             PttAction::Passthrough
@@ -1259,7 +1260,7 @@ mod tests {
         assert_eq!(state.stage, Stage::Processing);
     }
 
-    const OTHER_BINDING: &str = "transcribe_with_post_process";
+    const OTHER_BINDING: &str = "test";
 
     /// Only one press can be pending. Once a binding has claimed it, a toggle
     /// for a different binding is ignored (as it is while recording) instead of
@@ -1281,7 +1282,7 @@ mod tests {
         let effect = state.on_processing_finished();
         assert!(
             effect.is_none(),
-            "two transcribe toggles net to no-op; the ignored post-process toggle must not start"
+            "two transcribe toggles net to no-op; the ignored unrelated action must not start"
         );
         assert_eq!(state.stage, Stage::Idle);
     }

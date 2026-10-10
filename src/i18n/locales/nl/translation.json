@@ -158,8 +158,8 @@
   "settings": {
     "localPolishing": {
       "title": "Local polishing",
-      "label": "Lightly polish Voice Input",
-      "description": "Qwen3-0.6B runs on this Mac. Fix punctuation and capitalization while preserving words and language. If it is not ready or takes over 500 ms, keep the original transcript. Long transcripts skip polishing. Turning this off releases the loaded model.",
+      "label": "Process Voice Input with selected prompt",
+      "description": "Apply the selected custom prompt using Qwen3-0.6B on this Mac. Inputs over 200 characters skip processing. If the model is unavailable, fails or takes over 500 ms, keep the original transcript. Turning this off releases the loaded model.",
       "download": "Download Qwen3-0.6B (651 MB)",
       "cancel": "Cancel download",
       "delete": "Delete model",
@@ -198,10 +198,6 @@
           "cancel": {
             "name": "Sneltoets voor annuleren",
             "description": "De sneltoets om de huidige opname te annuleren."
-          },
-          "transcribe_with_post_process": {
-            "name": "Sneltoets voor naverwerking",
-            "description": "Optioneel: Een specifieke sneltoets die altijd AI-naverwerking toepast op je transcriptie."
           }
         },
         "errors": {

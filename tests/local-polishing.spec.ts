@@ -48,24 +48,25 @@ test.beforeEach(async ({ page }) => {
       body: `
       import React from '/node_modules/.vite/deps/react.js';
       import ReactDOM from '/node_modules/.vite/deps/react-dom_client.js';
+      import { AdvancedSettings } from '/src/components/settings/advanced/AdvancedSettings.tsx';
       import { LocalPolishingSettings } from '/src/components/settings/general/LocalPolishingSettings.tsx';
       import { useSettingsStore } from '/src/stores/settingsStore.ts';
       import '/src/i18n/index.ts';
       import '/src/App.css';
       const settings = await window.__TAURI_INTERNALS__.invoke('get_app_settings');
       useSettingsStore.setState({ settings, isLoading: false });
-      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(LocalPolishingSettings));
+      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(React.Fragment, null, React.createElement(AdvancedSettings), React.createElement(LocalPolishingSettings)));
     `,
     }),
   );
   await page.goto("/");
 });
 
-test("polishing is accessible and independent of disabled legacy postprocessing", async ({
+test("polishing is accessible and uses the unified setting in the custom prompt group", async ({
   page,
 }) => {
   const toggle = page.getByRole("checkbox", {
-    name: "Lightly polish Voice Input",
+    name: "Process Voice Input with selected prompt",
   });
   await expect(toggle).not.toBeChecked();
   await toggle.focus();
@@ -86,5 +87,9 @@ test("download progress and cancellation are reachable while polishing is off", 
   ).toHaveAttribute("value", "0.5");
   await page.getByRole("button", { name: "Cancel download" }).click();
   await expect(page.getByRole("status")).toHaveText("Model not downloaded");
-  await expect(page.getByRole("checkbox")).not.toBeChecked();
+  await expect(
+    page.getByRole("checkbox", {
+      name: "Process Voice Input with selected prompt",
+    }),
+  ).not.toBeChecked();
 });

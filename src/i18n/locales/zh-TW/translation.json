@@ -158,8 +158,8 @@
   "settings": {
     "localPolishing": {
       "title": "Local polishing",
-      "label": "Lightly polish Voice Input",
-      "description": "Qwen3-0.6B runs on this Mac. Fix punctuation and capitalization while preserving words and language. If it is not ready or takes over 500 ms, keep the original transcript. Long transcripts skip polishing. Turning this off releases the loaded model.",
+      "label": "使用所選提示詞處理語音輸入",
+      "description": "在此 Mac 上使用 Qwen3-0.6B 執行所選自訂提示詞。超過 200 字元時跳過處理。模型無法使用、出錯或耗時超過 500 毫秒時保留原轉寫。關閉後釋放已載入的模型。",
       "download": "Download Qwen3-0.6B (651 MB)",
       "cancel": "Cancel download",
       "delete": "Delete model",
@@ -198,10 +198,6 @@
           "cancel": {
             "name": "取消聽寫",
             "description": "用於取消目前錄製的鍵盤快捷鍵"
-          },
-          "transcribe_with_post_process": {
-            "name": "後處理快捷鍵",
-            "description": "可選：專用快捷鍵，使用時一律對轉錄結果套用 AI 後處理"
           }
         },
         "errors": {

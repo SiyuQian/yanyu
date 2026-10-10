@@ -15,6 +15,7 @@ use std::{
 
 pub const OUTPUT_BUDGET: Duration = Duration::from_millis(500);
 const SUPPORTED: bool = cfg!(all(target_os = "macos", target_arch = "aarch64"));
+#[cfg(any(test, all(target_os = "macos", target_arch = "aarch64")))]
 const PROMPT: &str = "Lightly clean up the transcript. Preserve meaning, language and identifiers. Fix punctuation and capitalization only. Do not add, remove, translate or reorder words. Return only the cleaned text. /no_think";
 struct Artifact {
     name: &'static str,
@@ -157,8 +158,8 @@ impl LocalPolishingManager {
         });
     }
     /// Returns only complete, validated cleanup within the output budget.
-    pub async fn polish(self: &Arc<Self>, text: &str) -> Option<String> {
-        if !eligible(text, true, false) {
+    pub async fn polish(self: &Arc<Self>, text: &str, prompt: &str) -> Option<String> {
+        if !eligible(text, true) {
             return None;
         }
         let deadline = Instant::now() + OUTPUT_BUDGET;
@@ -175,8 +176,9 @@ impl LocalPolishingManager {
         let stop = cancel.clone();
         let manager = self.clone();
         let original = text.to_string();
+        let prompt = prompt.to_string();
         let task = tauri::async_runtime::spawn_blocking(move || {
-            let result = model.generate(&original, deadline, &cancel);
+            let result = model.generate(&original, &prompt, deadline, &cancel);
             model.clear();
             let mut s = manager.inner.lock().unwrap_or_else(|e| e.into_inner());
             s.busy = false;
@@ -429,7 +431,12 @@ impl NativeModel {
             device,
         };
         // Compile lazy Metal kernels before announcing readiness. Cold work never blocks output.
-        let _ = model.generate("hello", Instant::now() + Duration::from_secs(30), cancel)?;
+        let _ = model.generate(
+            "hello",
+            PROMPT,
+            Instant::now() + Duration::from_secs(30),
+            cancel,
+        )?;
         model.clear();
         check_stop(cancel, None)?;
         Ok(model)
@@ -440,11 +447,12 @@ impl NativeModel {
     fn generate(
         &mut self,
         text: &str,
+        instructions: &str,
         deadline: Instant,
         cancel: &AtomicBool,
     ) -> anyhow::Result<Option<String>> {
         check_stop(cancel, Some(deadline))?;
-        let prompt = format!("<|im_start|>system\n{PROMPT}<|im_end|>\n<|im_start|>user\n{text}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n");
+        let prompt = inference_prompt(text, instructions);
         let mut input = self
             .tokenizer
             .encode(prompt, false)
@@ -452,8 +460,8 @@ impl NativeModel {
             .get_ids()
             .to_vec();
         anyhow::ensure!(
-            input.len() <= 384,
-            "Transcript exceeds local context budget"
+            input.len() <= 4096,
+            "Prompt and transcript exceed local context budget"
         );
         self.clear();
         let mut offset = 0;
@@ -489,7 +497,13 @@ impl NativeModel {
         anyhow::bail!("Local polishing requires an Apple Silicon Mac")
     }
     fn clear(&mut self) {}
-    fn generate(&mut self, _: &str, _: Instant, _: &AtomicBool) -> anyhow::Result<Option<String>> {
+    fn generate(
+        &mut self,
+        _: &str,
+        _: &str,
+        _: Instant,
+        _: &AtomicBool,
+    ) -> anyhow::Result<Option<String>> {
         Ok(None)
     }
 }
@@ -507,8 +521,8 @@ fn accepted_output(original: &str, output: &str, complete: bool) -> Option<Strin
     }
     // Code-like tokens retain spelling and internal punctuation.
     for token in original.split_whitespace() {
-        let token = token.trim_matches(|c: char| !c.is_alphanumeric() && c != '_');
-        if (token.contains(['_', '.', '/', '@', '-', ':'])
+        let token = token.trim_matches(|c: char| !c.is_alphanumeric() && !"_+#$".contains(c));
+        if (token.contains(['_', '.', '/', '@', '-', ':', '+', '#', '$'])
             || token.chars().any(|c| c.is_ascii_digit())
             || token.chars().skip(1).any(|c| c.is_ascii_uppercase()))
             && !output.contains(token)
@@ -516,34 +530,15 @@ fn accepted_output(original: &str, output: &str, complete: bool) -> Option<Strin
             return None;
         }
     }
-    if content_tokens(original) != content_tokens(output) {
-        return None;
-    }
     Some(output.to_string())
 }
-fn content_tokens(text: &str) -> Vec<String> {
-    let mut tokens = Vec::new();
-    let mut word = String::new();
-    for c in text.chars().flat_map(char::to_lowercase) {
-        if c.is_ascii_alphanumeric() || c == '_' {
-            word.push(c);
-        } else {
-            if !word.is_empty() {
-                tokens.push(std::mem::take(&mut word));
-            }
-            if !c.is_whitespace() && !",.!?;:'\"()[]，。！？、：；“”‘’（）【】《》—…".contains(c)
-            {
-                tokens.push(c.to_string());
-            }
-        }
-    }
-    if !word.is_empty() {
-        tokens.push(word);
-    }
-    tokens
+fn inference_prompt(text: &str, instructions: &str) -> String {
+    // Saved prompts use the same transcript placeholder as explicit provider trials.
+    let instructions = instructions.replace("${output}", text);
+    format!("<|im_start|>system\n{instructions}\nReturn only the processed transcript. /no_think<|im_end|>\n<|im_start|>user\n{text}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n")
 }
-pub(crate) fn eligible(text: &str, enabled: bool, legacy: bool) -> bool {
-    enabled && !legacy && !text.trim().is_empty() && text.chars().count() <= 200
+pub(crate) fn eligible(text: &str, enabled: bool) -> bool {
+    enabled && !text.trim().is_empty() && text.chars().count() <= 200
 }
 #[derive(Default)]
 struct Lifecycle {
@@ -562,6 +557,15 @@ impl Lifecycle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn custom_prompt_can_rewrite_content_without_changing_identifiers() {
+        assert_eq!(
+            accepted_output("please send the file", "Kindly share the document.", true),
+            Some("Kindly share the document.".into())
+        );
+        assert_eq!(accepted_output("send foo.bar", "Share foo bar", true), None);
+    }
+
     #[tokio::test]
     async fn deadline_returns_fallback_and_signals_cooperative_stop() {
         let cancel = Arc::new(AtomicBool::new(false));
@@ -651,7 +655,7 @@ mod tests {
             "use foo_bar42 with HTTPServer",
         ] {
             let start = Instant::now();
-            let result = manager.polish(text).await;
+            let result = manager.polish(text, PROMPT).await;
             println!(
                 "Native manager {text:?}: {:?}, accepted={result:?}",
                 start.elapsed()
@@ -690,7 +694,7 @@ mod tests {
         assert!(cancel.load(Ordering::Acquire));
         let running_manager = manager.clone();
         let running =
-            tokio::spawn(async move { running_manager.polish(&"hello ".repeat(30)).await });
+            tokio::spawn(async move { running_manager.polish(&"hello ".repeat(30), PROMPT).await });
         tokio::time::sleep(Duration::from_millis(10)).await;
         let stop_start = Instant::now();
         manager.set_enabled(false);
@@ -704,7 +708,7 @@ mod tests {
             stop_start.elapsed()
         );
         assert!(manager.inner.lock().unwrap().model.is_none());
-        assert_eq!(manager.polish("hello world").await, None);
+        assert_eq!(manager.polish("hello world", PROMPT).await, None);
         manager.set_enabled(true);
         manager.set_enabled(false);
         let stop_start = Instant::now();
@@ -719,34 +723,30 @@ mod tests {
         );
     }
     #[test]
-    fn cleanup_preserves_combining_marks_and_meaningful_symbols() {
-        assert_eq!(accepted_output("नाम", "नम", true), None);
+    fn prompt_request_contains_saved_instructions_and_transcript() {
+        let request = inference_prompt("hello world", "Translate ${output} to French");
+        assert!(request.contains("Translate hello world to French"));
+        assert!(request.contains("<|im_start|>user\nhello world<|im_end|>"));
+        assert!(request.contains("/no_think"));
+    }
+    #[test]
+    fn prompt_output_rejects_malformed_truncated_and_changed_identifiers() {
+        for output in [
+            "",
+            "<think>unfinished",
+            "{broken}",
+            "hello\nworld",
+            "hello\u{200B}world",
+        ] {
+            assert_eq!(accepted_output("hello world", output, true), None);
+        }
+        assert_eq!(accepted_output("hello world", "Bonjour monde", false), None);
+        assert_eq!(accepted_output("use foo.bar", "use foo bar", true), None);
         assert_eq!(accepted_output("use C++", "use C", true), None);
         assert_eq!(accepted_output("cost $5", "cost 5", true), None);
         assert_eq!(
-            accepted_output("你好世界", "你好，世界。", true),
-            Some("你好，世界。".into())
-        );
-    }
-    #[test]
-    fn cleanup_preserves_negations_and_word_boundaries() {
-        assert_eq!(
-            accepted_output("do not send the file", "do send the file", true),
-            None
-        );
-        assert_eq!(
-            accepted_output("不删除这个文件", "删除这个文件", true),
-            None
-        );
-        assert_eq!(accepted_output("send file", "sendfile", true), None);
-        assert_eq!(accepted_output("use foo.bar", "use foo bar", true), None);
-        assert_eq!(
             accepted_output("send 42 files", "Send 43 files.", true),
             None
-        );
-        assert_eq!(
-            accepted_output("do not send", "Do not send.", true),
-            Some("Do not send.".into())
         );
     }
     #[test]
@@ -820,14 +820,10 @@ mod tests {
         assert!(state.permits(state.generation));
     }
     #[test]
-    fn cleanup_cannot_translate_or_invent_content() {
+    fn custom_prompt_allows_translation_while_preserving_code_tokens() {
         assert_eq!(
             accepted_output("请 review foo_bar42", "Please review foo_bar42", true),
-            None
-        );
-        assert_eq!(
-            accepted_output("send the file", "delete the file", true),
-            None
+            Some("Please review foo_bar42".into())
         );
     }
     #[test]
@@ -863,10 +859,11 @@ mod tests {
     }
     #[test]
     fn only_short_regular_voice_input_is_eligible() {
-        assert!(!eligible("hello", false, false));
-        assert!(!eligible("hello", true, true));
-        assert!(!eligible(" \n", true, false));
-        assert!(!eligible(&"x".repeat(201), true, false));
-        assert!(eligible("你好 hello", true, false));
+        assert!(!eligible("hello", false));
+        assert!(!eligible(" \n", true));
+        assert!(!eligible(&"x".repeat(201), true));
+        assert!(eligible(&"你".repeat(200), true));
+        assert!(!eligible(&"你".repeat(201), true));
+        assert!(eligible("你好 hello", true));
     }
 }
