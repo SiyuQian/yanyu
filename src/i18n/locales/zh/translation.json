@@ -158,8 +158,8 @@
   "settings": {
     "localPolishing": {
       "title": "本地润色",
-      "label": "轻度润色语音输入",
-      "description": "Qwen3-0.6B 在此 Mac 上运行，只调整标点和大小写，保留原有词语和语言。模型未就绪或耗时超过 500 毫秒时保留原转写，较长文本跳过润色。关闭后释放已加载的模型。",
+      "label": "使用所选提示词处理语音输入",
+      "description": "在此 Mac 上使用 Qwen3-0.6B 执行所选自定义提示词。超过 200 字符时跳过处理。模型不可用、出错或耗时超过 500 毫秒时保留原转写。关闭后释放已加载的模型。",
       "download": "下载 Qwen3-0.6B（651 MB）",
       "cancel": "取消下载",
       "delete": "删除模型",
@@ -218,10 +218,6 @@
           "cancel": {
             "name": "取消听写",
             "description": "用于取消当前录制的键盘快捷键。"
-          },
-          "transcribe_with_post_process": {
-            "name": "后处理快捷键",
-            "description": "可选：一个专用快捷键，始终对您的转录应用 AI 后处理。"
           }
         },
         "errors": {

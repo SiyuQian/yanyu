@@ -2,15 +2,12 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Sparkles } from "lucide-react";
 import { commands, type LocalPolishingStatus } from "@/bindings";
-import { useSettings } from "@/hooks/useSettings";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { Button } from "@/components/ui/Button";
-import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
 
 export function LocalPolishingSettings() {
   const { t } = useTranslation();
-  const { getSetting, updateSetting, isUpdating } = useSettings();
   const [status, setStatus] = useState<LocalPolishingStatus | null>(null);
   const [error, setError] = useState(false);
   const [pending, setPending] = useState(false);
@@ -68,18 +65,6 @@ export function LocalPolishingSettings() {
       icon={<Sparkles size={20} />}
       title={t("settings.localPolishing.title")}
     >
-      <ToggleSwitch
-        checked={getSetting("local_polishing_enabled") ?? false}
-        onChange={(enabled) =>
-          updateSetting("local_polishing_enabled", enabled)
-        }
-        isUpdating={isUpdating("local_polishing_enabled")}
-        disabled={!status?.supported}
-        label={t("settings.localPolishing.label")}
-        description={t("settings.localPolishing.description")}
-        descriptionMode="inline"
-        grouped
-      />
       <div className="py-3 space-y-3">
         <p className="text-sm text-text/70" role="status" aria-live="polite">
           {t(`settings.localPolishing.states.${status?.phase ?? "loading"}`)}

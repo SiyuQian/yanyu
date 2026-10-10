@@ -201,7 +201,7 @@ test("ready trial requires an explicit recording and shows a preview comparison"
   ).toBeEnabled();
 });
 
-test("advanced custom mode is explicit and retains the selected legacy prompt", async ({
+test("advanced prompts stay available while Generated profile is enabled", async ({
   page,
 }) => {
   await page.evaluate(() => {
@@ -229,10 +229,14 @@ test("advanced custom mode is explicit and retains the selected legacy prompt", 
   );
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("textarea")).toHaveValue("Translate to French");
-  await page.getByRole("button", { name: "Use saved custom prompts" }).click();
+  await expect(
+    page.getByRole("checkbox", {
+      name: "Process Voice Input with selected prompt",
+    }),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Use saved custom prompts" }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("textarea")).toHaveValue("Translate to French");
 });

@@ -55,9 +55,7 @@ pub trait ShortcutAction: Send + Sync {
 }
 
 // Transcribe Action
-struct TranscribeAction {
-    post_process: bool,
-}
+struct TranscribeAction;
 
 /// Field name for structured output JSON schema
 const TRANSCRIPTION_FIELD: &str = "transcription";
@@ -459,37 +457,54 @@ pub(crate) struct ProcessedTranscription {
 pub(crate) async fn process_transcription_output(
     app: &AppHandle,
     transcription: &str,
-    post_process: bool,
 ) -> ProcessedTranscription {
     let settings = get_settings(app);
-    let mut final_text = transcription.to_string();
-    let mut post_processed_text: Option<String> = None;
-    let mut post_process_prompt: Option<String> = None;
+    let manager = app
+        .try_state::<Arc<LocalPolishingManager>>()
+        .map(|m| Arc::clone(&m));
+    process_local_prompt_output(&settings, transcription, |text, prompt| async move {
+        match manager {
+            Some(manager) => manager.polish(&text, &prompt).await,
+            None => None,
+        }
+    })
+    .await
+}
 
-    if post_process || crate::personalization::generated_enabled(&settings) {
-        if let Some(processed_text) = post_process_transcription(&settings, &final_text).await {
-            post_processed_text = Some(processed_text.clone());
-            final_text = processed_text;
-
-            if settings.processing_mode == crate::personalization::ProcessingMode::Generated {
-                post_process_prompt = Some(crate::personalization::RULE_ID.into());
-            } else if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
-                if let Some(prompt) = settings
+async fn process_local_prompt_output<F, Fut>(
+    settings: &AppSettings,
+    transcription: &str,
+    polish: F,
+) -> ProcessedTranscription
+where
+    F: FnOnce(String, String) -> Fut,
+    Fut: std::future::Future<Output = Option<String>>,
+{
+    let mut processed = ProcessedTranscription {
+        final_text: transcription.into(),
+        post_processed_text: None,
+        post_process_prompt: None,
+    };
+    if should_polish_locally(transcription, settings.local_polishing_enabled) {
+        if let Some(prompt) = settings
+            .post_process_selected_prompt_id
+            .as_ref()
+            .and_then(|id| {
+                settings
                     .post_process_prompts
                     .iter()
-                    .find(|prompt| &prompt.id == prompt_id)
-                {
-                    post_process_prompt = Some(prompt.prompt.clone());
-                }
+                    .find(|prompt| &prompt.id == id)
+            })
+            .filter(|prompt| !prompt.prompt.trim().is_empty())
+        {
+            if let Some(text) = polish(transcription.into(), prompt.prompt.clone()).await {
+                processed.final_text = text.clone();
+                processed.post_processed_text = Some(text);
+                processed.post_process_prompt = Some(prompt.prompt.clone());
             }
         }
     }
-
-    ProcessedTranscription {
-        final_text,
-        post_processed_text,
-        post_process_prompt,
-    }
+    processed
 }
 
 impl ShortcutAction for TranscribeAction {
@@ -534,7 +549,7 @@ impl ShortcutAction for TranscribeAction {
         let plan_started = Instant::now();
         let settings = get_settings(app);
         let is_always_on = settings.always_on_microphone;
-        if settings.local_polishing_enabled && !self.post_process {
+        if settings.local_polishing_enabled {
             if let Some(manager) = app.try_state::<Arc<LocalPolishingManager>>() {
                 manager.preload();
             }
@@ -713,9 +728,7 @@ impl ShortcutAction for TranscribeAction {
         play_feedback_sound(app, SoundType::Stop);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
-        let post_process =
-            self.post_process || crate::personalization::generated_enabled(&get_settings(app));
-        let local_polishing_enabled = get_settings(app).local_polishing_enabled;
+        let post_process = get_settings(app).local_polishing_enabled;
         let cancel_generation = rm.cancel_generation();
 
         tauri::async_runtime::spawn(async move {
@@ -821,30 +834,7 @@ impl ShortcutAction for TranscribeAction {
                                 }
                             }
                             let Some(processed) = complete_unless_cancelled(
-                                async {
-                                    let mut processed = process_transcription_output(
-                                        &ah,
-                                        &transcription,
-                                        post_process,
-                                    )
-                                    .await;
-                                    if should_polish_locally(
-                                        &transcription,
-                                        local_polishing_enabled,
-                                        post_process,
-                                    ) {
-                                        if let Some(manager) =
-                                            ah.try_state::<Arc<LocalPolishingManager>>()
-                                        {
-                                            if let Some(text) = manager.polish(&transcription).await
-                                            {
-                                                processed.post_processed_text = Some(text.clone());
-                                                processed.final_text = text;
-                                            }
-                                        }
-                                    }
-                                    processed
-                                },
+                                async { process_transcription_output(&ah, &transcription).await },
                                 || rm.was_cancelled_since(cancel_generation),
                             )
                             .await
@@ -999,13 +989,7 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     let mut map = HashMap::new();
     map.insert(
         "transcribe".to_string(),
-        Arc::new(TranscribeAction {
-            post_process: false,
-        }) as Arc<dyn ShortcutAction>,
-    );
-    map.insert(
-        "transcribe_with_post_process".to_string(),
-        Arc::new(TranscribeAction { post_process: true }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cancel".to_string(),
@@ -1118,6 +1102,77 @@ mod tests {
             );
             assert_eq!(request.get("response_format").is_some(), structured);
         }
+    }
+
+    #[tokio::test]
+    async fn daily_output_uses_saved_local_prompt_even_with_generated_external_settings() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.post_process_enabled = true;
+        settings.processing_mode = crate::personalization::ProcessingMode::Generated;
+        settings.personalization.enabled = true;
+        let prompt = settings.post_process_prompts[0].prompt.clone();
+        settings.post_process_selected_prompt_id =
+            Some(settings.post_process_prompts[0].id.clone());
+        let output = super::process_local_prompt_output(
+            &settings,
+            "hello world",
+            |text, instructions| async move {
+                assert_eq!(text, "hello world");
+                assert_eq!(instructions, prompt);
+                Some("Bonjour monde".into())
+            },
+        )
+        .await;
+        assert_eq!(output.final_text, "Bonjour monde");
+        assert_eq!(output.post_processed_text.as_deref(), Some("Bonjour monde"));
+        assert_eq!(
+            output.post_process_prompt.as_deref(),
+            Some(settings.post_process_prompts[0].prompt.as_str())
+        );
+        assert!(!super::ACTION_MAP.contains_key("transcribe_with_post_process"));
+    }
+
+    #[tokio::test]
+    async fn daily_output_bypasses_inference_when_disabled_long_or_prompt_missing() {
+        for (enabled, text, selected) in [
+            (false, "hello".into(), true),
+            (true, "x".repeat(201), true),
+            (true, "hello".into(), false),
+        ] {
+            let mut settings = crate::settings::get_default_settings();
+            settings.local_polishing_enabled = enabled;
+            settings.processing_mode = crate::personalization::ProcessingMode::Generated;
+            settings.personalization.enabled = true;
+            settings.post_process_enabled = true;
+            settings.post_process_selected_prompt_id =
+                selected.then(|| settings.post_process_prompts[0].id.clone());
+            let output = super::process_local_prompt_output(&settings, &text, |_, _| async {
+                panic!("Skipped processing must not invoke inference");
+            })
+            .await;
+            assert_eq!(output.final_text, text);
+            assert!(output.post_processed_text.is_none());
+            assert!(output.post_process_prompt.is_none());
+        }
+    }
+
+    #[tokio::test]
+    async fn local_failure_returns_original_text_without_success_metadata() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.post_process_selected_prompt_id =
+            Some(settings.post_process_prompts[0].id.clone());
+        let called = AtomicBool::new(false);
+        let output = super::process_local_prompt_output(&settings, "hello world", |_, _| {
+            called.store(true, Ordering::SeqCst);
+            std::future::ready(None)
+        })
+        .await;
+        assert!(called.load(Ordering::SeqCst));
+        assert_eq!(output.final_text, "hello world");
+        assert!(output.post_processed_text.is_none());
+        assert!(output.post_process_prompt.is_none());
     }
 
     #[test]

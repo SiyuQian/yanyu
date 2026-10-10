@@ -132,6 +132,9 @@ fn reconcile_cancel_shortcut(app: &AppHandle) {
 
 /// Register a shortcut using the appropriate implementation
 pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+    if binding.id == "transcribe_with_post_process" {
+        return Err("The dedicated post-processing shortcut was removed".into());
+    }
     let settings = get_settings(app);
     match settings.keyboard_implementation {
         KeyboardImplementation::Tauri => tauri_impl::register_shortcut(app, binding),
@@ -330,7 +333,7 @@ pub fn resume_all_shortcuts(app: &AppHandle) {
         if id == "cancel" {
             continue;
         }
-        if id == "transcribe_with_post_process" && !settings.post_process_enabled {
+        if id == "transcribe_with_post_process" || binding.id == "transcribe_with_post_process" {
             continue;
         }
         if let Err(e) = register_shortcut(app, binding.clone()) {
@@ -577,8 +580,10 @@ fn register_all_shortcuts_for_implementation(
             continue;
         }
 
-        // Skip post-processing shortcut when the feature is disabled
-        if id == "transcribe_with_post_process" && !current_settings.post_process_enabled {
+        // Ignore retired post-processing bindings.
+        if id == "transcribe_with_post_process"
+            || stored_binding.id == "transcribe_with_post_process"
+        {
             continue;
         }
 
@@ -1131,19 +1136,6 @@ pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Res
     let mut settings = settings::get_settings(&app);
     settings.post_process_enabled = enabled;
     settings::write_settings(&app, settings.clone());
-
-    // Register or unregister the post-processing shortcut
-    if let Some(binding) = settings
-        .bindings
-        .get("transcribe_with_post_process")
-        .cloned()
-    {
-        if enabled {
-            let _ = register_shortcut(&app, binding);
-        } else {
-            let _ = unregister_shortcut(&app, binding);
-        }
-    }
 
     crate::secure_input::reconcile_fallback(&app);
     Ok(())
