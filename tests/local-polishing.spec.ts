@@ -64,11 +64,11 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
-test("polishing is accessible and uses the unified setting in the custom prompt group", async ({
+test("polishing is accessible and uses the unified setting in General settings", async ({
   page,
 }) => {
   const toggle = page.getByRole("checkbox", {
-    name: "Process Voice Input with selected prompt",
+    name: "Polish voice input locally",
   });
   await expect(toggle).not.toBeChecked();
   await toggle.focus();
@@ -78,7 +78,7 @@ test("polishing is accessible and uses the unified setting in the custom prompt 
   await expect(toggle).toBeChecked();
 });
 
-test("prompt toggle is disabled when local polishing is unsupported", async ({
+test("local toggle is disabled when local polishing is unsupported", async ({
   page,
 }) => {
   await page.evaluate(() =>
@@ -87,7 +87,7 @@ test("prompt toggle is disabled when local polishing is unsupported", async ({
   await page.reload();
   await expect(
     page.getByRole("checkbox", {
-      name: "Process Voice Input with selected prompt",
+      name: "Polish voice input locally",
     }),
   ).toBeDisabled();
 });
@@ -105,7 +105,7 @@ test("download progress and cancellation are reachable while polishing is off", 
   await expect(page.getByRole("status")).toHaveText("Model not downloaded");
   await expect(
     page.getByRole("checkbox", {
-      name: "Process Voice Input with selected prompt",
+      name: "Polish voice input locally",
     }),
   ).not.toBeChecked();
 });

@@ -21,6 +21,16 @@ test.beforeEach(async ({ page }) => {
               throw new Error("Refresh failed");
             return settings;
           }
+          if (command === "get_local_polishing_status")
+            return {
+              supported: true,
+              downloaded: !!localStorage.getItem("ready-profile"),
+              phase: localStorage.getItem("ready-profile")
+                ? "ready"
+                : "missing",
+              progress: 0,
+              error: null,
+            };
           if (command === "get_personalization_status")
             return {
               service_ready: !!localStorage.getItem("ready-profile"),
@@ -59,8 +69,10 @@ test.beforeEach(async ({ page }) => {
           if (command === "stop_personalization_trial")
             return {
               original: "嗯，我我我想写代码，但不要改文件。",
-              processed: "我想写代码，但不要改文件。",
-              processing_succeeded: true,
+              processed: localStorage.getItem("trial-fallback")
+                ? "嗯，我我我想写代码，但不要改文件。"
+                : "我想写代码，但不要改文件。",
+              processing_succeeded: !localStorage.getItem("trial-fallback"),
             };
           if (
             command.includes("paste") ||
@@ -115,7 +127,7 @@ test("keyboard questions save a pending profile without replacing legacy prompts
   await page.keyboard.press("Space");
   await page.getByRole("button", { name: "Review profile" }).click();
   await expect(
-    page.getByText(/sends your transcript and selected profile context/),
+    page.getByText(/sends your transcript and enabled profile context/),
   ).toBeVisible();
   await page.getByRole("button", { name: "Save and enable" }).click();
   await expect(
@@ -201,7 +213,7 @@ test("ready trial requires an explicit recording and shows a preview comparison"
   ).toBeEnabled();
 });
 
-test("advanced prompts stay available while Generated profile is enabled", async ({
+test("advanced custom prompt controls are absent and saved data is retained", async ({
   page,
 }) => {
   await page.evaluate(() => {
@@ -228,17 +240,17 @@ test("advanced prompts stay available while Generated profile is enabled", async
     }),
   );
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator("textarea")).toHaveValue("Translate to French");
+  await expect(page.locator("textarea")).toHaveCount(0);
   await expect(
-    page.getByRole("checkbox", {
-      name: "Process Voice Input with selected prompt",
-    }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Use saved custom prompts" }),
+    page.getByRole("button", { name: "Create New Prompt" }),
   ).toHaveCount(0);
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator("textarea")).toHaveValue("Translate to French");
+  await expect(
+    page.getByRole("checkbox", { name: /selected prompt/ }),
+  ).toHaveCount(0);
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("profile-test")!),
+  );
+  expect(saved.post_process_prompts[0].prompt).toBe("Translate to French");
 });
 
 test("failed refresh after save does not display activation success", async ({
@@ -298,4 +310,64 @@ test("trial starts when the native webview lacks randomUUID", async ({
     page.getByRole("button", { name: "Stop and compare" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Cancel trial" }).click();
+});
+
+test("local preview uses enabled profile in legacy mode without external setup", async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const settings = JSON.parse(localStorage.getItem("profile-test")!);
+    settings.local_polishing_enabled = true;
+    settings.processing_mode = "legacy";
+    settings.personalization.enabled = true;
+    settings.personalization.invitation_dismissed = true;
+    localStorage.setItem("profile-test", JSON.stringify(settings));
+    localStorage.setItem("ready-profile", "true");
+  });
+  await page.reload();
+  await expect(
+    page.getByText(
+      /Recording and stopping processes recognized text on this Mac/,
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continue service setup" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Record a trial" }),
+  ).toBeEnabled();
+});
+
+test("local readiness refreshes after the model becomes ready and reports trial fallback", async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const settings = JSON.parse(localStorage.getItem("profile-test")!);
+    settings.local_polishing_enabled = true;
+    settings.personalization.enabled = true;
+    settings.personalization.invitation_dismissed = true;
+    localStorage.setItem("profile-test", JSON.stringify(settings));
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Record a trial" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Continue service setup" }),
+  ).toHaveCount(0);
+  await page.evaluate(() => {
+    localStorage.setItem("ready-profile", "true");
+    localStorage.setItem("trial-fallback", "true");
+  });
+  await expect(
+    page.getByRole("button", { name: "Record a trial" }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Stop and compare" }).click();
+  await expect(
+    page.getByText("嗯，我我我想写代码，但不要改文件。", { exact: true }),
+  ).toHaveCount(2);
+  await expect(
+    page.getByRole("status").filter({ hasText: /Processing was skipped/ }),
+  ).toContainText("Original recognition is preserved.");
 });

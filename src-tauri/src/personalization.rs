@@ -108,8 +108,21 @@ pub fn service_ready(settings: &AppSettings, apple_available: bool) -> bool {
 
 /// Serialize profile and transcript as data in a separate message from the rules.
 pub fn request_data(settings: &AppSettings, transcript: &str) -> String {
+    request_data_with_profile(settings, transcript, generated_enabled(settings))
+}
+
+/// Local polishing uses enabled profile data independently of legacy prompt mode.
+pub fn local_request_data(settings: &AppSettings, transcript: &str) -> String {
+    request_data_with_profile(settings, transcript, settings.personalization.enabled)
+}
+
+fn request_data_with_profile(
+    settings: &AppSettings,
+    transcript: &str,
+    include_profile: bool,
+) -> String {
     let mut value = serde_json::json!({ "transcript": transcript });
-    if generated_enabled(settings) {
+    if include_profile {
         let mut profile = settings.personalization.clone();
         if profile.validate().is_ok() {
             value["profile_context"] = serde_json::json!({
@@ -178,6 +191,22 @@ mod tests {
         settings.processing_mode = ProcessingMode::Legacy;
         assert!(!generated_enabled(&settings));
         assert!(!request_data(&settings, "Hello").contains("profile_context"));
+    }
+
+    #[test]
+    fn local_profile_inclusion_validates_and_ignores_legacy_mode() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.personalization.enabled = true;
+        settings.personalization.domain = Some(Domain::Other);
+        settings.personalization.other_domain = "  software  ".into();
+        let data: serde_json::Value =
+            serde_json::from_str(&local_request_data(&settings, "hello")).unwrap();
+        assert_eq!(data["profile_context"]["other_domain"], "software");
+        settings.personalization.other_domain = "x".repeat(161);
+        assert!(!local_request_data(&settings, "hello").contains("profile_context"));
+        settings.personalization = PersonalizationProfile::default();
+        assert!(!local_request_data(&settings, "hello").contains("profile_context"));
     }
 
     #[test]

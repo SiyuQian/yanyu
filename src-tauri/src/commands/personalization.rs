@@ -1,7 +1,8 @@
 //! Acknowledged local profile operations and an isolated, ephemeral recording trial.
 use crate::audio_toolkit::VadPolicy;
 use crate::managers::{
-    audio::AudioRecordingManager, model::ModelManager, transcription::TranscriptionManager,
+    audio::AudioRecordingManager, local_polishing::LocalPolishingManager, model::ModelManager,
+    transcription::TranscriptionManager,
 };
 use crate::personalization::{
     generated_enabled, service_ready, PersonalizationProfile, ProcessingMode,
@@ -129,17 +130,59 @@ pub fn set_processing_mode(app: AppHandle, mode: ProcessingMode) -> Result<(), S
 
 #[tauri::command]
 #[specta::specta]
-/// Report selected service configuration and installed ASR prerequisites.
+/// Report local model or external service readiness and installed ASR prerequisites.
 pub fn get_personalization_status(app: AppHandle) -> PersonalizationStatus {
     let settings = get_settings(&app);
-    let ready = service_ready(&settings, super::check_apple_intelligence_available());
+    let local_ready = app
+        .try_state::<Arc<LocalPolishingManager>>()
+        .is_some_and(|manager| {
+            let status = manager.status();
+            status.supported && status.phase == "ready"
+        });
+    let (ready, active) = processing_readiness(
+        &settings,
+        local_ready,
+        !settings.local_polishing_enabled && super::check_apple_intelligence_available(),
+    );
     PersonalizationStatus {
         service_ready: ready,
         asr_ready: app
             .state::<Arc<ModelManager>>()
             .get_model_path(&settings.selected_model)
             .is_ok(),
-        active: generated_enabled(&settings) && ready,
+        active,
+    }
+}
+
+fn processing_readiness(
+    settings: &crate::settings::AppSettings,
+    local_ready: bool,
+    apple_available: bool,
+) -> (bool, bool) {
+    if settings.local_polishing_enabled {
+        return (local_ready, settings.personalization.enabled && local_ready);
+    }
+    let ready = service_ready(settings, apple_available);
+    (ready, generated_enabled(settings) && ready)
+}
+
+async fn trial_processing<L, E, LF, EF>(
+    settings: &crate::settings::AppSettings,
+    local: L,
+    external: E,
+) -> Option<String>
+where
+    L: FnOnce() -> LF,
+    E: FnOnce() -> EF,
+    LF: std::future::Future<Output = Option<String>>,
+    EF: std::future::Future<Output = Option<String>>,
+{
+    if settings.local_polishing_enabled {
+        local().await
+    } else if generated_enabled(settings) {
+        external().await
+    } else {
+        None
     }
 }
 
@@ -174,7 +217,7 @@ pub async fn start_personalization_trial(app: AppHandle, id: String) -> Result<(
     }
     let status = get_personalization_status(app.clone());
     if !status.active || !status.asr_ready {
-        return Err("Finish model and service setup before the trial".into());
+        return Err("Finish speech recognition and processing setup before the trial".into());
     }
     let cancelled = Arc::new(AtomicBool::new(false));
     {
@@ -293,13 +336,15 @@ pub async fn stop_personalization_trial(app: AppHandle, id: String) -> Result<Tr
     }
     let processed = {
         let settings = get_settings(&app);
-        let operation = async {
-            if generated_enabled(&settings) {
-                crate::actions::post_process_transcription(&settings, &original).await
-            } else {
-                None
-            }
-        };
+        let operation = trial_processing(
+            &settings,
+            || async {
+                crate::actions::process_transcription_output(&app, &original)
+                    .await
+                    .post_processed_text
+            },
+            || crate::actions::post_process_transcription(&settings, &original),
+        );
         tokio::pin!(operation);
         loop {
             if cancelled.load(Ordering::Acquire) {
@@ -367,6 +412,62 @@ pub fn cancel_active_trial(app: &AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_readiness_ignores_external_configuration_and_legacy_mode() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.personalization.enabled = true;
+        settings.post_process_models.clear();
+        assert_eq!(processing_readiness(&settings, true, false), (true, true));
+        assert_eq!(processing_readiness(&settings, false, true), (false, false));
+        settings.personalization.enabled = false;
+        assert_eq!(processing_readiness(&settings, true, false), (true, false));
+        settings.local_polishing_enabled = false;
+        assert_eq!(processing_readiness(&settings, true, false), (false, false));
+    }
+
+    #[tokio::test]
+    async fn local_trial_failure_never_invokes_external_fallback() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.personalization.enabled = true;
+        settings.processing_mode = ProcessingMode::Generated;
+        let local_called = AtomicBool::new(false);
+        let output = trial_processing(
+            &settings,
+            || {
+                local_called.store(true, Ordering::Release);
+                std::future::ready(None)
+            },
+            || async { panic!("Local trials must never call an external service") },
+        )
+        .await;
+        assert!(local_called.load(Ordering::Acquire));
+        assert!(output.is_none());
+    }
+
+    #[tokio::test]
+    async fn external_trial_retains_generated_gate_when_local_is_off() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.processing_mode = ProcessingMode::Generated;
+        settings.personalization.enabled = true;
+        let output = trial_processing(
+            &settings,
+            || async { panic!("External trials must not invoke local polishing") },
+            || async { Some("external fixture".into()) },
+        )
+        .await;
+        assert_eq!(output.as_deref(), Some("external fixture"));
+        settings.personalization.enabled = false;
+        assert!(trial_processing(
+            &settings,
+            || async { panic!("disabled") },
+            || async { panic!("disabled") }
+        )
+        .await
+        .is_none());
+    }
 
     #[test]
     fn capture_deadline_does_not_cancel_processing_but_explicit_cancel_does() {

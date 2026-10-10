@@ -72,16 +72,26 @@ export function PersonalizationSettings() {
   }, []);
   useEffect(() => {
     let current = true;
-    commands
-      .getPersonalizationStatus()
-      .then((result) => {
+    let fetching = false;
+    const refresh = async () => {
+      if (fetching) return;
+      fetching = true;
+      try {
+        const result = await commands.getPersonalizationStatus();
         if (current) setStatus(result);
-      })
-      .catch(() => {
+      } catch {
         if (current) setStatus(null);
-      });
+      } finally {
+        fetching = false;
+      }
+    };
+    void refresh();
+    const timer = settings?.local_polishing_enabled
+      ? window.setInterval(() => void refresh(), 500)
+      : undefined;
     return () => {
       current = false;
+      window.clearInterval(timer);
     };
   }, [settings]);
 
@@ -166,7 +176,10 @@ export function PersonalizationSettings() {
     return () => window.clearTimeout(timer);
   }, [trialPhase]);
 
-  const pending = profile.enabled && settings?.processing_mode === "generated";
+  const localPolishing = settings?.local_polishing_enabled ?? false;
+  const pending =
+    profile.enabled &&
+    (localPolishing || settings?.processing_mode === "generated");
   return (
     <SettingsGroup variant="card" title={t("personalization.title")}>
       <div className="space-y-4 py-3">
@@ -182,8 +195,12 @@ export function PersonalizationSettings() {
               {t(
                 pending
                   ? status?.active
-                    ? "personalization.ready"
-                    : "personalization.pending"
+                    ? localPolishing
+                      ? "personalization.localReady"
+                      : "personalization.ready"
+                    : localPolishing
+                      ? "personalization.localPending"
+                      : "personalization.pending"
                   : "personalization.disabled",
               )}
             </p>
@@ -257,7 +274,7 @@ export function PersonalizationSettings() {
                 <p className="text-sm text-text/70">
                   {t("personalization.configuredOnly")}
                 </p>
-                {!status?.service_ready && (
+                {!status?.service_ready && !localPolishing && (
                   <Button
                     variant="secondary"
                     onClick={() =>
@@ -275,7 +292,11 @@ export function PersonalizationSettings() {
                   <p className="text-sm">{t("personalization.needsAsr")}</p>
                 )}
                 <p className="text-sm text-text/70">
-                  {t("personalization.trialInfo")}
+                  {t(
+                    localPolishing
+                      ? "personalization.localTrialInfo"
+                      : "personalization.trialInfo",
+                  )}
                 </p>
                 {trialPhase === "idle" ? (
                   <Button
@@ -315,7 +336,9 @@ export function PersonalizationSettings() {
                     <p role="status" className="text-sm">
                       {t(
                         trial.processing_succeeded
-                          ? "personalization.trialSucceeded"
+                          ? localPolishing
+                            ? "personalization.localTrialSucceeded"
+                            : "personalization.trialSucceeded"
                           : "personalization.trialFallback",
                       )}
                     </p>
@@ -408,7 +431,13 @@ export function PersonalizationSettings() {
                 ? ` (${draft.other_domain})`
                 : ""}
             </p>
-            <p className="text-sm">{t("personalization.disclosure")}</p>
+            <p className="text-sm">
+              {t(
+                localPolishing
+                  ? "personalization.localDisclosure"
+                  : "personalization.disclosure",
+              )}
+            </p>
             <p className="text-sm">{t("personalization.modeDisclosure")}</p>
             <div className="flex gap-2">
               <Button
