@@ -196,7 +196,21 @@ mod tests {
             .post_process_api_keys
             .insert("openai".into(), "test".into());
         assert!(service_ready(&settings, false));
+        settings
+            .post_process_providers
+            .retain(|provider| provider.id != APPLE_INTELLIGENCE_PROVIDER_ID);
         settings.post_process_provider_id = APPLE_INTELLIGENCE_PROVIDER_ID.into();
+        assert!(!service_ready(&settings, true));
+        settings
+            .post_process_providers
+            .push(crate::settings::PostProcessProvider {
+                id: APPLE_INTELLIGENCE_PROVIDER_ID.into(),
+                label: "Apple Intelligence test provider".into(),
+                base_url: "apple-intelligence://local".into(),
+                allow_base_url_edit: false,
+                models_endpoint: None,
+                supports_structured_output: true,
+            });
         assert!(!service_ready(&settings, false));
         assert!(service_ready(&settings, true));
     }
