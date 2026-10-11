@@ -3,6 +3,7 @@ use futures_util::StreamExt;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
+    collections::HashSet,
     fs::{self, File},
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -572,11 +573,17 @@ pub(crate) fn check_output(
         return Err(PolishSkip::LanguageChanged);
     }
     // Code-like tokens retain spelling and internal punctuation.
+    let output_tokens: HashSet<_> = output
+        .split_whitespace()
+        .map(|token| token.trim_matches(|c: char| !c.is_alphanumeric() && !"_+#$".contains(c)))
+        .collect();
+    // shortcut: embedded identifiers retain substring scans; use multi-pattern search if these dominate long inputs.
     for token in original.split_whitespace() {
         let token = token.trim_matches(|c: char| !c.is_alphanumeric() && !"_+#$".contains(c));
         if (token.contains(['_', '.', '/', '@', '-', ':', '+', '#', '$'])
             || token.chars().any(|c| c.is_ascii_digit())
             || token.chars().skip(1).any(|c| c.is_ascii_uppercase()))
+            && !output_tokens.contains(token)
             && !output.contains(token)
         {
             return Err(PolishSkip::IdentifierChanged);
@@ -585,7 +592,11 @@ pub(crate) fn check_output(
     if !only_deletes(original, output) {
         return Err(PolishSkip::Rewritten);
     }
-    let output_words: Vec<_> = output.split(|c: char| !c.is_ascii_alphabetic()).collect();
+    let output_words: HashSet<_> = output
+        .split(|c: char| !c.is_ascii_alphabetic())
+        .filter(|word| !word.is_empty())
+        .map(str::to_ascii_lowercase)
+        .collect();
     for word in original
         .split(|c: char| !c.is_ascii_alphabetic())
         .filter(|word| !word.is_empty())
@@ -593,11 +604,7 @@ pub(crate) fn check_output(
         let filler = ["um", "uh", "erm", "hmm"]
             .iter()
             .any(|filler| word.eq_ignore_ascii_case(filler));
-        if !filler
-            && !output_words
-                .iter()
-                .any(|out| word.eq_ignore_ascii_case(out))
-        {
+        if !filler && !output_words.contains(&word.to_ascii_lowercase()) {
             return Err(PolishSkip::LanguageChanged);
         }
     }
@@ -627,7 +634,11 @@ fn keeps_language(original: &str, output: &str) -> bool {
     if orig_han.is_empty() {
         return out_han.is_empty();
     }
-    let shared = out_han.iter().filter(|c| orig_han.contains(c)).count();
+    let orig_han_characters: HashSet<_> = orig_han.iter().copied().collect();
+    let shared = out_han
+        .iter()
+        .filter(|c| orig_han_characters.contains(c))
+        .count();
     // Dropping over half the spoken characters loses meaning, not just fillers.
     !out_han.is_empty() && shared * 10 >= out_han.len() * 7 && out_han.len() * 2 >= orig_han.len()
 }
@@ -672,6 +683,59 @@ mod tests {
         assert_eq!(
             check_output("um uh 请保留中文", "请保留中文", true),
             Ok("请保留中文".into())
+        );
+    }
+
+    #[test]
+    fn cleanup_validates_long_transcripts_without_quadratic_word_searches() {
+        let mut text = String::new();
+        for index in 0..40_000 {
+            let mut value = index;
+            let mut word = String::from("word");
+            for _ in 0..4 {
+                word.push((b'a' + (value % 26) as u8) as char);
+                value /= 26;
+            }
+            text.push_str(&word);
+            text.push(' ');
+        }
+        let started = Instant::now();
+        assert_eq!(
+            check_output(&text, text.trim(), true),
+            Ok(text.trim().into())
+        );
+        assert!(
+            started.elapsed() < Duration::from_secs(5),
+            "long word validation exceeded five seconds: {:?}",
+            started.elapsed()
+        );
+
+        let identifiers = (0..20_000)
+            .map(|index| format!("term.{index}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let started = Instant::now();
+        assert_eq!(
+            check_output(&identifiers, &identifiers, true),
+            Ok(identifiers.clone())
+        );
+        assert!(
+            started.elapsed() < Duration::from_secs(5),
+            "long identifier validation exceeded five seconds: {:?}",
+            started.elapsed()
+        );
+        assert_eq!(
+            check_output("foo.bar baz.qux", "foo.bar,baz.qux", true),
+            Ok("foo.bar,baz.qux".into())
+        );
+
+        let han: String = ('\u{4E00}'..='\u{9FFF}').collect();
+        let started = Instant::now();
+        assert_eq!(check_output(&han, &han, true), Ok(han.clone()));
+        assert!(
+            started.elapsed() < Duration::from_secs(5),
+            "long Han validation exceeded five seconds: {:?}",
+            started.elapsed()
         );
     }
 
