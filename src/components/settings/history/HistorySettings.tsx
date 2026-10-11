@@ -457,6 +457,15 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         </div>
       )}
 
+      {!retrying && entry.post_process_skip_reason && (
+        <p className="text-xs text-mid-gray -mt-2 pb-2">
+          {t("settings.history.polishingSkipped")}:{" "}
+          {t(`settings.history.skipReasons.${entry.post_process_skip_reason}`, {
+            defaultValue: entry.post_process_skip_reason,
+          })}
+        </p>
+      )}
+
       <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
     </div>
   );

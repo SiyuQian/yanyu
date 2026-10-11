@@ -156,17 +156,17 @@ impl LocalPolishingManager {
         });
     }
     /// Polish the raw transcript using serialized JSON data and fixed rules within the output budget.
-    pub async fn polish(self: &Arc<Self>, text: &str, data: &str) -> Option<String> {
+    pub async fn polish(self: &Arc<Self>, text: &str, data: &str) -> Result<String, PolishSkip> {
         if !eligible(text, true) {
-            return None;
+            return Err(PolishSkip::Unavailable);
         }
         let deadline = Instant::now() + OUTPUT_BUDGET;
         let (mut model, epoch, cancel) = {
-            let mut s = self.inner.try_lock().ok()?;
+            let mut s = self.inner.try_lock().map_err(|_| PolishSkip::Unavailable)?;
             if !s.life.enabled || s.busy {
-                return None;
+                return Err(PolishSkip::Unavailable);
             }
-            let model = s.model.take()?;
+            let model = s.model.take().ok_or(PolishSkip::Unavailable)?;
             s.busy = true;
             s.work_cancel = Arc::new(AtomicBool::new(false));
             (model, s.life.generation, s.work_cancel.clone())
@@ -192,12 +192,16 @@ impl LocalPolishingManager {
                 manager.preload();
             }
             if valid {
-                result.ok().flatten()
+                result.unwrap_or(Err(PolishSkip::Failed))
+            } else if Instant::now() >= deadline {
+                Err(PolishSkip::Timeout)
             } else {
-                None
+                Err(PolishSkip::Unavailable)
             }
         });
-        within_budget(async { task.await.ok().flatten() }, deadline, stop).await
+        within_budget(async { task.await.ok() }, deadline, stop)
+            .await
+            .unwrap_or(Err(PolishSkip::Timeout))
     }
     /// Signals cancellation of the current explicit download.
     pub fn cancel_download(&self) {
@@ -340,11 +344,11 @@ impl LocalPolishingManager {
         self.install(staging, cancel)
     }
 }
-async fn within_budget<F: std::future::Future<Output = Option<String>>>(
+async fn within_budget<T, F: std::future::Future<Output = Option<T>>>(
     future: F,
     deadline: Instant,
     cancel: Arc<AtomicBool>,
-) -> Option<String> {
+) -> Option<T> {
     let _stop_on_drop = CancelOnDrop(cancel);
     // Reserve 5 ms of the output budget for timer resolution and handoff.
     let deadline = deadline - Duration::from_millis(5);
@@ -448,10 +452,11 @@ impl NativeModel {
         data: &str,
         deadline: Instant,
         cancel: &AtomicBool,
-    ) -> anyhow::Result<Option<String>> {
-        Ok(self
-            .generate_raw(data, deadline, cancel)?
-            .and_then(|decoded| accepted_output(text, &decoded, true)))
+    ) -> anyhow::Result<Result<String, PolishSkip>> {
+        Ok(match self.generate_raw(data, deadline, cancel)? {
+            Some(decoded) => check_output(text, &decoded, true),
+            None => Err(PolishSkip::Incomplete),
+        })
     }
     /// Decoded model output before acceptance checks; `None` when generation did not finish.
     fn generate_raw(
@@ -512,23 +517,52 @@ impl NativeModel {
         _: &str,
         _: Instant,
         _: &AtomicBool,
-    ) -> anyhow::Result<Option<String>> {
-        Ok(None)
+    ) -> anyhow::Result<Result<String, PolishSkip>> {
+        Ok(Err(PolishSkip::Unavailable))
     }
 }
 
-fn accepted_output(original: &str, output: &str, complete: bool) -> Option<String> {
+/// Why a transcript kept its original text instead of a polished one.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PolishSkip {
+    TooLong,
+    Unavailable,
+    Timeout,
+    Failed,
+    Incomplete,
+    BadFormat,
+    LanguageChanged,
+    IdentifierChanged,
+}
+impl PolishSkip {
+    /// Stable code stored in history and mapped to UI text by the frontend.
+    pub(crate) fn code(self) -> &'static str {
+        match self {
+            Self::TooLong => "too_long",
+            Self::Unavailable => "unavailable",
+            Self::Timeout => "timeout",
+            Self::Failed => "failed",
+            Self::Incomplete => "incomplete",
+            Self::BadFormat => "bad_format",
+            Self::LanguageChanged => "language_changed",
+            Self::IdentifierChanged => "identifier_changed",
+        }
+    }
+}
+
+fn check_output(original: &str, output: &str, complete: bool) -> Result<String, PolishSkip> {
     let output = output.trim();
-    if !complete
-        || output.is_empty()
-        || output.chars().any(|c| c.is_control() || matches!(c, '\u{200B}'..='\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}' | '\u{FEFF}'))
+    if !complete || output.is_empty() {
+        return Err(PolishSkip::Incomplete);
+    }
+    if output.chars().any(|c| c.is_control() || matches!(c, '\u{200B}'..='\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}' | '\u{FEFF}'))
         || output.contains(['<', '>', '{', '}', '\n'])
         || output.chars().count() > original.chars().count() * 2 + 8
     {
-        return None;
+        return Err(PolishSkip::BadFormat);
     }
     if !keeps_language(original, output) {
-        return None;
+        return Err(PolishSkip::LanguageChanged);
     }
     // Code-like tokens retain spelling and internal punctuation.
     for token in original.split_whitespace() {
@@ -538,10 +572,10 @@ fn accepted_output(original: &str, output: &str, complete: bool) -> Option<Strin
             || token.chars().skip(1).any(|c| c.is_ascii_uppercase()))
             && !output.contains(token)
         {
-            return None;
+            return Err(PolishSkip::IdentifierChanged);
         }
     }
-    Some(output.to_string())
+    Ok(output.to_string())
 }
 fn is_han(c: char) -> bool {
     ('\u{4E00}'..='\u{9FFF}').contains(&c) || ('\u{3400}'..='\u{4DBF}').contains(&c)
@@ -584,6 +618,9 @@ impl Lifecycle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn accepted_output(original: &str, output: &str, complete: bool) -> Option<String> {
+        check_output(original, output, complete).ok()
+    }
     #[test]
     fn structural_validation_accepts_rewrites_but_protects_identifiers() {
         assert_eq!(
@@ -600,7 +637,7 @@ mod tests {
         let result = within_budget(
             async {
                 tokio::time::sleep(Duration::from_millis(150)).await;
-                Some("late output".into())
+                Some("late output".to_string())
             },
             start + Duration::from_millis(20),
             cancel.clone(),
@@ -699,7 +736,7 @@ mod tests {
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
             println!("Cooperative worker drain: {:?}", drain_start.elapsed());
-            if let Some(output) = result {
+            if let Ok(output) = result {
                 assert!(accepted_output(text, &output, true).is_some());
             }
         }
@@ -708,7 +745,7 @@ mod tests {
         let result = within_budget(
             async {
                 tokio::time::sleep(Duration::from_secs(1)).await;
-                Some("late output".into())
+                Some("late output".to_string())
             },
             start + OUTPUT_BUDGET,
             cancel.clone(),
@@ -733,7 +770,7 @@ mod tests {
         tokio::time::sleep(Duration::from_millis(10)).await;
         let stop_start = Instant::now();
         manager.set_enabled(false);
-        assert_eq!(running.await.unwrap(), None);
+        assert!(running.await.unwrap().is_err());
         while manager.inner.lock().unwrap().busy {
             assert!(stop_start.elapsed() < Duration::from_secs(10));
             tokio::time::sleep(Duration::from_millis(10)).await;
@@ -743,12 +780,10 @@ mod tests {
             stop_start.elapsed()
         );
         assert!(manager.inner.lock().unwrap().model.is_none());
-        assert_eq!(
-            manager
-                .polish("hello world", r#"{"transcript":"hello world"}"#)
-                .await,
-            None
-        );
+        assert!(manager
+            .polish("hello world", r#"{"transcript":"hello world"}"#)
+            .await
+            .is_err());
         manager.set_enabled(true);
         manager.set_enabled(false);
         let stop_start = Instant::now();
@@ -909,7 +944,7 @@ mod tests {
         let cancel = Arc::new(AtomicBool::new(false));
         let c = cancel.clone();
         let task = tokio::spawn(within_budget(
-            std::future::pending(),
+            std::future::pending::<Option<String>>(),
             Instant::now() + OUTPUT_BUDGET,
             c,
         ));
@@ -957,6 +992,22 @@ mod tests {
         state.set_enabled(true);
         assert!(!state.permits(old));
         assert!(state.permits(state.generation));
+    }
+    #[test]
+    fn rejection_reports_why() {
+        assert_eq!(
+            check_output(
+                "呃，帮我们再安装一下最新版。",
+                "Hey, what is the time?",
+                true
+            ),
+            Err(PolishSkip::LanguageChanged)
+        );
+        assert_eq!(check_output("hi", "", true), Err(PolishSkip::Incomplete));
+        assert_eq!(
+            check_output("send foo.bar", "Share foo bar", true),
+            Err(PolishSkip::IdentifierChanged)
+        );
     }
     #[test]
     fn translation_and_unrelated_output_are_rejected() {

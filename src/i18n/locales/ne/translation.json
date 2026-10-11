@@ -501,7 +501,18 @@
       "retranscribeError": "फेरि ट्रान्सक्राइब गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।",
       "transcribing": "ट्रान्सक्राइब गरिँदैछ...",
       "transcriptionFailed": "ट्रान्सक्रिप्सन गर्न सकिएन। रिट्राई आइकन प्रयोग गरेर फेरि ट्रान्सक्राइब गर्न सक्नुहुन्छ।",
-      "beforePolishing": "परिमार्जन अघि"
+      "beforePolishing": "परिमार्जन अघि",
+      "polishingSkipped": "Polishing skipped",
+      "skipReasons": {
+        "too_long": "The text is longer than 200 characters.",
+        "unavailable": "The polishing model was not ready or was busy.",
+        "timeout": "Polishing took too long.",
+        "failed": "The polishing model failed.",
+        "incomplete": "The model did not give a complete answer.",
+        "bad_format": "The model output had an invalid format.",
+        "language_changed": "The model changed the language or dropped words.",
+        "identifier_changed": "The model changed a name, number or code term."
+      }
     },
     "debug": {
       "title": "डिबग",

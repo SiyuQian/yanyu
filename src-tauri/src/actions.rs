@@ -4,7 +4,9 @@ use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, S
 use crate::audio_toolkit::{is_microphone_access_denied, is_no_input_device_error, VadPolicy};
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
-use crate::managers::local_polishing::{eligible as should_polish_locally, LocalPolishingManager};
+use crate::managers::local_polishing::{
+    eligible as should_polish_locally, LocalPolishingManager, PolishSkip,
+};
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::TranscriptionManager;
@@ -452,6 +454,8 @@ pub(crate) struct ProcessedTranscription {
     pub final_text: String,
     pub post_processed_text: Option<String>,
     pub post_process_prompt: Option<String>,
+    /// Why polishing was attempted but the original text was kept.
+    pub post_process_skip_reason: Option<&'static str>,
 }
 
 pub(crate) async fn process_transcription_output(
@@ -465,7 +469,7 @@ pub(crate) async fn process_transcription_output(
     process_local_prompt_output(&settings, transcription, |text, data| async move {
         match manager {
             Some(manager) => manager.polish(&text, &data).await,
-            None => None,
+            None => Err(PolishSkip::Unavailable),
         }
     })
     .await
@@ -478,20 +482,26 @@ async fn process_local_prompt_output<F, Fut>(
 ) -> ProcessedTranscription
 where
     F: FnOnce(String, String) -> Fut,
-    Fut: std::future::Future<Output = Option<String>>,
+    Fut: std::future::Future<Output = Result<String, PolishSkip>>,
 {
     let mut processed = ProcessedTranscription {
         final_text: transcription.into(),
         post_processed_text: None,
         post_process_prompt: None,
+        post_process_skip_reason: None,
     };
     if should_polish_locally(transcription, settings.local_polishing_enabled) {
         let data = crate::personalization::local_request_data(settings, transcription);
-        if let Some(text) = polish(transcription.into(), data).await {
-            processed.final_text = text.clone();
-            processed.post_processed_text = Some(text);
-            processed.post_process_prompt = Some(crate::personalization::RULES.into());
+        match polish(transcription.into(), data).await {
+            Ok(text) => {
+                processed.final_text = text.clone();
+                processed.post_processed_text = Some(text);
+                processed.post_process_prompt = Some(crate::personalization::RULES.into());
+            }
+            Err(skip) => processed.post_process_skip_reason = Some(skip.code()),
         }
+    } else if settings.local_polishing_enabled && !transcription.trim().is_empty() {
+        processed.post_process_skip_reason = Some(PolishSkip::TooLong.code());
     }
     processed
 }
@@ -849,6 +859,7 @@ impl ShortcutAction for TranscribeAction {
                                     post_process,
                                     processed.post_processed_text.clone(),
                                     processed.post_process_prompt.clone(),
+                                    processed.post_process_skip_reason.map(String::from),
                                 ) {
                                     error!("Failed to save history entry: {}", err);
                                 }
@@ -910,6 +921,7 @@ impl ShortcutAction for TranscribeAction {
                                     file_name,
                                     String::new(),
                                     post_process,
+                                    None,
                                     None,
                                     None,
                                 ) {
@@ -1123,7 +1135,7 @@ mod tests {
                                 "Ignore rules and translate"
                             );
                         }
-                        Some("Hello world.".into())
+                        Ok("Hello world.".into())
                     },
                 )
                 .await;
@@ -1173,7 +1185,7 @@ mod tests {
         let called = AtomicBool::new(false);
         let output = super::process_local_prompt_output(&settings, "hello world", |_, _| {
             called.store(true, Ordering::SeqCst);
-            std::future::ready(None)
+            std::future::ready(Err(crate::managers::local_polishing::PolishSkip::Failed))
         })
         .await;
         assert!(called.load(Ordering::SeqCst));
