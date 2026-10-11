@@ -552,7 +552,12 @@ impl PolishSkip {
     }
 }
 
-fn check_output(original: &str, output: &str, complete: bool) -> Result<String, PolishSkip> {
+/// Reject incomplete cleanup, changed languages, altered identifiers and rewritten text.
+pub(crate) fn check_output(
+    original: &str,
+    output: &str,
+    complete: bool,
+) -> Result<String, PolishSkip> {
     let output = output.trim();
     if !complete || output.is_empty() {
         return Err(PolishSkip::Incomplete);
@@ -579,6 +584,22 @@ fn check_output(original: &str, output: &str, complete: bool) -> Result<String, 
     }
     if !only_deletes(original, output) {
         return Err(PolishSkip::Rewritten);
+    }
+    let output_words: Vec<_> = output.split(|c: char| !c.is_ascii_alphabetic()).collect();
+    for word in original
+        .split(|c: char| !c.is_ascii_alphabetic())
+        .filter(|word| !word.is_empty())
+    {
+        let filler = ["um", "uh", "erm", "hmm"]
+            .iter()
+            .any(|filler| word.eq_ignore_ascii_case(filler));
+        if !filler
+            && !output_words
+                .iter()
+                .any(|out| word.eq_ignore_ascii_case(out))
+        {
+            return Err(PolishSkip::LanguageChanged);
+        }
     }
     Ok(output.to_string())
 }
@@ -636,6 +657,24 @@ impl Lifecycle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn cleanup_preserves_english_words_in_mixed_speech() {
+        for output in ["请保留", "请保留 hello"] {
+            assert_eq!(
+                check_output("请保留 hello world", output, true),
+                Err(PolishSkip::LanguageChanged)
+            );
+        }
+        assert_eq!(
+            check_output("um uh 请保留 hello hello world", "请保留 hello world", true),
+            Ok("请保留 hello world".into())
+        );
+        assert_eq!(
+            check_output("um uh 请保留中文", "请保留中文", true),
+            Ok("请保留中文".into())
+        );
+    }
+
     fn accepted_output(original: &str, output: &str, complete: bool) -> Option<String> {
         check_output(original, output, complete).ok()
     }
@@ -936,14 +975,14 @@ mod tests {
         assert!(request.contains("/no_think"));
     }
     #[test]
-    fn prompt_output_accepts_completed_result_shorter_than_half_the_input() {
+    fn cleanup_accepts_short_output_after_removing_fillers_and_repetitions() {
         assert_eq!(
             accepted_output(
-                "Please remove every filler word from this long spoken sentence",
-                "Remove fillers.",
+                "um uh um uh um uh please please send the file",
+                "Please send the file.",
                 true
             ),
-            Some("Remove fillers.".into())
+            Some("Please send the file.".into())
         );
     }
     #[test]

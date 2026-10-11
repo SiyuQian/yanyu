@@ -128,6 +128,7 @@ struct ChatCompletionResponse {
 #[derive(Debug, Deserialize)]
 struct ChatChoice {
     message: ChatMessageResponse,
+    finish_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -295,7 +296,7 @@ fn report_reqwest_error(context: &str, error: &reqwest::Error) -> String {
 }
 
 /// Send a chat completion request to an OpenAI-compatible API
-/// Returns Ok(Some(content)) on success, Ok(None) if response has no content,
+/// Returns Ok(Some(content)) on success, Ok(None) if response has no usable content,
 /// or Err on actual errors (HTTP, parsing, etc.)
 pub async fn send_chat_completion(
     provider: &PostProcessProvider,
@@ -458,6 +459,7 @@ pub async fn send_chat_completion_with_schema(
     Ok(completion
         .choices
         .first()
+        .filter(|choice| matches!(choice.finish_reason.as_deref(), None | Some("stop")))
         .and_then(|choice| choice.message.content.clone()))
 }
 

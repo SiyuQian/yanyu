@@ -276,6 +276,15 @@ export function PersonalizationSettings() {
             )}
             {(pending || trialPhase !== "idle" || trial) && (
               <>
+                {pending && (
+                  <p className="text-sm text-text/70">
+                    {t(
+                      localPolishing
+                        ? "personalization.localDisclosure"
+                        : "personalization.disclosure",
+                    )}
+                  </p>
+                )}
                 <p className="text-sm text-text/70">
                   {t("personalization.configuredOnly")}
                 </p>
