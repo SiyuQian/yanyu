@@ -159,7 +159,7 @@
     "localPolishing": {
       "title": "Local polishing",
       "label": "Polish voice input locally",
-      "description": "Conservatively clean up speech using Qwen3-0.6B on this Mac. Enabled personalization supplies terminology context only. Without it, use basic cleanup. Preserve meaning and spoken languages. Inputs over 200 characters skip polishing. Keep the original if the model is unavailable, output is invalid or processing exceeds 500 ms. Turning this off releases the loaded model.",
+      "description": "Conservatively clean up speech with Qwen3-0.6B on this Mac. Custom words allow limited correction of clear recognition errors to listed terms; enabled personalization supplies domain context. Keep uncertain names and quotations. Preserve meaning and spoken languages. Inputs over 200 characters skip polishing. Keep the original if the model is unavailable, output is invalid or processing exceeds 500 ms. Turning this off releases the loaded model.",
       "download": "Download Qwen3-0.6B (651 MB)",
       "cancel": "Cancel download",
       "delete": "Delete model",
@@ -769,7 +769,7 @@
   },
   "personalization": {
     "title": "Personalization",
-    "intro": "After setup, enabled personalization automatically removes fillers and unintended repetitions from each dictation while preserving meaning and spoken languages. Optional answers supply usage and terminology background.",
+    "intro": "After setup, enabled personalization removes fillers and unintended repetitions and can correct clear recognition errors to your custom terms. Keep uncertain names and quotations while preserving meaning and spoken languages. Optional answers supply usage and domain background.",
     "setup": "Set up personalization",
     "later": "Later",
     "edit": "Edit profile",
@@ -784,7 +784,7 @@
     "disable": "Disable personalization",
     "delete": "Delete profile",
     "summary": "Common uses: {{uses}}. Field: {{domain}}.",
-    "disclosure": "Your profile is saved on this device. With local polishing off, daily dictation and optional previews send your transcript and enabled profile context to your configured service. Disabling or deleting excludes profile context from future requests.",
+    "disclosure": "Your profile is saved on this device. With local polishing off, daily dictation and optional previews send your transcript, bounded custom terminology and enabled profile context to your configured service. Disabling or deleting excludes profile context from future requests; custom terms remain available independently.",
     "modeDisclosure": "Automatic processing uses fixed conservative rules and optional terminology context. Saved custom prompts remain on disk and do not affect this cleanup. Cleanup aims to preserve meaning, languages, emphasis, negations and instructions. Uncertain repetitions stay.",
     "ready": "Enabled; automatic processing configured",
     "pending": "Saved; finish service setup",
@@ -830,7 +830,7 @@
       "recording": "Recording (up to one minute)…",
       "processing": "Recognizing and processing…"
     },
-    "localDisclosure": "Your profile and transcript stay on this Mac during local polishing and local trials. Enabled profile context supplies terminology background only. Disabling or deleting excludes profile context from future requests.",
+    "localDisclosure": "Your profile, custom terminology and transcript stay on this Mac during local polishing and local trials. Custom terms allow limited recognition correction; enabled profile context supplies domain background. Disabling or deleting excludes profile context, while custom terms remain available independently.",
     "localReady": "Enabled; automatic local polishing ready",
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",

@@ -139,7 +139,9 @@ test("keyboard questions save a pending profile without replacing legacy prompts
   await page.keyboard.press("Space");
   await page.getByRole("button", { name: "Review profile" }).click();
   await expect(
-    page.getByText(/send your transcript and enabled profile context/),
+    page.getByText(
+      /send your transcript, bounded custom terminology and enabled profile context/,
+    ),
   ).toBeVisible();
   await page.getByRole("button", { name: "Save and enable" }).click();
   await expect(
