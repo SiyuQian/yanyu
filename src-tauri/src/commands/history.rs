@@ -100,6 +100,7 @@ pub async fn retry_history_entry_transcription(
             transcription,
             processed.post_processed_text,
             processed.post_process_prompt,
+            processed.post_process_skip_reason.map(String::from),
         )
         .map(|_| ())
         .map_err(|e| e.to_string())

@@ -501,7 +501,18 @@
       "retranscribeError": "Misslyckades med att transkribera igen. Försök igen.",
       "transcribing": "Transkriberar...",
       "transcriptionFailed": "Transkribering misslyckades. Du kan transkribera igen med hjälp av ikonen för nytt försök.",
-      "beforePolishing": "Före bearbetning"
+      "beforePolishing": "Före bearbetning",
+      "polishingSkipped": "Polishing skipped",
+      "skipReasons": {
+        "too_long": "The text is longer than 200 characters.",
+        "unavailable": "The polishing model was not ready or was busy.",
+        "timeout": "Polishing took too long.",
+        "failed": "The polishing model failed.",
+        "incomplete": "The model did not give a complete answer.",
+        "bad_format": "The model output had an invalid format.",
+        "language_changed": "The model changed the language or dropped words.",
+        "identifier_changed": "The model changed a name, number or code term."
+      }
     },
     "debug": {
       "title": "Felsökning",

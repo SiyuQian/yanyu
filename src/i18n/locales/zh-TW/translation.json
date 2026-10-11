@@ -501,7 +501,18 @@
       "retranscribeError": "重新轉錄失敗，請重試。",
       "transcribing": "轉錄中...",
       "transcriptionFailed": "轉錄失敗。您可以使用重試圖示重新轉錄。",
-      "beforePolishing": "潤飾前"
+      "beforePolishing": "潤飾前",
+      "polishingSkipped": "已略過潤飾",
+      "skipReasons": {
+        "too_long": "文字超過 200 個字元。",
+        "unavailable": "潤飾模型尚未就緒或忙碌中。",
+        "timeout": "潤飾耗時過長。",
+        "failed": "潤飾模型發生錯誤。",
+        "incomplete": "模型沒有給出完整的結果。",
+        "bad_format": "模型輸出格式無效。",
+        "language_changed": "模型改變了語言或遺失了內容。",
+        "identifier_changed": "模型改動了名稱、數字或程式術語。"
+      }
     },
     "debug": {
       "title": "偵錯",

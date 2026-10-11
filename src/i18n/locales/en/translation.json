@@ -501,7 +501,18 @@
       "retranscribeError": "Failed to re-transcribe. Please try again.",
       "transcribing": "Transcribing...",
       "transcriptionFailed": "Transcription failed. You can re-transcribe using the retry icon.",
-      "beforePolishing": "Before polishing"
+      "beforePolishing": "Before polishing",
+      "polishingSkipped": "Polishing skipped",
+      "skipReasons": {
+        "too_long": "The text is longer than 200 characters.",
+        "unavailable": "The polishing model was not ready or was busy.",
+        "timeout": "Polishing took too long.",
+        "failed": "The polishing model failed.",
+        "incomplete": "The model did not give a complete answer.",
+        "bad_format": "The model output had an invalid format.",
+        "language_changed": "The model changed the language or dropped words.",
+        "identifier_changed": "The model changed a name, number or code term."
+      }
     },
     "debug": {
       "title": "Debug",
