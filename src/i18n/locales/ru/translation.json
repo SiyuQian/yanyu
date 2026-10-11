@@ -503,6 +503,7 @@
       "transcriptionFailed": "Транскрипция не удалась. Вы можете перетранскрибировать, используя значок повтора.",
       "beforePolishing": "До обработки",
       "polishingSkipped": "Polishing skipped",
+      "polishingUnchanged": "Polishing made no changes",
       "skipReasons": {
         "too_long": "The text is longer than 200 characters.",
         "unavailable": "The polishing model was not ready or was busy.",
@@ -511,7 +512,8 @@
         "incomplete": "The model did not give a complete answer.",
         "bad_format": "The model output had an invalid format.",
         "language_changed": "The model changed the language or dropped words.",
-        "identifier_changed": "The model changed a name, number or code term."
+        "identifier_changed": "The model changed a name, number or code term.",
+        "rewritten": "The model rephrased the text instead of only removing words."
       }
     },
     "debug": {

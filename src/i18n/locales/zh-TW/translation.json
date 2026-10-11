@@ -503,6 +503,7 @@
       "transcriptionFailed": "轉錄失敗。您可以使用重試圖示重新轉錄。",
       "beforePolishing": "潤飾前",
       "polishingSkipped": "已略過潤飾",
+      "polishingUnchanged": "潤飾沒有改動",
       "skipReasons": {
         "too_long": "文字超過 200 個字元。",
         "unavailable": "潤飾模型尚未就緒或忙碌中。",
@@ -511,7 +512,8 @@
         "incomplete": "模型沒有給出完整的結果。",
         "bad_format": "模型輸出格式無效。",
         "language_changed": "模型改變了語言或遺失了內容。",
-        "identifier_changed": "模型改動了名稱、數字或程式術語。"
+        "identifier_changed": "模型改動了名稱、數字或程式術語。",
+        "rewritten": "模型改寫了句子，而不只是刪除贅詞。"
       }
     },
     "debug": {
