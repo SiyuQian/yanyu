@@ -158,8 +158,8 @@
   "settings": {
     "localPolishing": {
       "title": "Local polishing",
-      "label": "Process Voice Input with selected prompt",
-      "description": "Apply the selected custom prompt using Qwen3-0.6B on this Mac. Inputs over 200 characters skip processing. If the model is unavailable, fails or takes over 500 ms, keep the original transcript. Turning this off releases the loaded model.",
+      "label": "Polish voice input locally",
+      "description": "Conservatively clean up speech using Qwen3-0.6B on this Mac. Enabled personalization supplies terminology context only. Without it, use basic cleanup. Preserve meaning and spoken languages. Inputs over 200 characters skip polishing. Keep the original if the model is unavailable, output is invalid or processing exceeds 500 ms. Turning this off releases the loaded model.",
       "download": "Download Qwen3-0.6B (651 MB)",
       "cancel": "Cancel download",
       "delete": "Delete model",
@@ -771,12 +771,12 @@
     "disable": "Disable personalization",
     "delete": "Delete profile",
     "summary": "Common uses: {{uses}}. Field: {{domain}}.",
-    "disclosure": "Your profile stays on this device. Cloud processing sends your transcript and selected profile context to your selected service when you dictate or explicitly run a trial. Disabling or deleting excludes profile context from future requests.",
-    "modeDisclosure": "Enabling switches to generated cleanup rules. Your saved custom prompts remain available in Advanced settings. We preserve meaning, languages, emphasis, negations and instructions; uncertain repetitions stay.",
+    "disclosure": "Your profile stays on this device. With local polishing off, an explicit trial sends your transcript and enabled profile context to your configured service. Disabling or deleting excludes profile context from future requests.",
+    "modeDisclosure": "Local polishing uses fixed conservative rules with optional terminology context. Saved custom prompts remain on disk and do not affect local polishing. Cleanup aims to preserve meaning, languages, emphasis, negations and instructions. Uncertain repetitions stay.",
     "ready": "Enabled; service configured",
     "pending": "Saved; finish service setup",
-    "disabled": "Disabled or custom mode; profile context is excluded",
-    "configuredOnly": "Configured does not mean tested. Only a completed trial can show whether this service works for a sample.",
+    "disabled": "Disabled; profile context is excluded",
+    "configuredOnly": "Readiness does not mean tested. A completed trial shows only whether processing returned a usable result for that sample.",
     "continueSetup": "Continue service setup",
     "needsAsr": "Choose and download a speech recognition model before recording a trial.",
     "trialInfo": "Optional one-minute trial: recording and stopping sends recognized text to your configured service. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
@@ -786,9 +786,9 @@
     "original": "Original recognition (before optional processing)",
     "processed": "Processed output",
     "trialSucceeded": "Service returned a result for this sample. Check that meaning and languages were preserved.",
-    "trialFallback": "Processing failed or returned no usable result. Original recognition is preserved.",
+    "trialFallback": "Processing was skipped, unavailable, timed out or returned no usable result. Original recognition is preserved.",
     "error": "Could not complete this operation. Your previous settings remain available. Try again or finish setup.",
-    "serviceGuidance": "Choose the service you want to use and enter its required model and API key. Personalization uses this existing configuration; it does not install a service or change your provider. Saving configuration is not a successful service test.",
+    "serviceGuidance": "Configure a service for optional personalization trials when local polishing is off. Local polishing uses Qwen3-0.6B on this Mac and requires no external service. Saving configuration is not a successful service test.",
     "advancedGuidance": "Custom prompts are an explicit alternative to generated cleanup. Returning to custom mode restores legacy shortcut behavior and excludes profile context. The selected custom prompt may change languages or meaning.",
     "customMode": "Use saved custom prompts",
     "uses": {
@@ -816,6 +816,11 @@
       "starting": "Preparing microphone…",
       "recording": "Recording (up to one minute)…",
       "processing": "Recognizing and processing…"
-    }
+    },
+    "localDisclosure": "Your profile and transcript stay on this Mac during local polishing and local trials. Enabled profile context supplies terminology background only. Disabling or deleting excludes profile context from future requests.",
+    "localReady": "Enabled; local polishing ready",
+    "localPending": "Saved; enable local polishing and finish model setup",
+    "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
+    "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
   }
 }

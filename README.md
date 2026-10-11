@@ -6,6 +6,8 @@ Yanyu is a personal speech input project based on [Handy](https://github.com/cjp
 
 The application already uses Yanyu branding and an independent identifier. The interface redesign, training-data export, and model-training workflow are not yet implemented.
 
+Optional local polishing uses Qwen3-0.6B on Apple Silicon Macs with fixed conservative cleanup rules. Enable it in General settings. An enabled personalization profile supplies terminology context only. Disabled or deleted profiles do not influence local polishing. The Prompt editor is removed, but saved legacy prompts remain on disk. Local trials use the same processing as daily dictation and never fall back to an external service. Inputs over 200 characters skip polishing. Unavailable models, invalid output and the 500 ms deadline preserve the original transcript. These checks do not guarantee semantic fidelity. With local polishing off, optional personalization trials retain the configured external service path.
+
 ## Project origin
 
 - Upstream project: [cjpais/Handy](https://github.com/cjpais/Handy)

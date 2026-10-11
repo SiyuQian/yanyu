@@ -54,6 +54,7 @@ export function PersonalizationSettings() {
   const [trialPhase, setTrialPhase] = useState<
     "idle" | "starting" | "recording" | "processing"
   >("idle");
+  const [trialLocalRoute, setTrialLocalRoute] = useState<boolean | null>(null);
   const [trial, setTrial] = useState<TrialResult | null>(null);
   const trialId = useRef<string | null>(null);
   const mounted = useRef(true);
@@ -72,16 +73,26 @@ export function PersonalizationSettings() {
   }, []);
   useEffect(() => {
     let current = true;
-    commands
-      .getPersonalizationStatus()
-      .then((result) => {
+    let fetching = false;
+    const refresh = async () => {
+      if (fetching) return;
+      fetching = true;
+      try {
+        const result = await commands.getPersonalizationStatus();
         if (current) setStatus(result);
-      })
-      .catch(() => {
+      } catch {
         if (current) setStatus(null);
-      });
+      } finally {
+        fetching = false;
+      }
+    };
+    void refresh();
+    const timer = settings?.local_polishing_enabled
+      ? window.setInterval(() => void refresh(), 500)
+      : undefined;
     return () => {
       current = false;
+      window.clearInterval(timer);
     };
   }, [settings]);
 
@@ -113,12 +124,16 @@ export function PersonalizationSettings() {
     const id = crypto.getRandomValues(new Uint32Array(4)).join("-");
     trialId.current = id;
     setTrial(null);
+    setTrialLocalRoute(null);
     setError(false);
     setTrialPhase("starting");
     try {
       const result = await commands.startPersonalizationTrial(id);
       if (result.status === "error") throw new Error(result.error);
-      if (mounted.current && trialId.current === id) setTrialPhase("recording");
+      if (mounted.current && trialId.current === id) {
+        setTrialLocalRoute(result.data);
+        setTrialPhase("recording");
+      }
     } catch {
       if (mounted.current && trialId.current === id) {
         setError(true);
@@ -166,7 +181,10 @@ export function PersonalizationSettings() {
     return () => window.clearTimeout(timer);
   }, [trialPhase]);
 
-  const pending = profile.enabled && settings?.processing_mode === "generated";
+  const localPolishing = settings?.local_polishing_enabled ?? false;
+  const pending =
+    profile.enabled &&
+    (localPolishing || settings?.processing_mode === "generated");
   return (
     <SettingsGroup variant="card" title={t("personalization.title")}>
       <div className="space-y-4 py-3">
@@ -182,8 +200,12 @@ export function PersonalizationSettings() {
               {t(
                 pending
                   ? status?.active
-                    ? "personalization.ready"
-                    : "personalization.pending"
+                    ? localPolishing
+                      ? "personalization.localReady"
+                      : "personalization.ready"
+                    : localPolishing
+                      ? "personalization.localPending"
+                      : "personalization.pending"
                   : "personalization.disabled",
               )}
             </p>
@@ -252,12 +274,12 @@ export function PersonalizationSettings() {
                   : ""}
               </p>
             )}
-            {pending && (
+            {(pending || trialPhase !== "idle" || trial) && (
               <>
                 <p className="text-sm text-text/70">
                   {t("personalization.configuredOnly")}
                 </p>
-                {!status?.service_ready && (
+                {!status?.service_ready && !localPolishing && (
                   <Button
                     variant="secondary"
                     onClick={() =>
@@ -274,12 +296,20 @@ export function PersonalizationSettings() {
                 {!status?.asr_ready && (
                   <p className="text-sm">{t("personalization.needsAsr")}</p>
                 )}
-                <p className="text-sm text-text/70">
-                  {t("personalization.trialInfo")}
-                </p>
+                {(trialPhase === "idle" || trialLocalRoute !== null) && (
+                  <p className="text-sm text-text/70">
+                    {t(
+                      (trialPhase === "idle" ? localPolishing : trialLocalRoute)
+                        ? "personalization.localTrialInfo"
+                        : "personalization.trialInfo",
+                    )}
+                  </p>
+                )}
                 {trialPhase === "idle" ? (
                   <Button
-                    disabled={!status?.active || !status?.asr_ready || busy}
+                    disabled={
+                      !pending || !status?.active || !status?.asr_ready || busy
+                    }
                     onClick={() => void startTrial()}
                   >
                     {t("personalization.record")}
@@ -315,7 +345,9 @@ export function PersonalizationSettings() {
                     <p role="status" className="text-sm">
                       {t(
                         trial.processing_succeeded
-                          ? "personalization.trialSucceeded"
+                          ? trial.local_route
+                            ? "personalization.localTrialSucceeded"
+                            : "personalization.trialSucceeded"
                           : "personalization.trialFallback",
                       )}
                     </p>
@@ -408,7 +440,13 @@ export function PersonalizationSettings() {
                 ? ` (${draft.other_domain})`
                 : ""}
             </p>
-            <p className="text-sm">{t("personalization.disclosure")}</p>
+            <p className="text-sm">
+              {t(
+                localPolishing
+                  ? "personalization.localDisclosure"
+                  : "personalization.disclosure",
+              )}
+            </p>
             <p className="text-sm">{t("personalization.modeDisclosure")}</p>
             <div className="flex gap-2">
               <Button
