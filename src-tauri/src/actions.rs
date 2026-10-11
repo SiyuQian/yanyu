@@ -509,7 +509,7 @@ fn output_processing_requested(settings: &AppSettings) -> bool {
     settings.local_polishing_enabled || crate::personalization::generated_enabled(settings)
 }
 
-async fn process_transcription_output_with_settings(
+pub(crate) async fn process_transcription_output_with_settings(
     app: &AppHandle,
     settings: &AppSettings,
     transcription: &str,
@@ -526,7 +526,7 @@ async fn process_transcription_output_with_settings(
     .await
 }
 
-async fn process_output_with_local_polisher<F, Fut>(
+pub(crate) async fn process_output_with_local_polisher<F, Fut>(
     settings: &AppSettings,
     transcription: &str,
     polish: F,

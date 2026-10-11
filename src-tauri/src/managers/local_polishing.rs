@@ -577,16 +577,21 @@ pub(crate) fn check_output(
         .split_whitespace()
         .map(|token| token.trim_matches(|c: char| !c.is_alphanumeric() && !"_+#$".contains(c)))
         .collect();
-    // shortcut: embedded identifiers retain substring scans; use multi-pattern search if these dominate long inputs.
+    // shortcut: substring scans share a 1 MB work budget; use multi-pattern search if larger cleanups are needed.
+    let mut remaining_search_bytes = 1_000_000usize;
     for token in original.split_whitespace() {
         let token = token.trim_matches(|c: char| !c.is_alphanumeric() && !"_+#$".contains(c));
         if (token.contains(['_', '.', '/', '@', '-', ':', '+', '#', '$'])
             || token.chars().any(|c| c.is_ascii_digit())
             || token.chars().skip(1).any(|c| c.is_ascii_uppercase()))
             && !output_tokens.contains(token)
-            && !output.contains(token)
         {
-            return Err(PolishSkip::IdentifierChanged);
+            remaining_search_bytes = remaining_search_bytes
+                .checked_sub(output.len())
+                .ok_or(PolishSkip::TooLong)?;
+            if !output.contains(token) {
+                return Err(PolishSkip::IdentifierChanged);
+            }
         }
     }
     if !only_deletes(original, output) {
@@ -736,6 +741,32 @@ mod tests {
             started.elapsed() < Duration::from_secs(5),
             "long Han validation exceeded five seconds: {:?}",
             started.elapsed()
+        );
+    }
+
+    #[test]
+    fn cleanup_validates_long_punctuation_joined_identifiers() {
+        let identifiers = (0..20_000)
+            .map(|index| format!("term.{index:05}"))
+            .collect::<Vec<_>>();
+        let original = identifiers.join(" ");
+        let output = identifiers.join(",");
+        let started = Instant::now();
+        assert!(
+            matches!(
+                check_output(&original, &output, true),
+                Err(PolishSkip::TooLong)
+            ),
+            "Unbounded identifier scans must preserve the original"
+        );
+        assert!(started.elapsed() < Duration::from_secs(5));
+        assert_eq!(
+            check_output("term.00001 term.00002", "term.00001,term.00002", true),
+            Ok("term.00001,term.00002".into())
+        );
+        assert_eq!(
+            check_output("term.00001 term.00002", "term.00001,term.00003", true),
+            Err(PolishSkip::IdentifierChanged)
         );
     }
 

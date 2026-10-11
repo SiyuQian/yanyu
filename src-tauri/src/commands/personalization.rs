@@ -174,21 +174,21 @@ fn processing_readiness(
     (ready, generated_enabled(settings) && ready)
 }
 
-async fn trial_processing<L, E, LF, EF>(
+async fn trial_processing<'a, L, E, LF, EF>(
     local_route: bool,
-    settings: &crate::settings::AppSettings,
+    settings: &'a crate::settings::AppSettings,
     local: L,
     external: E,
 ) -> Option<String>
 where
-    L: FnOnce() -> LF,
+    L: FnOnce(&'a crate::settings::AppSettings) -> LF,
     E: FnOnce() -> EF,
     LF: std::future::Future<Output = Option<String>>,
     EF: std::future::Future<Output = Option<String>>,
 {
     if local_route {
         if settings.local_polishing_enabled {
-            local().await
+            local(settings).await
         } else {
             None
         }
@@ -357,10 +357,12 @@ pub async fn stop_personalization_trial(app: AppHandle, id: String) -> Result<Tr
         let operation = trial_processing(
             local_route,
             &settings,
-            || async {
-                crate::actions::process_transcription_output(&app, &original)
-                    .await
-                    .post_processed_text
+            |snapshot| async {
+                crate::actions::process_transcription_output_with_settings(
+                    &app, snapshot, &original,
+                )
+                .await
+                .post_processed_text
             },
             || crate::actions::post_process_transcription(&settings, &original),
         );
@@ -457,7 +459,7 @@ mod tests {
         let output = trial_processing(
             settings.local_polishing_enabled,
             &settings,
-            || {
+            |_| {
                 local_called.store(true, Ordering::Release);
                 std::future::ready(None)
             },
@@ -466,6 +468,58 @@ mod tests {
         .await;
         assert!(local_called.load(Ordering::Acquire));
         assert!(output.is_none());
+    }
+
+    #[tokio::test]
+    async fn local_preview_never_redispatches_externally_after_settings_change() {
+        use crate::managers::local_polishing::PolishSkip;
+        use std::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.processing_mode = ProcessingMode::Generated;
+        settings.personalization.enabled = true;
+        settings.post_process_provider_id = "custom".into();
+        let provider = settings.post_process_provider_mut("custom").unwrap();
+        provider.base_url = format!("http://{}/v1", listener.local_addr().unwrap());
+        provider.supports_structured_output = false;
+        settings
+            .post_process_models
+            .insert("custom".into(), "fixture".into());
+        let current = std::sync::Mutex::new(settings.clone());
+        let local_called = AtomicBool::new(false);
+        let original = "hello world";
+        let processed = trial_processing(
+            true,
+            &settings,
+            |snapshot| async {
+                // Change persisted settings after route selection, before dispatch.
+                current.lock().unwrap().local_polishing_enabled = false;
+                crate::actions::process_output_with_local_polisher(
+                    snapshot,
+                    original,
+                    |_, _| async {
+                        local_called.store(true, Ordering::Release);
+                        Err(PolishSkip::Unavailable)
+                    },
+                )
+                .await
+                .post_processed_text
+            },
+            || async { panic!("Retained local previews must never select the external route") },
+        )
+        .await;
+        assert!(
+            matches!(
+                listener.accept(),
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock
+            ),
+            "Local preview sent an external request"
+        );
+        assert!(local_called.load(Ordering::Acquire));
+        assert_eq!(processed.as_deref().unwrap_or(original), original);
     }
 
     #[tokio::test]
@@ -487,7 +541,7 @@ mod tests {
         let processed = trial_processing(
             session.local_route,
             &settings,
-            || async { panic!("Disabled local polishing must preserve the original") },
+            |_| async { panic!("Disabled local polishing must preserve the original") },
             || async { panic!("A local recording must never reach an external service") },
         )
         .await;
@@ -518,8 +572,8 @@ mod tests {
             let output = trial_processing(
                 session.local_route,
                 &settings,
-                || async {
-                    let data = crate::personalization::local_request_data(&settings, "hello");
+                |snapshot| async {
+                    let data = crate::personalization::local_request_data(snapshot, "hello");
                     assert!(!data.contains("profile_context"));
                     assert!(!data.contains("private domain"));
                     Some("local fixture".into())
@@ -546,7 +600,7 @@ mod tests {
         let output = trial_processing(
             session.local_route,
             &settings,
-            || async { panic!("External trial must retain its starting route") },
+            |_| async { panic!("External trial must retain its starting route") },
             || async { Some("external fixture".into()) },
         )
         .await;
@@ -561,7 +615,7 @@ mod tests {
         let output = trial_processing(
             settings.local_polishing_enabled,
             &settings,
-            || async { panic!("External trials must not invoke local polishing") },
+            |_| async { panic!("External trials must not invoke local polishing") },
             || async { Some("external fixture".into()) },
         )
         .await;
@@ -570,7 +624,7 @@ mod tests {
         assert!(trial_processing(
             false,
             &settings,
-            || async { panic!("disabled") },
+            |_| async { panic!("disabled") },
             || async { panic!("disabled") }
         )
         .await
