@@ -1304,19 +1304,30 @@ impl TranscriptionManager {
         let output_was_translated = run_plan.target_language.as_deref() == Some("en");
         let applied_language_hint = run_plan.language.clone();
 
+        // Non-whisper models that take a vocabulary (e.g. Qwen3-ASR) get the
+        // custom words as recognition hints. Fuzzy post-correction cannot help
+        // there for Chinese, which has no spaces to split words on.
+        let vocabulary = if !model_is_whisper && info.supports_vocabulary {
+            settings.custom_words.clone()
+        } else {
+            Vec::new()
+        };
+
         let run_options = RunOptions {
             task: run_plan.task,
             language: run_plan.language,
             target_language: run_plan.target_language,
             family,
+            vocabulary,
             ..Default::default()
         };
 
         debug!(
-            "transcribe-cpp run: task={:?}, language={:?}, initial_prompt={}",
+            "transcribe-cpp run: task={:?}, language={:?}, initial_prompt={}, vocabulary={}",
             run_options.task,
             run_options.language,
-            run_options.family.is_some()
+            run_options.family.is_some(),
+            run_options.vocabulary.len()
         );
 
         let transcript = match self.engine.transcribe(audio, run_options) {

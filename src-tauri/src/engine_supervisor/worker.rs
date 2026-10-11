@@ -311,6 +311,7 @@ fn load(
             .unwrap_or_else(|| "unknown".to_string()),
         capabilities: model.capabilities(),
         supports_initial_prompt: model.supports(Feature::InitialPrompt),
+        supports_vocabulary: model.supports(Feature::Vocabulary),
     };
     Ok((session, info))
 }

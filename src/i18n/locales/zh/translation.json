@@ -503,6 +503,7 @@
       "transcriptionFailed": "转录失败。您可以使用重试图标重新转录。",
       "beforePolishing": "润色前",
       "polishingSkipped": "已跳过润色",
+      "polishingUnchanged": "润色没有改动",
       "skipReasons": {
         "too_long": "文本超过 200 个字符。",
         "unavailable": "润色模型未就绪或正忙。",
@@ -511,7 +512,8 @@
         "incomplete": "模型没有给出完整的结果。",
         "bad_format": "模型输出格式无效。",
         "language_changed": "模型改变了语言或丢失了内容。",
-        "identifier_changed": "模型改动了名称、数字或代码术语。"
+        "identifier_changed": "模型改动了名称、数字或代码术语。",
+        "rewritten": "模型改写了句子，而不只是删除赘词。"
       }
     },
     "debug": {

@@ -457,6 +457,14 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         </div>
       )}
 
+      {!retrying &&
+        !originalText &&
+        entry.post_processed_text?.trim() === entry.transcription_text && (
+          <p className="text-xs text-mid-gray -mt-2 pb-2">
+            {t("settings.history.polishingUnchanged")}
+          </p>
+        )}
+
       {!retrying && entry.post_process_skip_reason && (
         <p className="text-xs text-mid-gray -mt-2 pb-2">
           {t("settings.history.polishingSkipped")}:{" "}
