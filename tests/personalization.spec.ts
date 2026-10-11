@@ -139,14 +139,14 @@ test("keyboard questions save a pending profile without replacing legacy prompts
   await page.keyboard.press("Space");
   await page.getByRole("button", { name: "Review profile" }).click();
   await expect(
-    page.getByText(/sends your transcript and enabled profile context/),
+    page.getByText(/send your transcript and enabled profile context/),
   ).toBeVisible();
   await page.getByRole("button", { name: "Save and enable" }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "Saved; finish service setup" }),
   ).toContainText("Saved; finish service setup");
   await expect(
-    page.getByRole("button", { name: "Record a trial" }),
+    page.getByRole("button", { name: "Preview with a recording" }),
   ).toBeDisabled();
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("profile-test")!),
@@ -204,10 +204,15 @@ test("ready trial requires an explicit recording and shows a preview comparison"
   await page.getByRole("button", { name: "Set up personalization" }).click();
   await page.getByRole("button", { name: "Review profile" }).click();
   await page.getByRole("button", { name: "Save and enable" }).click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "automatic processing configured" }),
+  ).toBeVisible();
   expect(
     await page.evaluate(() => localStorage.getItem("trial-started")),
   ).toBeNull();
-  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Preview with a recording" }).click();
   await page.getByRole("button", { name: "Stop and compare" }).click();
   await expect(
     page.getByText("嗯，我我我想写代码，但不要改文件。", { exact: true }),
@@ -218,10 +223,10 @@ test("ready trial requires an explicit recording and shows a preview comparison"
   await expect(
     page.getByText(/This sample does not prove a general accuracy gain/),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Record a trial" }).click();
-  await page.getByRole("button", { name: "Cancel trial" }).click();
+  await page.getByRole("button", { name: "Preview with a recording" }).click();
+  await page.getByRole("button", { name: "Cancel preview" }).click();
   await expect(
-    page.getByRole("button", { name: "Record a trial" }),
+    page.getByRole("button", { name: "Preview with a recording" }),
   ).toBeEnabled();
 });
 
@@ -287,20 +292,20 @@ test("failed trial cancellation remains visible and can be retried", async ({
   await page.getByRole("button", { name: "Set up personalization" }).click();
   await page.getByRole("button", { name: "Review profile" }).click();
   await page.getByRole("button", { name: "Save and enable" }).click();
-  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Preview with a recording" }).click();
   await page.getByRole("button", { name: "Stop and compare" }).waitFor();
   await page.evaluate(() =>
     localStorage.setItem("reject-trial-cancel", "true"),
   );
-  await page.getByRole("button", { name: "Cancel trial" }).click();
+  await page.getByRole("button", { name: "Cancel preview" }).click();
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Cancel trial" }),
+    page.getByRole("button", { name: "Cancel preview" }),
   ).toBeVisible();
   await page.evaluate(() => localStorage.removeItem("reject-trial-cancel"));
-  await page.getByRole("button", { name: "Cancel trial" }).click();
+  await page.getByRole("button", { name: "Cancel preview" }).click();
   await expect(
-    page.getByRole("button", { name: "Record a trial" }),
+    page.getByRole("button", { name: "Preview with a recording" }),
   ).toBeEnabled();
 });
 
@@ -317,11 +322,11 @@ test("trial starts when the native webview lacks randomUUID", async ({
   await page.getByRole("button", { name: "Set up personalization" }).click();
   await page.getByRole("button", { name: "Review profile" }).click();
   await page.getByRole("button", { name: "Save and enable" }).click();
-  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Preview with a recording" }).click();
   await expect(
     page.getByRole("button", { name: "Stop and compare" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Cancel trial" }).click();
+  await page.getByRole("button", { name: "Cancel preview" }).click();
 });
 
 test("local preview uses enabled profile in legacy mode without external setup", async ({
@@ -346,7 +351,7 @@ test("local preview uses enabled profile in legacy mode without external setup",
     page.getByRole("button", { name: "Continue service setup" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Record a trial" }),
+    page.getByRole("button", { name: "Preview with a recording" }),
   ).toBeEnabled();
 });
 
@@ -362,7 +367,7 @@ test("local readiness refreshes after the model becomes ready and reports trial 
   });
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "Record a trial" }),
+    page.getByRole("button", { name: "Preview with a recording" }),
   ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "Continue service setup" }),
@@ -372,9 +377,9 @@ test("local readiness refreshes after the model becomes ready and reports trial 
     localStorage.setItem("trial-fallback", "true");
   });
   await expect(
-    page.getByRole("button", { name: "Record a trial" }),
+    page.getByRole("button", { name: "Preview with a recording" }),
   ).toBeEnabled();
-  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Preview with a recording" }).click();
   await page.getByRole("button", { name: "Stop and compare" }).click();
   await expect(
     page.getByText("嗯，我我我想写代码，但不要改文件。", { exact: true }),
@@ -403,7 +408,7 @@ test("trial provenance survives route toggles and keeps disabled local controls 
   const externalSuccess = page
     .getByRole("status")
     .filter({ hasText: /Service returned a result/ });
-  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Preview with a recording" }).click();
   await page.getByRole("button", { name: "Stop and compare" }).waitFor();
   await toggle.focus();
   await page.keyboard.press("Space");
@@ -421,7 +426,7 @@ test("trial provenance survives route toggles and keeps disabled local controls 
   await toggle.focus();
   await page.keyboard.press("Space");
   await expect(externalSuccess).toBeVisible();
-  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Preview with a recording" }).click();
   await page.getByRole("button", { name: "Stop and compare" }).waitFor();
   await page.evaluate(async () => {
     const { useSettingsStore } = await import("/src/stores/settingsStore.ts");
@@ -447,7 +452,7 @@ test("trial provenance survives route toggles and keeps disabled local controls 
     page.getByText("嗯，我我我想写代码，但不要改文件。", { exact: true }),
   ).toHaveCount(2);
   await expect(
-    page.getByRole("button", { name: "Record a trial" }),
+    page.getByRole("button", { name: "Preview with a recording" }),
   ).toBeDisabled();
 });
 
@@ -464,7 +469,7 @@ test("active disclosure uses the backend start response when settings change at 
     localStorage.setItem("enable-local-at-start", "true");
   });
   await page.reload();
-  await page.getByRole("button", { name: "Record a trial" }).click();
+  await page.getByRole("button", { name: "Preview with a recording" }).click();
   await expect(
     page.getByRole("button", { name: "Stop and compare" }),
   ).toBeVisible();
