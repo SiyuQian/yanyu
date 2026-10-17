@@ -112,11 +112,13 @@ export function validateFeedback(value: unknown): Feedback {
   return feedbackSchema.parse(value);
 }
 async function assertSeparate(sources: Source[], dataDirectory: string) {
+  const lexical = resolve(dataDirectory);
   const target = await canonicalPath(dataDirectory);
+  const overlaps = (a: string, b: string) => inside(a, b) || inside(b, a);
   for (const source of sources) {
     if (
-      inside(resolve(dataDirectory), resolve(source.directory)) ||
-      inside(target, await canonicalPath(source.directory))
+      overlaps(lexical, resolve(source.directory)) ||
+      overlaps(target, await canonicalPath(source.directory))
     )
       throw new Error("Snapshot must be separate from source data");
   }
@@ -417,9 +419,10 @@ if (import.meta.main) {
         server.stop(true);
         process.exit(0);
       });
-  } catch {
+  } catch (error) {
     console.error(
       "Recording review could not start. Check source access, private snapshot directory, server.lock and port 17843.",
+      error instanceof Error ? error.message : String(error),
     );
     process.exitCode = 1;
   }

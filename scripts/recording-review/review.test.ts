@@ -85,6 +85,8 @@ describe("private recording review", () => {
           source,
           join(alias, "Yanyu", "new", "review"),
           join(source, "new", "review"),
+          f.root,
+          alias,
         ]) {
           for (const start of [
             () => snapshot(sources, dataDirectory),
