@@ -6,6 +6,50 @@
 
 export const commands = {
 /**
+ * Read the current correction draft. A lazy window can fetch this after mount.
+ */
+async getCorrectionSession() : Promise<Result<CorrectionSession | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_correction_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Preserve edits and an explicitly selected term without persisting app text.
+ */
+async saveCorrectionDraft(generation: number, draft: string, word: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_correction_draft", { generation, draft, word }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Apply only to a verified saved range, otherwise copy with an explicit outcome.
+ */
+async applyCorrection(generation: number, draft: string, word: string | null) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("apply_correction", { generation, draft, word }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Hide the editor without discarding the draft.
+ */
+async closeCorrection() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("close_correction") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Persist the whole validated profile and explicitly select generated mode when enabled.
  */
 async savePersonalization(profile: PersonalizationProfile) : Promise<Result<null, string>> {
@@ -1180,6 +1224,8 @@ export type ChineseScript =
  */
 "as_transcribed" | "simplified" | "traditional"
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
+export type CorrectionSession = { generation: number; draft: string; word: string | null }
+
 /**
  * Bounded common-use context, never instructions to execute.
  */
