@@ -373,6 +373,10 @@ impl std::ops::DerefMut for SecretMap {
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 #[serde(default)]
 pub struct AppSettings {
+    #[serde(default)]
+    pub personalization: crate::personalization::PersonalizationProfile,
+    #[serde(default)]
+    pub processing_mode: crate::personalization::ProcessingMode,
     /// Internal settings schema marker for one-time migrations. Fresh installs
     /// start at the current version; existing stores missing this key are
     /// treated as version 0 and migrated forward.
@@ -899,26 +903,6 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: default_shortcut.to_string(),
         },
     );
-    #[cfg(target_os = "windows")]
-    let default_post_process_shortcut = "ctrl+shift+space";
-    #[cfg(target_os = "macos")]
-    let default_post_process_shortcut = "option+shift+space";
-    #[cfg(target_os = "linux")]
-    let default_post_process_shortcut = "ctrl+shift+space";
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-    let default_post_process_shortcut = "alt+shift+space";
-
-    bindings.insert(
-        "transcribe_with_post_process".to_string(),
-        ShortcutBinding {
-            id: "transcribe_with_post_process".to_string(),
-            name: "Transcribe with Post-Processing".to_string(),
-            description: "Converts your speech into text and applies AI post-processing."
-                .to_string(),
-            default_binding: default_post_process_shortcut.to_string(),
-            current_binding: default_post_process_shortcut.to_string(),
-        },
-    );
     #[cfg(target_os = "macos")]
     let correction_shortcut = "command+option+shift+c";
     #[cfg(not(target_os = "macos"))]
@@ -978,6 +962,8 @@ pub fn get_default_settings() -> AppSettings {
         clipboard_handling: ClipboardHandling::default(),
         auto_submit: default_auto_submit(),
         auto_submit_key: AutoSubmitKey::default(),
+        personalization: Default::default(),
+        processing_mode: Default::default(),
         post_process_enabled: default_post_process_enabled(),
         local_polishing_enabled: false,
         post_process_provider_id: default_post_process_provider_id(),
@@ -1140,7 +1126,12 @@ fn apply_settings_migrations(
     settings: &mut AppSettings,
     settings_value: &serde_json::Value,
 ) -> bool {
-    let mut updated = false;
+    // Retired bindings must never restore the external-processing shortcut.
+    let before = settings.bindings.len();
+    settings.bindings.retain(|id, binding| {
+        id != "transcribe_with_post_process" && binding.id != "transcribe_with_post_process"
+    });
+    let mut updated = settings.bindings.len() != before;
 
     // One-time onboarding migration: users with an explicit selected model have
     // already made it through model selection. Users who merely have compatible
@@ -1315,6 +1306,41 @@ mod tests {
         let restored: AppSettings =
             serde_json::from_value(serde_json::to_value(settings).unwrap()).unwrap();
         assert_eq!(restored.bindings["correct_last"].current_binding, "ctrl+f9");
+    }
+
+    #[test]
+    fn local_prompt_upgrade_keeps_opt_in_and_prunes_legacy_shortcuts() {
+        for local_enabled in [false, true] {
+            let mut settings = get_default_settings();
+            settings.local_polishing_enabled = local_enabled;
+            settings.post_process_enabled = true;
+            let regular = settings.bindings["transcribe"].clone();
+            let mut legacy = regular.clone();
+            legacy.id = "transcribe_with_post_process".into();
+            settings.bindings.insert(legacy.id.clone(), legacy);
+            let raw = serde_json::to_value(&settings).unwrap();
+            assert!(apply_settings_migrations(&mut settings, &raw));
+            assert!(!settings
+                .bindings
+                .contains_key("transcribe_with_post_process"));
+            assert_eq!(
+                settings.bindings["transcribe"].current_binding,
+                regular.current_binding
+            );
+            assert_eq!(settings.local_polishing_enabled, local_enabled);
+        }
+        assert!(!get_default_settings()
+            .bindings
+            .contains_key("transcribe_with_post_process"));
+    }
+
+    #[test]
+    fn personalization_defaults_preserve_legacy_behavior() {
+        let settings: AppSettings = serde_json::from_value(serde_json::json!({})).unwrap();
+        let value = serde_json::to_value(settings).unwrap();
+        assert_eq!(value["processing_mode"], "legacy");
+        assert_eq!(value["personalization"]["enabled"], false);
+        assert_eq!(value["personalization"]["invitation_dismissed"], false);
     }
 
     #[test]

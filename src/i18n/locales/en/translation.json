@@ -158,8 +158,8 @@
   "settings": {
     "localPolishing": {
       "title": "Local polishing",
-      "label": "Lightly polish Voice Input",
-      "description": "Qwen3-0.6B runs on this Mac. Fix punctuation and capitalization while preserving words and language. If it is not ready or takes over 500 ms, keep the original transcript. Long transcripts skip polishing. Turning this off releases the loaded model.",
+      "label": "Polish voice input locally",
+      "description": "Conservatively clean up speech using Qwen3-0.6B on this Mac. Enabled personalization supplies terminology context only. Without it, use basic cleanup. Preserve meaning and spoken languages. Inputs over 200 characters skip polishing. Keep the original if the model is unavailable, output is invalid or processing exceeds 500 ms. Turning this off releases the loaded model.",
       "download": "Download Qwen3-0.6B (651 MB)",
       "cancel": "Cancel download",
       "delete": "Delete model",
@@ -198,10 +198,6 @@
           "cancel": {
             "name": "Cancel Shortcut",
             "description": "The keyboard shortcut to cancel the current recording."
-          },
-          "transcribe_with_post_process": {
-            "name": "Post-Processing Hotkey",
-            "description": "Optional: A dedicated hotkey that always applies AI post-processing to your transcription."
           },
           "correct_last": {
             "name": "Correct last dictation",
@@ -509,7 +505,27 @@
       "retranscribeError": "Failed to re-transcribe. Please try again.",
       "transcribing": "Transcribing...",
       "transcriptionFailed": "Transcription failed. You can re-transcribe using the retry icon.",
-      "beforePolishing": "Before polishing"
+      "beforePolishing": "Before polishing",
+      "polishingSkipped": "Polishing skipped",
+      "polishingUnchanged": "Polishing made no changes",
+      "skipReasons": {
+        "too_long": "The text is longer than 200 characters.",
+        "unavailable": "The polishing model was not ready or was busy.",
+        "timeout": "Polishing took too long.",
+        "failed": "The polishing model failed.",
+        "incomplete": "The model did not give a complete answer.",
+        "bad_format": "The model output had an invalid format.",
+        "language_changed": "The model changed the language or dropped words.",
+        "identifier_changed": "The model changed a name, number or code term.",
+        "rewritten": "The model rephrased the text instead of only removing words."
+      },
+      "editTranscript": "Edit transcript",
+      "correctedTranscript": "Corrected transcript",
+      "saveCorrection": "Save",
+      "correctionRequired": "Enter a transcript before saving.",
+      "correctionSaveError": "Failed to save transcript. Please try again.",
+      "recognizedText": "Recognized text",
+      "polishedText": "Polished text"
     },
     "debug": {
       "title": "Debug",
@@ -790,5 +806,74 @@
       "learning_failed": "Output completed, but saving vocabulary failed. Your draft is preserved."
     },
     "loadLatest": "Load latest (discard draft)"
+  },
+  "personalization": {
+    "title": "Personalization",
+    "intro": "After setup, enabled personalization automatically removes fillers and unintended repetitions from each dictation while preserving meaning and spoken languages. Optional answers supply usage and terminology background.",
+    "setup": "Set up personalization",
+    "later": "Later",
+    "edit": "Edit profile",
+    "useQuestion": "What do you mainly use Yanyu for?",
+    "domainQuestion": "Which field do you mainly work or study in?",
+    "notSelected": "Prefer not to select",
+    "otherDetail": "Other field (optional, up to 160 characters)",
+    "review": "Review profile",
+    "cancel": "Cancel",
+    "back": "Back",
+    "save": "Save and enable",
+    "disable": "Disable personalization",
+    "delete": "Delete profile",
+    "summary": "Common uses: {{uses}}. Field: {{domain}}.",
+    "disclosure": "Your profile is saved on this device. With local polishing off, daily dictation and optional previews send your transcript and enabled profile context to your configured service. Disabling or deleting excludes profile context from future requests.",
+    "modeDisclosure": "Automatic processing uses fixed conservative rules and optional terminology context. Saved custom prompts remain on disk and do not affect this cleanup. Cleanup aims to preserve meaning, languages, emphasis, negations and instructions. Uncertain repetitions stay.",
+    "ready": "Enabled; automatic processing configured",
+    "pending": "Saved; finish service setup",
+    "disabled": "Disabled; profile context is excluded",
+    "configuredOnly": "Automatic processing starts after setup. The optional preview lets you compare one sample. A configured service has not necessarily been tested.",
+    "continueSetup": "Continue service setup",
+    "needsAsr": "Choose and download a speech recognition model before dictation or preview.",
+    "trialInfo": "Optional one-minute preview: recording and stopping sends recognized text to your configured service using the same processing as daily dictation. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
+    "record": "Preview with a recording",
+    "stop": "Stop and compare",
+    "cancelTrial": "Cancel preview",
+    "original": "Original recognition (before optional processing)",
+    "processed": "Processed output",
+    "trialSucceeded": "Service returned a result for this sample. Check that meaning and languages were preserved.",
+    "trialFallback": "Processing was skipped, unavailable, timed out or returned no usable result. Original recognition is preserved.",
+    "error": "Could not complete this operation. Your previous settings remain available. Try again or finish setup.",
+    "serviceGuidance": "Configure a service for automatic personalization during daily dictation when local polishing is off. Local polishing uses Qwen3-0.6B on this Mac and requires no external service. Saving configuration is not a successful service test.",
+    "advancedGuidance": "Custom prompts are an explicit alternative to generated cleanup. Returning to custom mode restores legacy shortcut behavior and excludes profile context. The selected custom prompt may change languages or meaning.",
+    "customMode": "Use saved custom prompts",
+    "uses": {
+      "ai_conversation": "Conversations with AI (Claude Code, Codex, ChatGPT)",
+      "messaging": "Chat or messaging",
+      "work_documents": "Email or work documents",
+      "notes": "Ideas or notes",
+      "study_writing": "Study or writing",
+      "other": "Other"
+    },
+    "domains": {
+      "software": "Software development and IT",
+      "product_design": "Product and design",
+      "business": "Business and operations",
+      "marketing": "Marketing and sales",
+      "education": "Education and research",
+      "healthcare": "Healthcare",
+      "law": "Law",
+      "finance": "Finance and accounting",
+      "engineering": "Engineering and manufacturing",
+      "media": "Media and content creation",
+      "other": "Other"
+    },
+    "trialPhases": {
+      "starting": "Preparing microphone…",
+      "recording": "Recording (up to one minute)…",
+      "processing": "Recognizing and processing…"
+    },
+    "localDisclosure": "Your profile and transcript stay on this Mac during local polishing and local trials. Enabled profile context supplies terminology background only. Disabling or deleting excludes profile context from future requests.",
+    "localReady": "Enabled; automatic local polishing ready",
+    "localPending": "Saved; enable local polishing and finish model setup",
+    "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
+    "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
   }
 }

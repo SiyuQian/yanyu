@@ -34,7 +34,7 @@ interface SettingsStore {
     value: Settings[K],
   ) => Promise<void>;
   resetSetting: (key: keyof Settings) => Promise<void>;
-  refreshSettings: () => Promise<void>;
+  refreshSettings: (rejectOnError?: boolean) => Promise<void>;
   refreshAudioDevices: () => Promise<void>;
   refreshOutputDevices: () => Promise<void>;
   updateBinding: (id: string, binding: string) => Promise<void>;
@@ -232,7 +232,7 @@ export const useSettingsStore = create<SettingsStore>()(
     isUpdatingKey: (key) => get().isUpdating[key] || false,
 
     // Load settings from store
-    refreshSettings: async () => {
+    refreshSettings: async (rejectOnError = false) => {
       try {
         const result = await commands.getAppSettings();
         if (result.status === "ok") {
@@ -247,12 +247,14 @@ export const useSettingsStore = create<SettingsStore>()(
           };
           set({ settings: normalizedSettings, isLoading: false });
         } else {
+          if (rejectOnError) throw new Error(result.error);
           console.error("Failed to load settings:", result.error);
           set({ isLoading: false });
         }
       } catch (error) {
         console.error("Failed to load settings:", error);
         set({ isLoading: false });
+        if (rejectOnError) throw error;
       }
     },
 

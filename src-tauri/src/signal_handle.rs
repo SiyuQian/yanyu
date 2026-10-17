@@ -17,6 +17,11 @@ use std::thread;
 /// Used by signal handlers, CLI flags, and any other external trigger.
 pub fn send_transcription_input(app: &AppHandle, binding_id: &str, source: &str) {
     if let Some(c) = app.try_state::<TranscriptionCoordinator>() {
+        let binding_id = if binding_id == "transcribe_with_post_process" {
+            "transcribe"
+        } else {
+            binding_id
+        };
         c.send_external_input(binding_id, source);
     } else {
         warn!("TranscriptionCoordinator not initialized");
@@ -26,7 +31,7 @@ pub fn send_transcription_input(app: &AppHandle, binding_id: &str, source: &str)
 /// Listen for Unix signals that remotely toggle transcription.
 ///
 /// SIGUSR2 toggles plain transcription on all Unix platforms. SIGUSR1
-/// (transcription with post-processing) is only handled on macOS: on Linux,
+/// (an ordinary transcription alias) is only handled on macOS: on Linux,
 /// WebKitGTK's JavaScriptCore garbage collector sends SIGUSR1 to its own
 /// threads to suspend them, so handling it caused phantom recordings on every
 /// GC cycle (#1660). Linux users should use `handy --toggle-post-process`
@@ -47,7 +52,7 @@ pub fn setup_signal_handler(app_handle: AppHandle) {
         for sig in signals.forever() {
             let (binding_id, signal_name) = match sig {
                 #[cfg(target_os = "macos")]
-                SIGUSR1 => ("transcribe_with_post_process", "SIGUSR1"),
+                SIGUSR1 => ("transcribe", "SIGUSR1"),
                 SIGUSR2 => ("transcribe", "SIGUSR2"),
                 _ => continue,
             };

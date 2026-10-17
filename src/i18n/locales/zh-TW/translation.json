@@ -158,8 +158,8 @@
   "settings": {
     "localPolishing": {
       "title": "Local polishing",
-      "label": "Lightly polish Voice Input",
-      "description": "Qwen3-0.6B runs on this Mac. Fix punctuation and capitalization while preserving words and language. If it is not ready or takes over 500 ms, keep the original transcript. Long transcripts skip polishing. Turning this off releases the loaded model.",
+      "label": "在本機潤飾語音輸入",
+      "description": "在這台 Mac 上用 Qwen3-0.6B 保守清理語音。已啟用的個人化資料僅提供術語背景，未啟用時使用基本清理規則。保留原意和所說語言。超過 200 字的輸入略過潤飾。模型無法使用、輸出無效或處理超過 500 毫秒時保留原文。關閉後釋放已載入模型。",
       "download": "Download Qwen3-0.6B (651 MB)",
       "cancel": "Cancel download",
       "delete": "Delete model",
@@ -198,10 +198,6 @@
           "cancel": {
             "name": "取消聽寫",
             "description": "用於取消目前錄製的鍵盤快捷鍵"
-          },
-          "transcribe_with_post_process": {
-            "name": "後處理快捷鍵",
-            "description": "可選：專用快捷鍵，使用時一律對轉錄結果套用 AI 後處理"
           },
           "correct_last": {
             "name": "Correct last dictation",
@@ -509,7 +505,27 @@
       "retranscribeError": "重新轉錄失敗，請重試。",
       "transcribing": "轉錄中...",
       "transcriptionFailed": "轉錄失敗。您可以使用重試圖示重新轉錄。",
-      "beforePolishing": "潤飾前"
+      "beforePolishing": "潤飾前",
+      "polishingSkipped": "已略過潤飾",
+      "polishingUnchanged": "潤飾沒有改動",
+      "skipReasons": {
+        "too_long": "文字超過 200 個字元。",
+        "unavailable": "潤飾模型尚未就緒或忙碌中。",
+        "timeout": "潤飾耗時過長。",
+        "failed": "潤飾模型發生錯誤。",
+        "incomplete": "模型沒有給出完整的結果。",
+        "bad_format": "模型輸出格式無效。",
+        "language_changed": "模型改變了語言或遺失了內容。",
+        "identifier_changed": "模型改動了名稱、數字或程式術語。",
+        "rewritten": "模型改寫了句子，而不只是刪除贅詞。"
+      },
+      "editTranscript": "編輯轉錄",
+      "correctedTranscript": "修正後的轉錄",
+      "saveCorrection": "儲存",
+      "correctionRequired": "請輸入轉錄文字後再儲存。",
+      "correctionSaveError": "儲存轉錄失敗，請重試。",
+      "recognizedText": "辨識原文",
+      "polishedText": "潤飾文字"
     },
     "debug": {
       "title": "偵錯",
@@ -790,5 +806,74 @@
       "learning_failed": "Output completed, but saving vocabulary failed. Your draft is preserved."
     },
     "loadLatest": "Load latest (discard draft)"
+  },
+  "personalization": {
+    "title": "個性化",
+    "intro": "完成設定後，已啟用的個人化會在每次聽寫結束後自動清理口頭禪和無意重複，保留原意及中英混說。可選資料提供用途和術語背景。",
+    "setup": "設置個性化",
+    "later": "以後再說",
+    "edit": "編輯資料",
+    "useQuestion": "你主要想用言語做什麼？",
+    "domainQuestion": "你主要在哪個領域工作或學習？",
+    "notSelected": "暫不選擇",
+    "otherDetail": "其他領域（可選，最多160個字符）",
+    "review": "查看資料摘要",
+    "cancel": "取消",
+    "back": "返回",
+    "save": "保存並啟用",
+    "disable": "停用個性化",
+    "delete": "刪除資料",
+    "summary": "常見用途：{{uses}}。領域：{{domain}}。",
+    "disclosure": "資料儲存在本機。關閉本機潤飾時，每次日常聽寫和可選錄音預覽都會將轉寫和已啟用的資料背景傳送至設定的服務。停用或刪除資料後，後續請求不再包含資料背景。",
+    "modeDisclosure": "自動處理使用固定的保守規則和可選術語背景。已儲存的自訂提示詞仍保留在磁碟上，不影響此清理。清理旨在保留原意、語言、強調、否定和指令。不確定的重複保持原樣。",
+    "ready": "已啟用；每次聽寫將自動處理",
+    "pending": "已保存；請完成服務設置",
+    "disabled": "已停用，資料背景不參與處理",
+    "configuredOnly": "完成設定後會自動處理日常聽寫，無需先試錄。可選錄音預覽用於比較一段樣例的效果。服務已設定不代表已測試成功。",
+    "continueSetup": "繼續設置服務",
+    "needsAsr": "聽寫或錄音預覽前，請先選擇並下載語音辨識模型。",
+    "trialInfo": "可選錄音預覽（最多一分鐘）：停止錄音後，辨識文字會傳送給已設定的服務，使用與日常聽寫相同的處理。僅供預覽，不貼上、不發訊息、不儲存歷史或錄音。樣例效果不代表整體準確率提高。",
+    "record": "錄音預覽效果",
+    "stop": "停止並對比",
+    "cancelTrial": "取消預覽",
+    "original": "原始識別结果（可選處理之前）",
+    "processed": "整理後的文本",
+    "trialSucceeded": "服務已返回本段樣例的结果。請確認原意和語言是否保留。",
+    "trialFallback": "處理被略過、無法使用、逾時或未傳回可用結果，已保留原始辨識。",
+    "error": "無法完成操作。之前的設置仍可用。請重試或完成服務設置。",
+    "serviceGuidance": "關閉本機潤飾時，設定服務即可在每次日常聽寫中自動使用個人化處理。本機潤飾在這台 Mac 上使用 Qwen3-0.6B，無需外部服務。儲存設定不代表服務已測試成功。",
+    "advancedGuidance": "自定義提示詞與自動生成的整理規則是兩種明確區分的模式。切換回自定義模式後恢複原有快捷鍵行為，不發送資料背景。選定的自定義提示詞可能改變語言或含義。",
+    "customMode": "使用已保存的自定義提示詞",
+    "uses": {
+      "ai_conversation": "與AI對話（Claude Code、Codex、ChatGPT）",
+      "messaging": "聊天或消息",
+      "work_documents": "郵件或工作文檔",
+      "notes": "想法或筆記",
+      "study_writing": "學習或寫作",
+      "other": "其他"
+    },
+    "domains": {
+      "software": "軟件開發與IT",
+      "product_design": "產品與設計",
+      "business": "商業與運營",
+      "marketing": "市場與銷售",
+      "education": "教育與研究",
+      "healthcare": "醫療健康",
+      "law": "法律",
+      "finance": "金融與會計",
+      "engineering": "工程與製造",
+      "media": "媒體與內容創作",
+      "other": "其他"
+    },
+    "trialPhases": {
+      "starting": "正在準備麥克風…",
+      "recording": "正在錄音（最多一分鐘）…",
+      "processing": "正在識別和整理…"
+    },
+    "localDisclosure": "本機潤飾和本機試用期間，資料和轉寫均保留在這台 Mac 上。已啟用的資料僅提供術語背景。停用或刪除後，後續請求不再包含資料背景。",
+    "localReady": "已啟用；每次聽寫將自動在本機潤飾",
+    "localPending": "已儲存，請啟用本機潤飾並完成模型設定",
+    "localTrialInfo": "可選的一分鐘試用：錄音並停止後，在這台 Mac 上使用與日常聽寫相同的本機潤飾處理轉寫，不回退到外部服務。僅預覽，不貼上、不傳送訊息、不寫入歷史或儲存錄音。該樣本不能證明整體準確率提高。",
+    "localTrialSucceeded": "本機潤飾為該樣本傳回了可用結果。請檢查原意和語言是否保留。"
   }
 }

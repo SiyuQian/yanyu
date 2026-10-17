@@ -18,6 +18,7 @@ mod managers;
 mod memory;
 mod overlay;
 mod paste_tx;
+mod personalization;
 pub mod portable;
 mod secure_input;
 mod settings;
@@ -663,6 +664,14 @@ pub fn run(cli_args: CliArgs) {
             correction::save_correction_draft,
             correction::apply_correction,
             correction::close_correction,
+            commands::personalization::save_personalization,
+            commands::personalization::dismiss_personalization_invitation,
+            commands::personalization::delete_personalization,
+            commands::personalization::set_processing_mode,
+            commands::personalization::get_personalization_status,
+            commands::personalization::start_personalization_trial,
+            commands::personalization::stop_personalization_trial,
+            commands::personalization::cancel_personalization_trial,
             commands::local_polishing::get_local_polishing_status,
             commands::local_polishing::set_local_polishing_enabled,
             commands::local_polishing::download_local_polishing_model,
@@ -779,6 +788,7 @@ pub fn run(cli_args: CliArgs) {
             commands::transcription::get_model_load_status,
             commands::transcription::unload_model_manually,
             commands::history::get_history_entries,
+            commands::history::update_history_entry_correction,
             commands::history::toggle_history_entry_saved,
             commands::history::get_audio_file_path,
             commands::history::delete_history_entry,
@@ -875,7 +885,7 @@ pub fn run(cli_args: CliArgs) {
             if args.iter().any(|a| a == "--toggle-transcription") {
                 signal_handle::send_transcription_input(app, "transcribe", "CLI");
             } else if args.iter().any(|a| a == "--toggle-post-process") {
-                signal_handle::send_transcription_input(app, "transcribe_with_post_process", "CLI");
+                signal_handle::send_transcription_input(app, "transcribe", "CLI");
             } else if args.iter().any(|a| a == "--cancel") {
                 crate::utils::cancel_current_operation(app);
             } else {
@@ -906,6 +916,7 @@ pub fn run(cli_args: CliArgs) {
             MacosLauncher::LaunchAgent,
             Some(vec![]),
         ))
+        .manage(commands::personalization::TrialState::default())
         .manage(cli_args.clone())
         .setup(move |app| {
             #[cfg(target_os = "windows")]
@@ -1081,6 +1092,7 @@ pub fn run(cli_args: CliArgs) {
         })
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
+                commands::personalization::cancel_active_trial(window.app_handle());
                 api.prevent_close();
                 let _res = window.hide();
 

@@ -917,7 +917,7 @@ impl TranscriptionManager {
         let effective_language =
             effective_language_for_model(&settings, self.model_manager.as_ref(), &model_id);
         let run_plan = transcribe_cpp_run_plan(
-            settings.translate_to_english,
+            crate::personalization::effective_translation(&settings),
             &effective_language,
             &languages,
             caps.supports_translate,
@@ -1218,7 +1218,7 @@ impl TranscriptionManager {
         );
 
         let et = std::time::Instant::now();
-        let translation_note = if settings.translate_to_english {
+        let translation_note = if crate::personalization::effective_translation(&settings) {
             " (translated)"
         } else {
             ""
@@ -1296,7 +1296,7 @@ impl TranscriptionManager {
         };
 
         let run_plan = transcribe_cpp_run_plan(
-            settings.translate_to_english,
+            crate::personalization::effective_translation(settings),
             validated_language,
             &languages,
             model_supports_translate,
@@ -1304,19 +1304,30 @@ impl TranscriptionManager {
         let output_was_translated = run_plan.target_language.as_deref() == Some("en");
         let applied_language_hint = run_plan.language.clone();
 
+        // Non-whisper models that take a vocabulary (e.g. Qwen3-ASR) get the
+        // custom words as recognition hints. Fuzzy post-correction cannot help
+        // there for Chinese, which has no spaces to split words on.
+        let vocabulary = if !model_is_whisper && info.supports_vocabulary {
+            settings.custom_words.clone()
+        } else {
+            Vec::new()
+        };
+
         let run_options = RunOptions {
             task: run_plan.task,
             language: run_plan.language,
             target_language: run_plan.target_language,
             family,
+            vocabulary,
             ..Default::default()
         };
 
         debug!(
-            "transcribe-cpp run: task={:?}, language={:?}, initial_prompt={}",
+            "transcribe-cpp run: task={:?}, language={:?}, initial_prompt={}, vocabulary={}",
             run_options.task,
             run_options.language,
-            run_options.family.is_some()
+            run_options.family.is_some(),
+            run_options.vocabulary.len()
         );
 
         let transcript = match self.engine.transcribe(audio, run_options) {
@@ -1420,7 +1431,7 @@ impl TranscriptionManager {
                     .map(|r| r.text)
                     .map_err(|e| anyhow::anyhow!("GigaAM transcription failed: {}", e)),
                 OnnxEngine::Canary(canary_engine) => {
-                    output_was_translated = settings.translate_to_english;
+                    output_was_translated = crate::personalization::effective_translation(settings);
                     let lang = if validated_language == "auto" {
                         None
                     } else {
@@ -1429,7 +1440,7 @@ impl TranscriptionManager {
                     applied_language_hint = lang.clone();
                     let options = TranscribeOptions {
                         language: lang,
-                        translate: settings.translate_to_english,
+                        translate: crate::personalization::effective_translation(settings),
                         ..Default::default()
                     };
                     canary_engine
@@ -2189,6 +2200,35 @@ mod tests {
             );
         }
         assert_eq!(available_transcribe_accelerators(true), ["cpu"]);
+    }
+
+    #[test]
+    fn generated_profile_does_not_change_daily_cleanup() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.chinese_script = ChineseScript::AsTranscribed;
+        settings.filler_word_removal_enabled = true;
+        settings.custom_filler_words = Some(vec!["um".into()]);
+        let text = "um send the file";
+        let ordinary = post_process_transcription_text(
+            text.into(),
+            &settings,
+            true,
+            &OutputLanguageEvidence::Unknown,
+            &[],
+        );
+        assert_ne!(ordinary, text);
+        settings.processing_mode = crate::personalization::ProcessingMode::Generated;
+        settings.personalization.enabled = true;
+        assert_eq!(
+            post_process_transcription_text(
+                text.into(),
+                &settings,
+                true,
+                &OutputLanguageEvidence::Unknown,
+                &[]
+            ),
+            ordinary
+        );
     }
 
     #[test]

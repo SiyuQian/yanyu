@@ -20,8 +20,8 @@ pub fn init_shortcuts(app: &AppHandle) {
         if id == "cancel" {
             continue; // Skip cancel shortcut, it will be registered dynamically
         }
-        // Skip post-processing shortcut when the feature is disabled
-        if id == "transcribe_with_post_process" && !user_settings.post_process_enabled {
+        // Ignore retired post-processing bindings.
+        if id == "transcribe_with_post_process" || binding.id == "transcribe_with_post_process" {
             continue;
         }
 
@@ -69,6 +69,9 @@ pub fn validate_shortcut(raw: &str) -> Result<(), String> {
 
 /// Register a shortcut using Tauri's global-shortcut plugin
 pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+    if binding.id == "transcribe_with_post_process" {
+        return Err("The dedicated post-processing shortcut was removed".into());
+    }
     // Validate for Tauri requirements
     if let Err(e) = validate_shortcut(&binding.current_binding) {
         warn!(
