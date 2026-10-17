@@ -664,6 +664,11 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             <Button
               size="sm"
               variant="secondary"
+              onMouseDown={(event) => {
+                // Safari does not focus buttons on mouse activation.
+                event.preventDefault();
+                event.currentTarget.focus();
+              }}
               onClick={handleAddCorrectionToVocabulary}
               disabled={!selectedCorrection || isUpdating("custom_words")}
             >

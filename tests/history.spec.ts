@@ -414,6 +414,61 @@ test("supports keyboard selection in the saved correction", async ({
   await expect(page.getByRole("status")).toHaveText("Added to vocabulary.");
 });
 
+for (const outcome of ["success", "result", "invoke"]) {
+  test(`adds a mouse selection with simulated Safari focus behavior: ${outcome}`, async ({
+    page,
+  }) => {
+    await mount(page, { user_corrected_text: "Term" }, ["existing"]);
+    const correction = savedCorrection(page);
+    const add = page.getByRole("button", { name: "Add to vocabulary" });
+    await add.evaluate((button) => {
+      const textarea = document.querySelector<HTMLTextAreaElement>(
+        'textarea[aria-label="Saved corrected transcript"]',
+      )!;
+      // Run after React's root handlers; Safari omits default button mouse focus.
+      document.addEventListener("mousedown", (event) => {
+        if (!button.contains(event.target as Node)) return;
+        event.preventDefault();
+        textarea.blur();
+      });
+    });
+    if (outcome !== "success")
+      await page.evaluate(
+        (failure) => localStorage.setItem("word-failure", failure),
+        outcome,
+      );
+
+    await correction.dblclick({ position: { x: 10, y: 8 } });
+    expect(
+      await correction.evaluate((element) => {
+        const textarea = element as HTMLTextAreaElement;
+        return textarea.value.slice(
+          textarea.selectionStart,
+          textarea.selectionEnd,
+        );
+      }),
+    ).toBe("Term");
+    await expect(add).toBeEnabled();
+    await add.click();
+
+    if (outcome !== "success") {
+      await expect(page.getByRole("alert")).toHaveText(
+        "Failed to update custom words. Please try again.",
+      );
+      expect(
+        await page.evaluate(() => localStorage.getItem("custom-words")),
+      ).toBe('["existing"]');
+      await expect(add).toBeEnabled();
+      await page.evaluate(() => localStorage.removeItem("word-failure"));
+      await add.click();
+    }
+    await expect(page.getByRole("status")).toHaveText("Added to vocabulary.");
+    expect(
+      await page.evaluate(() => localStorage.getItem("custom-words")),
+    ).toBe('["existing","Term"]');
+  });
+}
+
 test("rejects recognized text and bounds selection to the saved correction", async ({
   page,
 }) => {
