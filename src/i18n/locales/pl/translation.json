@@ -404,7 +404,10 @@
         "placeholder": "Dodaj słowo",
         "add": "Dodaj",
         "remove": "Usuń {{word}}",
-        "duplicate": "\"{{word}}\" już istnieje"
+        "duplicate": "\"{{word}}\" już istnieje",
+        "invalid": "Wpisz poprawne słowo.",
+        "tooLong": "Słowa mogą mieć maksymalnie 50 znaków.",
+        "updateFailed": "Nie udało się zaktualizować słów niestandardowych. Spróbuj ponownie."
       },
       "voiceActivityDetection": {
         "title": "Wykrywanie aktywności głosowej",
@@ -521,7 +524,10 @@
       "correctionRequired": "Wpisz transkrypcję przed zapisaniem.",
       "correctionSaveError": "Nie udało się zapisać transkrypcji. Spróbuj ponownie.",
       "recognizedText": "Rozpoznany tekst",
-      "polishedText": "Wygładzony tekst"
+      "polishedText": "Wygładzony tekst",
+      "addToVocabulary": "Dodaj do słownika",
+      "vocabularyAdded": "Dodano do słownika.",
+      "savedCorrectionText": "Zapisana poprawiona transkrypcja"
     },
     "debug": {
       "title": "Debugowanie",

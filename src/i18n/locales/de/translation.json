@@ -404,7 +404,10 @@
         "placeholder": "Wort hinzufügen",
         "add": "Hinzufügen",
         "remove": "{{word}} entfernen",
-        "duplicate": "\"{{word}}\" existiert bereits"
+        "duplicate": "\"{{word}}\" existiert bereits",
+        "invalid": "Gib ein gültiges Wort ein.",
+        "tooLong": "Wörter dürfen höchstens 50 Zeichen lang sein.",
+        "updateFailed": "Benutzerdefinierte Wörter konnten nicht aktualisiert werden. Bitte erneut versuchen."
       },
       "voiceActivityDetection": {
         "title": "Sprachaktivitätserkennung (VAD)",
@@ -521,7 +524,10 @@
       "correctionRequired": "Gib vor dem Speichern ein Transkript ein.",
       "correctionSaveError": "Transkript konnte nicht gespeichert werden. Bitte versuche es erneut.",
       "recognizedText": "Erkannter Text",
-      "polishedText": "Überarbeiteter Text"
+      "polishedText": "Überarbeiteter Text",
+      "addToVocabulary": "Zum Wörterbuch hinzufügen",
+      "vocabularyAdded": "Zum Wörterbuch hinzugefügt.",
+      "savedCorrectionText": "Gespeicherte korrigierte Transkription"
     },
     "debug": {
       "title": "Debug",

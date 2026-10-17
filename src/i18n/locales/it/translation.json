@@ -404,7 +404,10 @@
         "placeholder": "Aggiungi una parola",
         "add": "Aggiungi",
         "remove": "Rimuovi {{word}}",
-        "duplicate": "\"{{word}}\" esiste già"
+        "duplicate": "\"{{word}}\" esiste già",
+        "invalid": "Inserisci una parola valida.",
+        "tooLong": "Le parole devono contenere al massimo 50 caratteri.",
+        "updateFailed": "Impossibile aggiornare le parole personalizzate. Riprova."
       },
       "voiceActivityDetection": {
         "title": "Rilevamento dell'attività vocale",
@@ -521,7 +524,10 @@
       "correctionRequired": "Inserisci una trascrizione prima di salvare.",
       "correctionSaveError": "Impossibile salvare la trascrizione. Riprova.",
       "recognizedText": "Testo riconosciuto",
-      "polishedText": "Testo rifinito"
+      "polishedText": "Testo rifinito",
+      "addToVocabulary": "Aggiungi al vocabolario",
+      "vocabularyAdded": "Aggiunto al vocabolario.",
+      "savedCorrectionText": "Trascrizione corretta salvata"
     },
     "debug": {
       "title": "Debug",

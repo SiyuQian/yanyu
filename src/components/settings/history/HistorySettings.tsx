@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
 import {
@@ -23,6 +30,11 @@ import { formatDateTime } from "@/utils/dateFormat";
 import { AudioPlayer, AudioPlayerGroup } from "../../ui/AudioPlayer";
 import { Button } from "../../ui/Button";
 import { copyToClipboard } from "./clipboard";
+import { useSettings } from "../../../hooks/useSettings";
+import {
+  getCustomWordValidationError,
+  normalizeCustomWord,
+} from "../../../utils/customWord";
 
 const IconButton: React.FC<{
   onClick: () => void;
@@ -329,16 +341,90 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   saveCorrection,
 }) => {
   const { t, i18n } = useTranslation();
+  const { getSetting, updateCustomWords, isUpdating } = useSettings();
   const [showCopied, setShowCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [selectedCorrection, setSelectedCorrection] = useState("");
+  const [vocabularyError, setVocabularyError] = useState<string | null>(null);
+  const [vocabularyStatus, setVocabularyStatus] = useState<string | null>(null);
+  const correctedTextRef = useRef<HTMLTextAreaElement>(null);
   const editorId = useId();
 
   const hasTranscription = entry.transcription_text.trim().length > 0;
   const displayText = getDisplayText(entry);
+  const selectionValidationError =
+    getCustomWordValidationError(selectedCorrection);
+  const captureCorrectionSelection = () => {
+    const correctedText = correctedTextRef.current;
+    if (!correctedText) return;
+    if (correctedText.selectionStart === correctedText.selectionEnd) {
+      if (document.activeElement === correctedText) setSelectedCorrection("");
+      return;
+    }
+    setSelectedCorrection(
+      correctedText.value.slice(
+        correctedText.selectionStart,
+        correctedText.selectionEnd,
+      ),
+    );
+    setVocabularyError(null);
+    setVocabularyStatus(null);
+  };
+
+  useEffect(() => {
+    setSelectedCorrection("");
+    setVocabularyError(null);
+    setVocabularyStatus(null);
+  }, [displayText, editing, retrying]);
+
+  useLayoutEffect(() => {
+    if (correctedTextRef.current) {
+      correctedTextRef.current.style.height = "auto";
+      correctedTextRef.current.style.height = `${correctedTextRef.current.scrollHeight}px`;
+    }
+  }, [displayText]);
+
+  const clearSelectionOutsideVocabularyAction = (
+    event: React.FocusEvent<HTMLTextAreaElement>,
+  ) => {
+    const nextFocus = event.relatedTarget;
+    if (
+      !(
+        nextFocus instanceof Element &&
+        nextFocus.closest("[data-vocabulary-action]")
+      )
+    ) {
+      setSelectedCorrection("");
+    }
+  };
+
+  const handleAddCorrectionToVocabulary = async () => {
+    if (!selectedCorrection || isUpdating("custom_words")) return;
+    if (selectionValidationError) {
+      setVocabularyError(selectionValidationError);
+      return;
+    }
+    const word = normalizeCustomWord(selectedCorrection);
+    const customWords = getSetting("custom_words") || [];
+    if (customWords.includes(word)) {
+      setVocabularyError("duplicate");
+      return;
+    }
+    setVocabularyError(null);
+    setVocabularyStatus(null);
+    try {
+      await updateCustomWords([...customWords, word]);
+      setSelectedCorrection("");
+      window.getSelection()?.removeAllRanges();
+      setVocabularyStatus("added");
+    } catch {
+      setVocabularyError("updateFailed");
+    }
+  };
   const originalText =
     displayText !== entry.transcription_text ? entry.transcription_text : null;
 
@@ -518,34 +604,86 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         </div>
       )}
 
-      <p
-        className={`italic text-sm pb-2 ${
-          retrying
-            ? ""
+      {entry.user_corrected_text !== null && !retrying ? (
+        <textarea
+          key={`${entry.id}:${displayText}`}
+          ref={correctedTextRef}
+          aria-label={t("settings.history.savedCorrectionText")}
+          defaultValue={displayText}
+          readOnly
+          spellCheck={false}
+          rows={Math.max(1, displayText.split("\n").length)}
+          onSelect={captureCorrectionSelection}
+          onMouseUp={captureCorrectionSelection}
+          onKeyUp={captureCorrectionSelection}
+          onBlur={clearSelectionOutsideVocabularyAction}
+          className="w-full resize-none overflow-hidden bg-transparent p-0 pb-2 text-sm italic text-text/90 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
+        />
+      ) : (
+        <p
+          className={`italic text-sm pb-2 ${
+            retrying
+              ? ""
+              : hasTranscription
+                ? "text-text/90 select-text cursor-text whitespace-pre-wrap break-words"
+                : "text-text/40"
+          }`}
+          style={
+            retrying
+              ? { animation: "transcribe-pulse 3s ease-in-out infinite" }
+              : undefined
+          }
+        >
+          {retrying && (
+            <style>{`
+              @keyframes transcribe-pulse {
+                0%, 100% { color: color-mix(in srgb, var(--color-text) 40%, transparent); }
+                50% { color: color-mix(in srgb, var(--color-text) 90%, transparent); }
+              }
+            `}</style>
+          )}
+          {retrying
+            ? t("settings.history.transcribing")
             : hasTranscription
-              ? "text-text/90 select-text cursor-text whitespace-pre-wrap break-words"
-              : "text-text/40"
-        }`}
-        style={
-          retrying
-            ? { animation: "transcribe-pulse 3s ease-in-out infinite" }
-            : undefined
-        }
-      >
-        {retrying && (
-          <style>{`
-            @keyframes transcribe-pulse {
-              0%, 100% { color: color-mix(in srgb, var(--color-text) 40%, transparent); }
-              50% { color: color-mix(in srgb, var(--color-text) 90%, transparent); }
-            }
-          `}</style>
-        )}
-        {retrying
-          ? t("settings.history.transcribing")
-          : hasTranscription
-            ? displayText
-            : t("settings.history.transcriptionFailed")}
-      </p>
+              ? displayText
+              : t("settings.history.transcriptionFailed")}
+        </p>
+      )}
+
+      {entry.user_corrected_text !== null && !retrying && !editing && (
+        <div
+          data-vocabulary-action
+          className="flex flex-col items-start gap-1 -mt-2"
+        >
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleAddCorrectionToVocabulary}
+            disabled={!selectedCorrection || isUpdating("custom_words")}
+          >
+            {t("settings.history.addToVocabulary")}
+          </Button>
+          {selectionValidationError && (
+            <p role="alert" className="text-sm text-red-500">
+              {t(`settings.advanced.customWords.${selectionValidationError}`)}
+            </p>
+          )}
+          {vocabularyError && (
+            <p role="alert" className="text-sm text-red-500">
+              {vocabularyError === "duplicate"
+                ? t("settings.advanced.customWords.duplicate", {
+                    word: normalizeCustomWord(selectedCorrection),
+                  })
+                : t(`settings.advanced.customWords.${vocabularyError}`)}
+            </p>
+          )}
+          {vocabularyStatus && (
+            <p role="status" className="text-sm">
+              {t("settings.history.vocabularyAdded")}
+            </p>
+          )}
+        </div>
+      )}
 
       {!retrying && (originalText || entry.user_corrected_text !== null) && (
         <div className="border-l-2 border-mid-gray/30 pl-3 -mt-2 pb-2">

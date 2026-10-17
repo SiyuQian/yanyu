@@ -18,6 +18,7 @@ interface UseSettingsReturn {
     key: K,
     value: Settings[K],
   ) => Promise<void>;
+  updateCustomWords: (words: string[]) => Promise<void>;
   resetSetting: (key: keyof Settings) => Promise<void>;
   refreshSettings: (rejectOnError?: boolean) => Promise<void>;
   refreshAudioDevices: () => Promise<void>;
@@ -64,6 +65,7 @@ export const useSettings = (): UseSettingsReturn => {
     postProcessModelOptions: store.postProcessModelOptions,
     updateChecksLocked: store.updateChecksLocked,
     updateSetting: store.updateSetting,
+    updateCustomWords: store.updateCustomWords,
     resetSetting: store.resetSetting,
     refreshSettings: store.refreshSettings,
     refreshAudioDevices: store.refreshAudioDevices,

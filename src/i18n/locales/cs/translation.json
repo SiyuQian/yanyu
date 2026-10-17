@@ -404,7 +404,10 @@
         "placeholder": "Přidat slovo",
         "add": "Přidat",
         "remove": "Odebrat {{word}}",
-        "duplicate": "\"{{word}}\" již existuje"
+        "duplicate": "\"{{word}}\" již existuje",
+        "invalid": "Zadejte platné slovo.",
+        "tooLong": "Slova mohou mít nejvýše 50 znaků.",
+        "updateFailed": "Vlastní slova se nepodařilo aktualizovat. Zkuste to znovu."
       },
       "voiceActivityDetection": {
         "title": "Detekce hlasové aktivity",
@@ -521,7 +524,10 @@
       "correctionRequired": "Před uložením zadejte přepis.",
       "correctionSaveError": "Přepis se nepodařilo uložit. Zkuste to znovu.",
       "recognizedText": "Rozpoznaný text",
-      "polishedText": "Upravený text"
+      "polishedText": "Upravený text",
+      "addToVocabulary": "Přidat do slovníku",
+      "vocabularyAdded": "Přidáno do slovníku.",
+      "savedCorrectionText": "Uložený opravený přepis"
     },
     "debug": {
       "title": "Ladění",

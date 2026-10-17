@@ -404,7 +404,10 @@
         "placeholder": "Ajouter un mot",
         "add": "Ajouter",
         "remove": "Supprimer {{word}}",
-        "duplicate": "\"{{word}}\" existe déjà"
+        "duplicate": "\"{{word}}\" existe déjà",
+        "invalid": "Saisissez un mot valide.",
+        "tooLong": "Les mots ne doivent pas dépasser 50 caractères.",
+        "updateFailed": "Échec de la mise à jour des mots personnalisés. Veuillez réessayer."
       },
       "voiceActivityDetection": {
         "title": "Détection d'activité vocale (VAD)",
@@ -521,7 +524,10 @@
       "correctionRequired": "Saisissez une transcription avant d’enregistrer.",
       "correctionSaveError": "Impossible d’enregistrer la transcription. Réessayez.",
       "recognizedText": "Texte reconnu",
-      "polishedText": "Texte peaufiné"
+      "polishedText": "Texte peaufiné",
+      "addToVocabulary": "Ajouter au vocabulaire",
+      "vocabularyAdded": "Ajouté au vocabulaire.",
+      "savedCorrectionText": "Transcription corrigée enregistrée"
     },
     "debug": {
       "title": "Débogage",

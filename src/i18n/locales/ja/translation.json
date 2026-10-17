@@ -404,7 +404,10 @@
         "placeholder": "単語を追加",
         "add": "追加",
         "remove": "{{word}}を削除",
-        "duplicate": "「{{word}}」は既に存在します"
+        "duplicate": "「{{word}}」は既に存在します",
+        "invalid": "有効な単語を入力してください。",
+        "tooLong": "単語は50文字以内で入力してください。",
+        "updateFailed": "カスタム単語を更新できませんでした。もう一度お試しください。"
       },
       "voiceActivityDetection": {
         "title": "音声区間検出 (VAD)",
@@ -521,7 +524,10 @@
       "correctionRequired": "保存する前に文字起こしを入力してください。",
       "correctionSaveError": "文字起こしを保存できませんでした。もう一度お試しください。",
       "recognizedText": "認識されたテキスト",
-      "polishedText": "整えたテキスト"
+      "polishedText": "整えたテキスト",
+      "addToVocabulary": "単語リストに追加",
+      "vocabularyAdded": "単語リストに追加しました。",
+      "savedCorrectionText": "保存済みの修正済み文字起こし"
     },
     "debug": {
       "title": "デバッグ",

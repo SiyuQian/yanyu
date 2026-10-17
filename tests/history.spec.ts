@@ -15,12 +15,21 @@ const entry: HistoryEntry = {
   user_corrected_text: null,
 };
 
-async function mount(page: Page, overrides: Partial<HistoryEntry> = {}) {
+async function mount(
+  page: Page,
+  overrides: Partial<HistoryEntry> = {},
+  customWords: string[] = [],
+) {
   await page.addInitScript(
-    (initial) => {
+    (initial: { entry: HistoryEntry; customWords: string[] }) => {
       let saved =
         JSON.parse(localStorage.getItem("history-fixture") || "null") ||
-        initial;
+        initial.entry;
+      if (localStorage.getItem("custom-words") === null)
+        localStorage.setItem(
+          "custom-words",
+          JSON.stringify(initial.customWords),
+        );
       const callbacks = new Map<number, (event: unknown) => void>();
       let nextCallback = 1;
       Object.assign(window, {
@@ -43,6 +52,19 @@ async function mount(page: Page, overrides: Partial<HistoryEntry> = {}) {
             }
             if (command === "get_history_entries")
               return { entries: [saved], has_more: false };
+            if (command === "update_custom_words") {
+              const failure = localStorage.getItem("word-failure");
+              if (failure === "result") throw "write failed";
+              if (failure === "invoke") throw new Error("invoke failed");
+              if (localStorage.getItem("word-pending"))
+                await new Promise<void>((resolve) => {
+                  (
+                    window as unknown as { finishWordUpdate: () => void }
+                  ).finishWordUpdate = resolve;
+                });
+              localStorage.setItem("custom-words", JSON.stringify(args.words));
+              return null;
+            }
             if (command === "update_history_entry_correction") {
               localStorage.setItem("last-save", JSON.stringify(args));
               const failure = localStorage.getItem("save-failure");
@@ -74,7 +96,7 @@ async function mount(page: Page, overrides: Partial<HistoryEntry> = {}) {
         },
       });
     },
-    { ...entry, ...overrides },
+    { entry: { ...entry, ...overrides }, customWords },
   );
   await page.route(/\/src\/main\.tsx(?:\?.*)?$/, (route) =>
     route.fulfill({
@@ -82,7 +104,9 @@ async function mount(page: Page, overrides: Partial<HistoryEntry> = {}) {
       body: `import React from '/node_modules/.vite/deps/react.js';
       import ReactDOM from '/node_modules/.vite/deps/react-dom_client.js';
       import { HistorySettings } from '/src/components/settings/history/HistorySettings.tsx';
+      import { useSettingsStore } from '/src/stores/settingsStore.ts';
       import '/src/i18n/index.ts'; import '/src/App.css';
+      useSettingsStore.setState({ settings: { custom_words: JSON.parse(localStorage.getItem('custom-words') || '[]') }, isLoading: false });
       ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(HistorySettings));`,
     }),
   );
@@ -91,7 +115,7 @@ async function mount(page: Page, overrides: Partial<HistoryEntry> = {}) {
 const edit = (page: Page) =>
   page.getByRole("button", { name: "Edit transcript", exact: true });
 const editor = (page: Page) =>
-  page.getByRole("textbox", { name: "Corrected transcript" });
+  page.getByRole("textbox", { name: "Corrected transcript", exact: true });
 const copy = (page: Page) =>
   page.getByRole("button", {
     name: "Copy transcription to clipboard",
@@ -99,6 +123,24 @@ const copy = (page: Page) =>
   });
 const save = (page: Page) =>
   page.getByRole("button", { name: "Save", exact: true });
+const savedCorrection = (page: Page) =>
+  page.getByRole("textbox", { name: "Saved corrected transcript" });
+
+async function selectSavedCorrection(page: Page, start = 0, end?: number) {
+  await savedCorrection(page).evaluate(
+    (element, selection) => {
+      const textarea = element as HTMLTextAreaElement;
+      textarea.focus();
+      textarea.setSelectionRange(
+        selection.start,
+        selection.end ?? textarea.value.length,
+      );
+      textarea.dispatchEvent(new Event("select", { bubbles: true }));
+      textarea.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    },
+    { start, end },
+  );
+}
 
 for (const [polished, displayed] of [
   ["  polished source  ", "polished source"],
@@ -324,5 +366,220 @@ for (const raw of ["", " \t\n"]) {
     expect(await page.evaluate(() => localStorage.getItem("clipboard"))).toBe(
       "retried",
     );
+  });
+}
+
+test("adds a mouse-selected saved correction to the custom vocabulary", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "My corrected phrase" });
+  await expect(savedCorrection(page)).toHaveValue("My corrected phrase");
+  await savedCorrection(page).selectText();
+  await savedCorrection(page).dispatchEvent("mouseup");
+  await expect(
+    page.getByRole("button", { name: "Add to vocabulary" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Add to vocabulary" }).click();
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("custom-words")!),
+    ),
+  ).toEqual(["My corrected phrase"]);
+  await expect(page.getByRole("status")).toHaveText("Added to vocabulary.");
+});
+
+test("supports keyboard selection in the saved correction", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "Keyboard term" });
+  const correction = savedCorrection(page);
+  await expect(correction).toHaveValue("Keyboard term");
+  await correction.focus();
+  expect(
+    await correction.evaluate((element) => document.activeElement === element),
+  ).toBe(true);
+  await page.keyboard.press("ControlOrMeta+A");
+  await expect
+    .poll(() =>
+      correction.evaluate(
+        (element) => (element as HTMLTextAreaElement).selectionEnd,
+      ),
+    )
+    .toBe("Keyboard term".length);
+  await expect(
+    page.getByRole("button", { name: "Add to vocabulary" }),
+  ).toBeEnabled();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("status")).toHaveText("Added to vocabulary.");
+});
+
+test("rejects recognized text and bounds selection to the saved correction", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "Saved words" });
+  const add = page.getByRole("button", { name: "Add to vocabulary" });
+  const source = page.getByText("recognized source", { exact: true });
+  await source.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
+    element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+  });
+  await expect(add).toBeDisabled();
+  await expect(savedCorrection(page)).toHaveValue("Saved words");
+  await selectSavedCorrection(page);
+  await expect(add).toBeEnabled();
+  await add.click();
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("custom-words")!),
+    ),
+  ).toEqual(["Saved words"]);
+});
+
+test("clears an empty saved selection and selections moved to unrelated text", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "Saved words" });
+  const correction = savedCorrection(page);
+  const add = page.getByRole("button", { name: "Add to vocabulary" });
+  await correction.focus();
+  await page.keyboard.press("ControlOrMeta+A");
+  await expect(add).toBeEnabled();
+  await correction.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    textarea.setSelectionRange(0, 0);
+    textarea.dispatchEvent(
+      new KeyboardEvent("keyup", { key: "ArrowRight", bubbles: true }),
+    );
+  });
+  await expect(add).toBeDisabled();
+
+  await selectSavedCorrection(page);
+  await expect(add).toBeEnabled();
+  await page.getByText("recognized source", { exact: true }).click();
+  await expect(add).toBeDisabled();
+});
+
+test("reports a normalized-empty selection without changing vocabulary", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "<>'\"" });
+  await selectSavedCorrection(page);
+  await expect(page.getByRole("alert")).toHaveText("Enter a valid word.");
+  expect(await page.evaluate(() => localStorage.getItem("custom-words"))).toBe(
+    "[]",
+  );
+});
+
+test("reports a 51-unit selection without changing vocabulary", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "x".repeat(51) });
+  await selectSavedCorrection(page);
+  await expect(page.getByRole("alert")).toHaveText(
+    "Words must be 50 characters or fewer.",
+  );
+  expect(await page.evaluate(() => localStorage.getItem("custom-words"))).toBe(
+    "[]",
+  );
+});
+
+test("accepts a 50-unit saved correction", async ({ page }) => {
+  const word = "x".repeat(50);
+  await mount(page, { user_corrected_text: word });
+  await selectSavedCorrection(page);
+  await page.getByRole("button", { name: "Add to vocabulary" }).click();
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("custom-words")!),
+    ),
+  ).toEqual([word]);
+});
+
+test("reports a normalized duplicate from history", async ({ page }) => {
+  await mount(page, { user_corrected_text: "<Saved>   word" }, ["Saved word"]);
+  await selectSavedCorrection(page);
+  await page.getByRole("button", { name: "Add to vocabulary" }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    '"Saved word" already exists',
+  );
+  expect(await page.evaluate(() => localStorage.getItem("custom-words"))).toBe(
+    '["Saved word"]',
+  );
+});
+
+test("clears a saved selection when editing or retrying starts", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "Saved term" });
+  await selectSavedCorrection(page);
+  await expect(
+    page.getByRole("button", { name: "Add to vocabulary" }),
+  ).toBeEnabled();
+  await edit(page).click();
+  await expect(
+    page.getByRole("button", { name: "Add to vocabulary" }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Add to vocabulary" }),
+  ).toBeDisabled();
+
+  await selectSavedCorrection(page);
+  await page
+    .getByRole("button", { name: "Re-transcribe", exact: true })
+    .click();
+  await expect(
+    page.getByText("Transcribing...", { exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() =>
+    (window as unknown as { finishRetry: () => void }).finishRetry(),
+  );
+  await expect(
+    page.getByRole("button", { name: "Add to vocabulary" }),
+  ).toBeDisabled();
+});
+
+test("disables history vocabulary updates while the shared word list is pending", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "Pending term" });
+  await page.evaluate(() => localStorage.setItem("word-pending", "yes"));
+  await selectSavedCorrection(page);
+  await page.getByRole("button", { name: "Add to vocabulary" }).click();
+  await expect(
+    page.getByRole("button", { name: "Add to vocabulary" }),
+  ).toBeDisabled();
+  await page.evaluate(() =>
+    (window as unknown as { finishWordUpdate: () => void }).finishWordUpdate(),
+  );
+  await expect(page.getByRole("status")).toHaveText("Added to vocabulary.");
+});
+
+for (const failure of ["result", "invoke"]) {
+  test(`preserves vocabulary and reports ${failure} failure for history addition`, async ({
+    page,
+  }) => {
+    await mount(page, {
+      user_corrected_text: "Saved word",
+    });
+    await page.evaluate(() =>
+      localStorage.setItem("custom-words", '["existing"]'),
+    );
+    await page.evaluate(
+      (mode) => localStorage.setItem("word-failure", mode),
+      failure,
+    );
+    await selectSavedCorrection(page);
+    await page.getByRole("button", { name: "Add to vocabulary" }).click();
+    await expect(page.getByRole("alert")).toHaveText(
+      "Failed to update custom words. Please try again.",
+    );
+    expect(
+      await page.evaluate(() => localStorage.getItem("custom-words")),
+    ).toBe('["existing"]');
   });
 }

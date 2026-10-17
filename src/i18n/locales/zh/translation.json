@@ -404,7 +404,10 @@
         "placeholder": "添加词汇",
         "add": "添加",
         "remove": "删除 {{word}}",
-        "duplicate": "\"{{word}}\" 已存在"
+        "duplicate": "\"{{word}}\" 已存在",
+        "invalid": "请输入有效单词。",
+        "tooLong": "单词长度不得超过 50 个字符。",
+        "updateFailed": "无法更新自定义词语，请重试。"
       },
       "voiceActivityDetection": {
         "title": "语音活动检测",
@@ -521,7 +524,10 @@
       "correctionRequired": "请输入转录文本后再保存。",
       "correctionSaveError": "保存转录失败，请重试。",
       "recognizedText": "识别原文",
-      "polishedText": "润色文本"
+      "polishedText": "润色文本",
+      "addToVocabulary": "添加到词汇表",
+      "vocabularyAdded": "已添加到词汇表。",
+      "savedCorrectionText": "已保存的修正转录文本"
     },
     "debug": {
       "title": "调试",

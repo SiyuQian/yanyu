@@ -381,7 +381,10 @@
         "placeholder": "أضف كلمة",
         "add": "إضافة",
         "remove": "إزالة {{word}}",
-        "duplicate": "\"{{word}}\" موجود بالفعل"
+        "duplicate": "\"{{word}}\" موجود بالفعل",
+        "invalid": "أدخل كلمة صالحة.",
+        "tooLong": "يجب ألا تتجاوز الكلمات 50 حرفًا.",
+        "updateFailed": "تعذّر تحديث الكلمات المخصصة. يُرجى المحاولة مرة أخرى."
       },
       "voiceActivityDetection": {
         "title": "كشف النشاط الصوتي",
@@ -498,7 +501,10 @@
       "correctionRequired": "أدخل نصًا قبل الحفظ.",
       "correctionSaveError": "تعذر حفظ النص. حاول مرة أخرى.",
       "recognizedText": "النص المتعرف عليه",
-      "polishedText": "النص المنقح"
+      "polishedText": "النص المنقح",
+      "addToVocabulary": "أضف إلى المفردات",
+      "vocabularyAdded": "تمت الإضافة إلى المفردات.",
+      "savedCorrectionText": "النص المصحح المحفوظ"
     },
     "debug": {
       "title": "تصحيح الأخطاء",

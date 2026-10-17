@@ -404,7 +404,10 @@
         "placeholder": "Adicionar uma palavra",
         "add": "Adicionar",
         "remove": "Remover {{word}}",
-        "duplicate": "\"{{word}}\" já existe"
+        "duplicate": "\"{{word}}\" já existe",
+        "invalid": "Insira uma palavra válida.",
+        "tooLong": "As palavras devem ter até 50 caracteres.",
+        "updateFailed": "Falha ao atualizar as palavras personalizadas. Tente novamente."
       },
       "voiceActivityDetection": {
         "title": "Detecção de atividade de voz",
@@ -521,7 +524,10 @@
       "correctionRequired": "Insira uma transcrição antes de salvar.",
       "correctionSaveError": "Não foi possível salvar a transcrição. Tente novamente.",
       "recognizedText": "Texto reconhecido",
-      "polishedText": "Texto aprimorado"
+      "polishedText": "Texto aprimorado",
+      "addToVocabulary": "Adicionar ao vocabulário",
+      "vocabularyAdded": "Adicionado ao vocabulário.",
+      "savedCorrectionText": "Transcrição corrigida salva"
     },
     "debug": {
       "title": "Depuração",
