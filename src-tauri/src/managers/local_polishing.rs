@@ -843,7 +843,13 @@ impl TermCorrection<'_> {
                     let han = literal.chars().all(is_han) && literal.chars().count() <= 4;
                     let english = literal.chars().all(|c| c.is_ascii_alphabetic())
                         && ascii_boundary(self.original, source.start)
-                        && ascii_boundary(self.original, source.end);
+                        && ascii_boundary(self.original, source.end)
+                        // shortcut: a misheard English word keeps its initial sound; use a phonetic score if this rejects real corrections.
+                        && literal
+                            .chars()
+                            .next()
+                            .map(|c| c.to_ascii_lowercase())
+                            == self.terms[t].first().copied();
                     if !(han || english)
                         || self
                             .protected
@@ -1026,6 +1032,7 @@ mod tests {
             ("check Ripple today", "check repository today"),
             ("check Ripple today", "visit repo today"),
             ("check Ripple today", "check repox today"),
+            ("delete Ripple today", "repo Ripple today"),
             ("check small Ripple today", "check repo today"),
             ("check not Ripple today", "check repo today"),
             ("if Ripple fails, stop", "repo fails, stop"),
