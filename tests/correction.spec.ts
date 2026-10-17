@@ -11,8 +11,10 @@ test.beforeEach(async ({ page }) => {
     // Queued backend results and recorded apply arguments for retry scenarios.
     const results: string[] = [];
     const applied: Record<string, unknown>[] = [];
+    const closes: number[] = [];
     Object.assign(window, {
       __applied: applied,
+      __closes: closes,
       __TAURI_INTERNALS__: {
         transformCallback: () => 1,
         invoke: async (command: string, args: Record<string, unknown>) => {
@@ -42,7 +44,10 @@ test.beforeEach(async ({ page }) => {
               ? `${deliveryOutcome}_learning_failed`
               : "copied";
           }
-          if (command === "close_correction") return null;
+          if (command === "close_correction") {
+            closes.push(1);
+            return null;
+          }
           if (command === "test_learning_fail") {
             learningFail = args.fail !== false;
             deliveryOutcome = (args.outcome as string) || "copied";
@@ -112,6 +117,24 @@ test("reopening preserves the draft", async ({ page }) => {
   await editor.press("Escape");
   // A persistent webview stays mounted when the native window is hidden.
   await expect(editor).toHaveValue("My preserved draft");
+});
+
+test("editor keeps focus after Apply so Escape still closes", async ({
+  page,
+}) => {
+  const editor = page.getByRole("textbox", { name: "Corrected text" });
+  await editor.fill("Hello Yanyu");
+  await editor.press("Enter");
+  await expect(page.getByRole("status")).toContainText("Copied");
+  await expect(editor).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __closes: number[] }).__closes.length,
+      ),
+    )
+    .toBe(1);
 });
 
 test("output errors preserve edits and report failure", async ({ page }) => {

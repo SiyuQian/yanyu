@@ -93,7 +93,7 @@ impl State {
     /// Deliver a draft, then attempt optional learning.
     ///
     /// The saved target is replaced at most once per generation. Repeating the last replaced
-    /// draft is a no-op. Copies are repeated.
+    /// draft skips delivery; optional learning still runs on every Apply. Copies are repeated.
     fn apply(
         &mut self,
         draft: &str,

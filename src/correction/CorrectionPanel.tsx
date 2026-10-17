@@ -131,7 +131,9 @@ export default function CorrectionPanel() {
             className="w-full"
             rows={4}
             value={session.draft}
-            disabled={busy}
+            // readOnly keeps focus (and Escape) during Apply; disabled would blur it.
+            readOnly={busy}
+            aria-busy={busy}
             onChange={(event) => {
               dirty.current = true;
               setSession({ ...session, draft: event.target.value, word: null });
