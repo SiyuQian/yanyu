@@ -404,7 +404,10 @@
         "placeholder": "단어 추가",
         "add": "추가",
         "remove": "{{word}} 제거",
-        "duplicate": "\"{{word}}\"이(가) 이미 존재합니다"
+        "duplicate": "\"{{word}}\"이(가) 이미 존재합니다",
+        "invalid": "올바른 단어를 입력하세요.",
+        "tooLong": "단어는 50자 이하여야 합니다.",
+        "updateFailed": "사용자 지정 단어를 업데이트하지 못했습니다. 다시 시도하세요."
       },
       "voiceActivityDetection": {
         "title": "음성 활동 감지",
@@ -521,7 +524,10 @@
       "correctionRequired": "저장하기 전에 전사를 입력하세요.",
       "correctionSaveError": "전사를 저장하지 못했습니다. 다시 시도하세요.",
       "recognizedText": "인식된 텍스트",
-      "polishedText": "다듬은 텍스트"
+      "polishedText": "다듬은 텍스트",
+      "addToVocabulary": "단어 목록에 추가",
+      "vocabularyAdded": "단어 목록에 추가했습니다.",
+      "savedCorrectionText": "저장된 수정 전사문"
     },
     "debug": {
       "title": "디버그",

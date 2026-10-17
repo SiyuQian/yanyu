@@ -404,7 +404,10 @@
         "placeholder": "Tambahkan kata",
         "add": "Tambah",
         "remove": "Hapus {{word}}",
-        "duplicate": "\"{{word}}\" sudah ada"
+        "duplicate": "\"{{word}}\" sudah ada",
+        "invalid": "Masukkan kata yang valid.",
+        "tooLong": "Kata tidak boleh lebih dari 50 karakter.",
+        "updateFailed": "Gagal memperbarui kata kustom. Silakan coba lagi."
       },
       "voiceActivityDetection": {
         "title": "Deteksi Aktivitas Suara",
@@ -521,7 +524,10 @@
       "correctionRequired": "Masukkan transkrip sebelum menyimpan.",
       "correctionSaveError": "Gagal menyimpan transkrip. Silakan coba lagi.",
       "recognizedText": "Teks yang dikenali",
-      "polishedText": "Teks yang dipoles"
+      "polishedText": "Teks yang dipoles",
+      "addToVocabulary": "Tambahkan ke kosakata",
+      "vocabularyAdded": "Ditambahkan ke kosakata.",
+      "savedCorrectionText": "Transkrip terkoreksi yang disimpan"
     },
     "debug": {
       "title": "Debug",

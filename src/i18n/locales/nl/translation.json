@@ -404,7 +404,10 @@
         "placeholder": "Woord toevoegen",
         "add": "Toevoegen",
         "remove": "{{word}} verwijderen",
-        "duplicate": "\"{{word}}\" bestaat al"
+        "duplicate": "\"{{word}}\" bestaat al",
+        "invalid": "Voer een geldig woord in.",
+        "tooLong": "Woorden mogen maximaal 50 tekens bevatten.",
+        "updateFailed": "Aangepaste woorden bijwerken is mislukt. Probeer het opnieuw."
       },
       "voiceActivityDetection": {
         "title": "Spraakactiviteitsdetectie (VAD)",
@@ -521,7 +524,10 @@
       "correctionRequired": "Voer een transcript in voordat je opslaat.",
       "correctionSaveError": "Transcript opslaan mislukt. Probeer het opnieuw.",
       "recognizedText": "Herkende tekst",
-      "polishedText": "Verbeterde tekst"
+      "polishedText": "Verbeterde tekst",
+      "addToVocabulary": "Toevoegen aan woordenlijst",
+      "vocabularyAdded": "Toegevoegd aan woordenlijst.",
+      "savedCorrectionText": "Opgeslagen gecorrigeerde transcriptie"
     },
     "debug": {
       "title": "Probleemoplossing",

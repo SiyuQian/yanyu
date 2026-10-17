@@ -404,7 +404,10 @@
         "placeholder": "Lägg till ett ord",
         "add": "Lägg till",
         "remove": "Ta bort {{word}}",
-        "duplicate": "\"{{word}}\" finns redan"
+        "duplicate": "\"{{word}}\" finns redan",
+        "invalid": "Ange ett giltigt ord.",
+        "tooLong": "Ord får innehålla högst 50 tecken.",
+        "updateFailed": "Det gick inte att uppdatera anpassade ord. Försök igen."
       },
       "voiceActivityDetection": {
         "title": "Röstaktivitetsdetektering",
@@ -521,7 +524,10 @@
       "correctionRequired": "Ange en transkription innan du sparar.",
       "correctionSaveError": "Kunde inte spara transkriptionen. Försök igen.",
       "recognizedText": "Igenkänd text",
-      "polishedText": "Förbättrad text"
+      "polishedText": "Förbättrad text",
+      "addToVocabulary": "Lägg till i ordförrådet",
+      "vocabularyAdded": "Tillagt i ordförrådet.",
+      "savedCorrectionText": "Sparad korrigerad transkription"
     },
     "debug": {
       "title": "Felsökning",

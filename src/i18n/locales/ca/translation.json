@@ -404,7 +404,10 @@
         "placeholder": "Afegiu una paraula",
         "add": "Afegiu",
         "remove": "Suprimiu {{word}}",
-        "duplicate": "«{{word}}» ja existeix"
+        "duplicate": "«{{word}}» ja existeix",
+        "invalid": "Introdueix una paraula vàlida.",
+        "tooLong": "Les paraules poden tenir fins a 50 caràcters.",
+        "updateFailed": "No s’han pogut actualitzar les paraules personalitzades. Torna-ho a provar."
       },
       "voiceActivityDetection": {
         "title": "Detecció d'activitat de veu",
@@ -521,7 +524,10 @@
       "correctionRequired": "Introduïu una transcripció abans de desar.",
       "correctionSaveError": "No s’ha pogut desar la transcripció. Torneu-ho a provar.",
       "recognizedText": "Text reconegut",
-      "polishedText": "Text polit"
+      "polishedText": "Text polit",
+      "addToVocabulary": "Afegeix al vocabulari",
+      "vocabularyAdded": "Afegit al vocabulari.",
+      "savedCorrectionText": "Transcripció corregida desada"
     },
     "debug": {
       "title": "Depuració",
