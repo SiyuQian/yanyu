@@ -627,21 +627,7 @@ pub(crate) fn check_output_with_terms(
         return check_output(original, output, complete);
     }
     let output = output.trim();
-    let protected = protected_ranges(original);
-    let mut checked = HashSet::new();
-    let mut search_budget = 1_000_000usize;
-    for range in &protected {
-        let literal = &original[range.clone()];
-        if !checked.insert(literal) {
-            continue;
-        }
-        search_budget = search_budget
-            .checked_sub(original.len() + output.len())
-            .ok_or(PolishSkip::TooLong)?;
-        if output.matches(literal).count() < original.matches(literal).count() {
-            return Err(PolishSkip::IdentifierChanged);
-        }
-    }
+    // Plain cleanup is judged exactly as without terms; protection guards substitutions only.
     if check_output(original, output, complete).is_ok() {
         return Ok(output.into());
     }
@@ -651,6 +637,16 @@ pub(crate) fn check_output_with_terms(
     // Bound correction work independently of the service's larger cleanup inputs.
     if original.chars().count() > 200 || output.chars().count() > 200 {
         return Err(PolishSkip::TooLong);
+    }
+    let protected = protected_ranges(original);
+    let mut checked = HashSet::new();
+    for range in &protected {
+        let literal = &original[range.clone()];
+        if checked.insert(literal)
+            && output.matches(literal).count() < original.matches(literal).count()
+        {
+            return Err(PolishSkip::IdentifierChanged);
+        }
     }
     // Raw format checks apply even to characters inside replacement spans.
     if output.chars().any(|c| c.is_control() || matches!(c, '\u{200B}'..='\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}' | '\u{FEFF}'))
@@ -722,6 +718,19 @@ fn protected_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
     ] {
         let mut start = None;
         for (i, c) in text.char_indices() {
+            // An ASCII apostrophe between letters (don't, it's) is not a quotation mark.
+            if c == '\''
+                && text[..i]
+                    .chars()
+                    .next_back()
+                    .is_some_and(char::is_alphanumeric)
+                && text[i + 1..]
+                    .chars()
+                    .next()
+                    .is_some_and(char::is_alphanumeric)
+            {
+                continue;
+            }
             if start.is_none() && c == open {
                 start = Some(i);
             } else if c == close {
@@ -730,7 +739,8 @@ fn protected_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
                 }
             }
         }
-        if let Some(begin) = start {
+        // An unmatched ASCII apostrophe (dogs') protects nothing; other unmatched quotes run to the end.
+        if let Some(begin) = start.filter(|_| open != '\'') {
             ranges.push(begin..text.len());
         }
     }
@@ -946,10 +956,54 @@ mod tests {
             .map(|i| format!("‘value{i}’"))
             .collect::<Vec<_>>()
             .join(" ");
+        let terms = ["repo".into()];
         assert_eq!(
-            check_output_with_terms(&source, &format!("{source}."), true, &["repo".into()]),
+            check_output_with_terms(&source, &format!("{source}."), true, &terms),
+            Ok(format!("{source}."))
+        );
+        assert_eq!(
+            check_output_with_terms(&source, &format!("{source} repo"), true, &terms),
             Err(PolishSkip::TooLong)
         );
+    }
+
+    #[test]
+    fn cleanup_with_terms_matches_cleanup_without_terms() {
+        let terms = ["repo".into()];
+        for (source, output) in [
+            ("不是不是不是，别改代码", "不是，别改代码"),
+            ("no no stop", "no stop"),
+            ("No, stop", "no, stop"),
+            ("不要提交", "提交"),
+            ("if ready send it", "ready send it"),
+            ("I don't um know", "I don't know"),
+        ] {
+            assert_eq!(
+                check_output_with_terms(source, output, true, &terms).ok(),
+                check_output(source, output, true).ok(),
+                "{source:?} -> {output:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn protected_ranges_ignore_contractions() {
+        let terms = ["repo".into()];
+        assert_eq!(
+            check_output_with_terms("I don't see Ripple", "I don't see repo", true, &terms),
+            Ok("I don't see repo".into())
+        );
+        assert_eq!(
+            check_output_with_terms("the dogs' Ripple", "the dogs' repo", true, &terms),
+            Ok("the dogs' repo".into())
+        );
+        assert!(check_output_with_terms(
+            "I don't say 'Ripple' here",
+            "I don't say 'repo' here",
+            true,
+            &terms
+        )
+        .is_err());
     }
 
     #[test]
@@ -990,10 +1044,6 @@ mod tests {
                 check_output_with_terms(source, candidate, true, &terms).is_err(),
                 "{source:?} -> {candidate:?}"
             );
-        }
-        for (source, candidate) in [("不要提交", "提交"), ("if ready send it", "ready send it")]
-        {
-            assert!(check_output_with_terms(source, candidate, true, &terms).is_err());
         }
         assert!(
             check_output_with_terms("check Ripple today", "check repo today", true, &[]).is_err()
