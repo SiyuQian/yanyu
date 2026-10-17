@@ -361,19 +361,22 @@ impl HistoryManager {
         if text.trim().is_empty() {
             return Err(anyhow!("Correction must not be blank"));
         }
-        let updated = conn.execute(
+        let transaction = conn.unchecked_transaction()?;
+        let updated = transaction.execute(
             "UPDATE transcription_history SET user_corrected_text = ?1 WHERE id = ?2",
             params![text, id],
         )?;
         if updated == 0 {
             return Err(anyhow!("History entry {} not found", id));
         }
-        Ok(conn.query_row(
+        let entry = transaction.query_row(
             "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason, user_corrected_text
              FROM transcription_history WHERE id = ?1",
             params![id],
             Self::map_history_entry,
-        )?)
+        )?;
+        transaction.commit()?;
+        Ok(entry)
     }
 
     pub fn cleanup_old_entries(&self) -> Result<()> {
@@ -821,6 +824,41 @@ mod tests {
             (100, "yanyu-100.wav", "Recording 100")
         );
         assert_eq!(fs::read(audio).unwrap(), b"synthetic audio bytes");
+    }
+
+    #[test]
+    fn correction_readback_failure_rolls_back() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "recognized", Some("polished"));
+        HistoryManager::update_correction_with_conn(&conn, 1, "  saved\n ").unwrap();
+        conn.execute_batch(
+            "CREATE TRIGGER fail_correction_readback AFTER UPDATE OF user_corrected_text
+             ON transcription_history BEGIN
+                UPDATE transcription_history SET timestamp = 'invalid' WHERE id = NEW.id;
+             END;",
+        )
+        .unwrap();
+
+        let error = HistoryManager::update_correction_with_conn(&conn, 1, "replacement")
+            .expect_err("the write succeeds but reading its timestamp must fail");
+        assert!(matches!(
+            error.downcast_ref::<rusqlite::Error>(),
+            Some(rusqlite::Error::InvalidColumnType(_, name, _)) if name == "timestamp"
+        ));
+        let saved: String = conn
+            .query_row(
+                "SELECT user_corrected_text FROM transcription_history WHERE id = 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(saved, "  saved\n ");
+        let entry = HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(entry.timestamp, 100);
+        assert_eq!(entry.transcription_text, "recognized");
+        assert_eq!(entry.post_processed_text.as_deref(), Some("polished"));
     }
 
     #[test]

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import type { HistoryEntry } from "../src/bindings";
+import type { HistoryEntry } from "@/bindings";
 
 const entry: HistoryEntry = {
   id: 1,
@@ -198,6 +198,47 @@ for (const failure of ["result", "invoke"]) {
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
     await edit(page).click();
     await expect(editor(page)).toHaveValue("polished source");
+  });
+}
+
+for (const failure of ["result", "invoke"]) {
+  test(`failed re-edit preserves correction and retries draft after ${failure} failure`, async ({
+    page,
+  }) => {
+    await mount(page, { user_corrected_text: "  saved correction\n " });
+    await edit(page).click();
+    await expect(editor(page)).toHaveValue("  saved correction\n ");
+    await editor(page).fill("discarded draft");
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
+    expect(
+      await page.evaluate(() => localStorage.getItem("last-save")),
+    ).toBeNull();
+    await edit(page).click();
+    await expect(editor(page)).toHaveValue("  saved correction\n ");
+    await editor(page).fill("  replacement correction\n ");
+    await page.evaluate(
+      (mode) => localStorage.setItem("save-failure", mode),
+      failure,
+    );
+    await save(page).click();
+    await expect(page.getByRole("alert")).toHaveText(
+      "Failed to save transcript. Please try again.",
+    );
+    await expect(editor(page)).toHaveValue("  replacement correction\n ");
+    await copy(page).click();
+    expect(await page.evaluate(() => localStorage.getItem("clipboard"))).toBe(
+      "  saved correction\n ",
+    );
+    await page.evaluate(() => localStorage.removeItem("save-failure"));
+    await save(page).click();
+    await expect(editor(page)).toHaveCount(0);
+    await page.reload();
+    await copy(page).click();
+    expect(await page.evaluate(() => localStorage.getItem("clipboard"))).toBe(
+      "  replacement correction\n ",
+    );
+    await edit(page).click();
+    await expect(editor(page)).toHaveValue("  replacement correction\n ");
   });
 }
 
