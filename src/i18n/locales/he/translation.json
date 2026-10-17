@@ -404,7 +404,10 @@
         "placeholder": "הוסף מילה",
         "add": "הוסף",
         "remove": "הסר את {{word}}",
-        "duplicate": "\"{{word}}\" כבר קיימת"
+        "duplicate": "\"{{word}}\" כבר קיימת",
+        "invalid": "הזן מילה תקינה.",
+        "tooLong": "מילים יכולות להכיל עד 50 תווים.",
+        "updateFailed": "עדכון המילים המותאמות נכשל. נסה שוב."
       },
       "voiceActivityDetection": {
         "title": "זיהוי פעילות קולית",
@@ -521,7 +524,10 @@
       "correctionRequired": "יש להזין תמלול לפני השמירה.",
       "correctionSaveError": "שמירת התמלול נכשלה. נסו שוב.",
       "recognizedText": "טקסט מזוהה",
-      "polishedText": "טקסט משופר"
+      "polishedText": "טקסט משופר",
+      "addToVocabulary": "הוסף לאוצר המילים",
+      "vocabularyAdded": "נוסף לאוצר המילים.",
+      "savedCorrectionText": "תמלול מתוקן שמור"
     },
     "debug": {
       "title": "ניפוי שגיאות",

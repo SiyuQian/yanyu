@@ -404,7 +404,10 @@
         "placeholder": "Kelime ekle",
         "add": "Ekle",
         "remove": "{{word}} Kaldır",
-        "duplicate": "\"{{word}}\" zaten mevcut"
+        "duplicate": "\"{{word}}\" zaten mevcut",
+        "invalid": "Geçerli bir sözcük girin.",
+        "tooLong": "Sözcükler en fazla 50 karakter olabilir.",
+        "updateFailed": "Özel sözcükler güncellenemedi. Lütfen yeniden deneyin."
       },
       "voiceActivityDetection": {
         "title": "Ses Etkinliği Algılama",
@@ -521,7 +524,10 @@
       "correctionRequired": "Kaydetmeden önce bir döküm girin.",
       "correctionSaveError": "Döküm kaydedilemedi. Lütfen tekrar deneyin.",
       "recognizedText": "Tanınan metin",
-      "polishedText": "Düzenlenmiş metin"
+      "polishedText": "Düzenlenmiş metin",
+      "addToVocabulary": "Sözlüğe ekle",
+      "vocabularyAdded": "Sözlüğe eklendi.",
+      "savedCorrectionText": "Kaydedilmiş düzeltilmiş döküm"
     },
     "debug": {
       "title": "Hata Ayıklama",

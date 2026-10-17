@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
       selected_language: "auto",
       audio_feedback: false,
       audio_feedback_volume: 1,
-      custom_words: [],
+      custom_words: JSON.parse(localStorage.getItem("custom-words") || "[]"),
       bindings: Object.fromEntries(
         ["transcribe", "cancel"].map((id) => [
           id,
@@ -43,6 +43,29 @@ test.beforeEach(async ({ page }) => {
         transformCallback: () => 1,
         invoke: async (command: string, args: Record<string, unknown>) => {
           if (command === "get_app_settings") return settings;
+          if (command === "get_history_entries")
+            return {
+              entries: [
+                {
+                  id: 1,
+                  file_name: "synthetic.wav",
+                  timestamp: 100,
+                  saved: false,
+                  title: "Synthetic recording",
+                  transcription_text: "recognized source",
+                  post_processed_text: null,
+                  post_process_prompt: null,
+                  post_process_requested: false,
+                  post_process_skip_reason: null,
+                  user_corrected_text: "言语 Acme",
+                },
+              ],
+              has_more: false,
+            };
+          if (command === "update_custom_words") {
+            settings.custom_words = args.words as string[];
+            localStorage.setItem("custom-words", JSON.stringify(args.words));
+          }
           if (command === "get_available_models") return [model];
           if (command === "get_current_model") return model.id;
           if (command === "plugin:app|version") return "0.0.1";
@@ -190,4 +213,29 @@ test("dictation keeps controls reachable in a narrow window in both themes", asy
   const rtlBounds = await page.getByRole("slider").boundingBox();
   expect(rtlBounds!.x).toBeGreaterThanOrEqual(0);
   expect(rtlBounds!.x + rtlBounds!.width).toBeLessThanOrEqual(680);
+});
+
+test("history vocabulary is shared with Dictionary in App and survives reload", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "Insights", exact: true }).click();
+  const correction = page.getByRole("textbox", {
+    name: "Saved corrected transcript",
+    exact: true,
+  });
+  await expect(correction).toHaveValue("言语 Acme");
+  await correction.focus();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("status")).toHaveText("Added to vocabulary.");
+  await page.getByRole("button", { name: "Dictionary", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Remove 言语 Acme", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Dictionary", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Remove 言语 Acme", exact: true }),
+  ).toBeVisible();
 });

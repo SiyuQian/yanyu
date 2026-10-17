@@ -404,7 +404,10 @@
         "placeholder": "新增詞彙",
         "add": "新增",
         "remove": "刪除 {{word}}",
-        "duplicate": "「{{word}}」已存在"
+        "duplicate": "「{{word}}」已存在",
+        "invalid": "請輸入有效的單字。",
+        "tooLong": "單字長度不得超過 50 個字元。",
+        "updateFailed": "無法更新自訂詞彙，請再試一次。"
       },
       "voiceActivityDetection": {
         "title": "語音活動偵測",
@@ -521,7 +524,10 @@
       "correctionRequired": "請輸入轉錄文字後再儲存。",
       "correctionSaveError": "儲存轉錄失敗，請重試。",
       "recognizedText": "辨識原文",
-      "polishedText": "潤飾文字"
+      "polishedText": "潤飾文字",
+      "addToVocabulary": "加入詞彙表",
+      "vocabularyAdded": "已加入詞彙表。",
+      "savedCorrectionText": "已儲存的修正轉錄文字"
     },
     "debug": {
       "title": "偵錯",

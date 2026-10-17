@@ -33,6 +33,7 @@ interface SettingsStore {
     key: K,
     value: Settings[K],
   ) => Promise<void>;
+  updateCustomWords: (words: string[]) => Promise<void>;
   resetSetting: (key: keyof Settings) => Promise<void>;
   refreshSettings: (rejectOnError?: boolean) => Promise<void>;
   refreshAudioDevices: () => Promise<void>;
@@ -343,10 +344,33 @@ export const useSettingsStore = create<SettingsStore>()(
       } catch (error) {
         console.error(`Failed to update setting ${String(key)}:`, error);
         if (settings) {
-          set({ settings: { ...settings, [key]: originalValue } });
+          set((state) => ({
+            settings: state.settings
+              ? { ...state.settings, [key]: originalValue }
+              : null,
+          }));
         }
       } finally {
         setUpdating(updateKey, false);
+      }
+    },
+
+    updateCustomWords: async (words) => {
+      const updateKey = "custom_words";
+      if (get().isUpdating[updateKey]) {
+        throw new Error("Custom vocabulary update already in progress");
+      }
+      get().setUpdating(updateKey, true);
+      try {
+        const result = await commands.updateCustomWords(words);
+        if (result.status === "error") throw new Error(result.error);
+        set((state) => ({
+          settings: state.settings
+            ? { ...state.settings, custom_words: words }
+            : null,
+        }));
+      } finally {
+        get().setUpdating(updateKey, false);
       }
     },
 

@@ -404,7 +404,10 @@
         "placeholder": "Tilføj et ord",
         "add": "Tilføj",
         "remove": "Fjern {{word}}",
-        "duplicate": "\"{{word}}\" findes allerede"
+        "duplicate": "\"{{word}}\" findes allerede",
+        "invalid": "Angiv et gyldigt ord.",
+        "tooLong": "Ord må højst indeholde 50 tegn.",
+        "updateFailed": "Kunne ikke opdatere brugerdefinerede ord. Prøv igen."
       },
       "voiceActivityDetection": {
         "title": "Stemmeaktivitetsdetektion",
@@ -521,7 +524,10 @@
       "correctionRequired": "Indtast en transskription før du gemmer.",
       "correctionSaveError": "Kunne ikke gemme transskriptionen. Prøv igen.",
       "recognizedText": "Genkendt tekst",
-      "polishedText": "Forbedret tekst"
+      "polishedText": "Forbedret tekst",
+      "addToVocabulary": "Føj til ordforråd",
+      "vocabularyAdded": "Føjet til ordforråd.",
+      "savedCorrectionText": "Gemt rettet transskription"
     },
     "debug": {
       "title": "Fejlfinding",

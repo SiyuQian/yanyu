@@ -1,56 +1,65 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { useSettings } from "../../hooks/useSettings";
+import { useSettings } from "@/hooks/useSettings";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { SettingContainer } from "../ui/SettingContainer";
+import {
+  getCustomWordValidationError,
+  normalizeCustomWord,
+} from "@/utils/customWord";
 
 interface CustomWordsProps {
   descriptionMode?: "inline" | "tooltip";
   grouped?: boolean;
 }
 
-const normalizeCustomWord = (word: string) =>
-  word
-    .replace(/[<>"']/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
 export const CustomWords: React.FC<CustomWordsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();
-    const { getSetting, updateSetting, isUpdating } = useSettings();
+    const { getSetting, updateCustomWords, isUpdating } = useSettings();
     const [newWord, setNewWord] = useState("");
+    const [error, setError] = useState<string | null>(null);
     const customWords = getSetting("custom_words") || [];
     const normalizedWord = normalizeCustomWord(newWord);
+    const validationError = getCustomWordValidationError(newWord);
+    const visibleError = error ?? validationError;
 
-    const handleAddWord = () => {
-      if (normalizedWord && normalizedWord.length <= 50) {
+    const handleAddWord = async () => {
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+      if (normalizedWord) {
         if (customWords.includes(normalizedWord)) {
-          toast.error(
-            t("settings.advanced.customWords.duplicate", {
-              word: normalizedWord,
-            }),
-          );
+          setError("duplicate");
           return;
         }
-        updateSetting("custom_words", [...customWords, normalizedWord]);
-        setNewWord("");
+        setError(null);
+        try {
+          await updateCustomWords([...customWords, normalizedWord]);
+          setNewWord("");
+        } catch {
+          setError("updateFailed");
+        }
       }
     };
 
-    const handleRemoveWord = (wordToRemove: string) => {
-      updateSetting(
-        "custom_words",
-        customWords.filter((word) => word !== wordToRemove),
-      );
+    const handleRemoveWord = async (wordToRemove: string) => {
+      setError(null);
+      try {
+        await updateCustomWords(
+          customWords.filter((word) => word !== wordToRemove),
+        );
+      } catch {
+        setError("updateFailed");
+      }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        handleAddWord();
+        void handleAddWord();
       }
     };
 
@@ -67,7 +76,10 @@ export const CustomWords: React.FC<CustomWordsProps> = React.memo(
               type="text"
               className="max-w-40"
               value={newWord}
-              onChange={(e) => setNewWord(e.target.value)}
+              onChange={(e) => {
+                setNewWord(e.target.value);
+                setError(null);
+              }}
               onKeyDown={handleKeyPress}
               placeholder={t("settings.advanced.customWords.placeholder")}
               variant="compact"
@@ -75,11 +87,7 @@ export const CustomWords: React.FC<CustomWordsProps> = React.memo(
             />
             <Button
               onClick={handleAddWord}
-              disabled={
-                !normalizedWord ||
-                normalizedWord.length > 50 ||
-                isUpdating("custom_words")
-              }
+              disabled={!normalizedWord || isUpdating("custom_words")}
               variant="primary"
               size="md"
             >
@@ -87,6 +95,15 @@ export const CustomWords: React.FC<CustomWordsProps> = React.memo(
             </Button>
           </div>
         </SettingContainer>
+        {visibleError && (
+          <p role="alert" className="px-4 text-sm text-red-500">
+            {visibleError === "duplicate"
+              ? t("settings.advanced.customWords.duplicate", {
+                  word: normalizedWord,
+                })
+              : t(`settings.advanced.customWords.${visibleError}`)}
+          </p>
+        )}
         {customWords.length > 0 && (
           <div
             className={`px-4 p-2 ${grouped ? "" : "rounded-lg border border-mid-gray/20"} flex flex-wrap gap-1`}

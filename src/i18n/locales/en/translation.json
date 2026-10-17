@@ -404,7 +404,10 @@
         "placeholder": "Add a word",
         "add": "Add",
         "remove": "Remove {{word}}",
-        "duplicate": "\"{{word}}\" already exists"
+        "duplicate": "\"{{word}}\" already exists",
+        "invalid": "Enter a valid word.",
+        "tooLong": "Words must be 50 characters or fewer.",
+        "updateFailed": "Failed to update custom words. Please try again."
       },
       "voiceActivityDetection": {
         "title": "Voice Activity Detection",
@@ -521,7 +524,10 @@
       "correctionRequired": "Enter a transcript before saving.",
       "correctionSaveError": "Failed to save transcript. Please try again.",
       "recognizedText": "Recognized text",
-      "polishedText": "Polished text"
+      "polishedText": "Polished text",
+      "addToVocabulary": "Add to vocabulary",
+      "vocabularyAdded": "Added to vocabulary.",
+      "savedCorrectionText": "Saved corrected transcript"
     },
     "debug": {
       "title": "Debug",
