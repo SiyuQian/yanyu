@@ -491,7 +491,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "تعديل النص",
+      "correctedTranscript": "النص المصحح",
+      "saveCorrection": "حفظ",
+      "correctionRequired": "أدخل نصًا قبل الحفظ.",
+      "correctionSaveError": "تعذر حفظ النص. حاول مرة أخرى.",
+      "recognizedText": "النص المتعرف عليه",
+      "polishedText": "النص المنقح"
     },
     "debug": {
       "title": "تصحيح الأخطاء",

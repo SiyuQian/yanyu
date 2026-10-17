@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Transkript bearbeiten",
+      "correctedTranscript": "Korrigiertes Transkript",
+      "saveCorrection": "Speichern",
+      "correctionRequired": "Gib vor dem Speichern ein Transkript ein.",
+      "correctionSaveError": "Transkript konnte nicht gespeichert werden. Bitte versuche es erneut.",
+      "recognizedText": "Erkannter Text",
+      "polishedText": "Überarbeiteter Text"
     },
     "debug": {
       "title": "Debug",

@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "전사 편집",
+      "correctedTranscript": "수정된 전사",
+      "saveCorrection": "저장",
+      "correctionRequired": "저장하기 전에 전사를 입력하세요.",
+      "correctionSaveError": "전사를 저장하지 못했습니다. 다시 시도하세요.",
+      "recognizedText": "인식된 텍스트",
+      "polishedText": "다듬은 텍스트"
     },
     "debug": {
       "title": "디버그",

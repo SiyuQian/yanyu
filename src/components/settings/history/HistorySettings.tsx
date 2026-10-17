@@ -1,7 +1,15 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
-import { Check, Copy, FolderOpen, RotateCcw, Star, Trash2 } from "lucide-react";
+import {
+  Check,
+  Copy,
+  FolderOpen,
+  Pencil,
+  RotateCcw,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -216,6 +224,14 @@ export const HistorySettings: React.FC = () => {
     }
   };
 
+  const saveCorrection = async (id: number, text: string) => {
+    const result = await commands.updateHistoryEntryCorrection(id, text);
+    if (result.status !== "ok") throw new Error(String(result.error));
+    setEntries((prev) =>
+      prev.map((entry) => (entry.id === id ? result.data : entry)),
+    );
+  };
+
   const openRecordingsFolder = async () => {
     try {
       const result = await commands.openRecordingsFolder();
@@ -255,6 +271,7 @@ export const HistorySettings: React.FC = () => {
                 getAudioUrl={getAudioUrl}
                 deleteAudio={deleteAudioEntry}
                 retryTranscription={retryHistoryEntry}
+                saveCorrection={saveCorrection}
               />
             ))}
           </div>
@@ -287,9 +304,10 @@ export const HistorySettings: React.FC = () => {
   );
 };
 
-// The pasted text: the polished result when polishing produced one.
+// Corrections preserve exact user text; unedited entries retain the polishing fallback.
 const getDisplayText = (entry: HistoryEntry) =>
-  entry.post_processed_text?.trim() || entry.transcription_text;
+  entry.user_corrected_text ??
+  (entry.post_processed_text?.trim() || entry.transcription_text);
 
 interface HistoryEntryProps {
   entry: HistoryEntry;
@@ -298,6 +316,7 @@ interface HistoryEntryProps {
   getAudioUrl: (fileName: string) => Promise<string | null>;
   deleteAudio: (id: number) => Promise<void>;
   retryTranscription: (id: number) => Promise<void>;
+  saveCorrection: (id: number, text: string) => Promise<void>;
 }
 
 const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
@@ -307,10 +326,16 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   getAudioUrl,
   deleteAudio,
   retryTranscription,
+  saveCorrection,
 }) => {
   const { t, i18n } = useTranslation();
   const [showCopied, setShowCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const editorId = useId();
 
   const hasTranscription = entry.transcription_text.trim().length > 0;
   const displayText = getDisplayText(entry);
@@ -323,7 +348,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   );
 
   const handleCopyText = async () => {
-    if (!hasTranscription) {
+    if (!hasTranscription || retrying || saving) {
       return;
     }
 
@@ -335,6 +360,25 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 
     setShowCopied(true);
     setTimeout(() => setShowCopied(false), 2000);
+  };
+
+  const handleSaveCorrection = async () => {
+    if (saving || retrying) return;
+    if (!draft.trim()) {
+      setSaveError(t("settings.history.correctionRequired"));
+      return;
+    }
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await saveCorrection(entry.id, draft);
+      setEditing(false);
+    } catch (error) {
+      console.error("Failed to save transcript:", error);
+      setSaveError(t("settings.history.correctionSaveError"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeleteEntry = async () => {
@@ -365,9 +409,22 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       <div className="flex justify-between items-center">
         <p className="text-sm font-medium">{formattedDate}</p>
         <div className="flex items-center">
+          {hasTranscription && displayText.trim() && (
+            <IconButton
+              onClick={() => {
+                setDraft(displayText);
+                setSaveError(null);
+                setEditing(true);
+              }}
+              disabled={retrying || saving || editing}
+              title={t("settings.history.editTranscript")}
+            >
+              <Pencil width={16} height={16} />
+            </IconButton>
+          )}
           <IconButton
             onClick={handleCopyText}
-            disabled={!hasTranscription || retrying}
+            disabled={!hasTranscription || retrying || saving}
             title={t("settings.history.copyToClipboard")}
           >
             {showCopied ? (
@@ -378,7 +435,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
           </IconButton>
           <IconButton
             onClick={onToggleSaved}
-            disabled={retrying}
+            disabled={retrying || saving}
             active={entry.saved}
             title={
               entry.saved
@@ -394,7 +451,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
           </IconButton>
           <IconButton
             onClick={handleRetranscribe}
-            disabled={retrying}
+            disabled={retrying || saving}
             title={t("settings.history.retranscribe")}
           >
             <RotateCcw
@@ -409,13 +466,57 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
           </IconButton>
           <IconButton
             onClick={handleDeleteEntry}
-            disabled={retrying}
+            disabled={retrying || saving}
             title={t("settings.history.delete")}
           >
             <Trash2 width={16} height={16} />
           </IconButton>
         </div>
       </div>
+
+      {editing && (
+        <div className="space-y-2">
+          <label htmlFor={editorId} className="text-sm font-medium">
+            {t("settings.history.correctedTranscript")}
+          </label>
+          <textarea
+            id={editorId}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            disabled={saving}
+            aria-invalid={!!saveError}
+            aria-describedby={saveError ? `${editorId}-error` : undefined}
+            rows={4}
+            className="w-full rounded-md border border-mid-gray/40 bg-background p-2 text-sm resize-y"
+          />
+          {saveError && (
+            <p
+              id={`${editorId}-error`}
+              role="alert"
+              className="text-sm text-red-500"
+            >
+              {saveError}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={handleSaveCorrection}
+              disabled={saving || retrying}
+            >
+              {t("settings.history.saveCorrection")}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setEditing(false)}
+              disabled={saving}
+            >
+              {t("tray.cancel")}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <p
         className={`italic text-sm pb-2 ${
@@ -446,18 +547,36 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             : t("settings.history.transcriptionFailed")}
       </p>
 
-      {!retrying && originalText && (
+      {!retrying && (originalText || entry.user_corrected_text !== null) && (
         <div className="border-l-2 border-mid-gray/30 pl-3 -mt-2 pb-2">
           <p className="text-xs text-mid-gray mb-1">
-            {t("settings.history.beforePolishing")}
+            {t(
+              entry.user_corrected_text !== null
+                ? "settings.history.recognizedText"
+                : "settings.history.beforePolishing",
+            )}
           </p>
           <p className="text-sm text-text/50 select-text cursor-text whitespace-pre-wrap break-words">
-            {originalText}
+            {entry.transcription_text}
           </p>
         </div>
       )}
 
       {!retrying &&
+        entry.user_corrected_text !== null &&
+        entry.post_processed_text !== null && (
+          <div className="border-l-2 border-mid-gray/30 pl-3 -mt-2 pb-2">
+            <p className="text-xs text-mid-gray mb-1">
+              {t("settings.history.polishedText")}
+            </p>
+            <p className="text-sm text-text/50 select-text cursor-text whitespace-pre-wrap break-words">
+              {entry.post_processed_text}
+            </p>
+          </div>
+        )}
+
+      {!retrying &&
+        entry.user_corrected_text === null &&
         !originalText &&
         entry.post_processed_text?.trim() === entry.transcription_text && (
           <p className="text-xs text-mid-gray -mt-2 pb-2">

@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Редактировать расшифровку",
+      "correctedTranscript": "Исправленная расшифровка",
+      "saveCorrection": "Сохранить",
+      "correctionRequired": "Введите расшифровку перед сохранением.",
+      "correctionSaveError": "Не удалось сохранить расшифровку. Попробуйте ещё раз.",
+      "recognizedText": "Распознанный текст",
+      "polishedText": "Обработанный текст"
     },
     "debug": {
       "title": "Отлаживать",

@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "文字起こしを編集",
+      "correctedTranscript": "修正した文字起こし",
+      "saveCorrection": "保存",
+      "correctionRequired": "保存する前に文字起こしを入力してください。",
+      "correctionSaveError": "文字起こしを保存できませんでした。もう一度お試しください。",
+      "recognizedText": "認識されたテキスト",
+      "polishedText": "整えたテキスト"
     },
     "debug": {
       "title": "デバッグ",

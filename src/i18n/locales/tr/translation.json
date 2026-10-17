@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Dökümü düzenle",
+      "correctedTranscript": "Düzeltilmiş döküm",
+      "saveCorrection": "Kaydet",
+      "correctionRequired": "Kaydetmeden önce bir döküm girin.",
+      "correctionSaveError": "Döküm kaydedilemedi. Lütfen tekrar deneyin.",
+      "recognizedText": "Tanınan metin",
+      "polishedText": "Düzenlenmiş metin"
     },
     "debug": {
       "title": "Hata Ayıklama",

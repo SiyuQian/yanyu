@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Редагувати транскрипцію",
+      "correctedTranscript": "Виправлена транскрипція",
+      "saveCorrection": "Зберегти",
+      "correctionRequired": "Введіть транскрипцію перед збереженням.",
+      "correctionSaveError": "Не вдалося зберегти транскрипцію. Спробуйте ще раз.",
+      "recognizedText": "Розпізнаний текст",
+      "polishedText": "Відшліфований текст"
     },
     "debug": {
       "title": "Дебаг",

@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Redigera transkription",
+      "correctedTranscript": "Korrigerad transkription",
+      "saveCorrection": "Spara",
+      "correctionRequired": "Ange en transkription innan du sparar.",
+      "correctionSaveError": "Kunde inte spara transkriptionen. Försök igen.",
+      "recognizedText": "Igenkänd text",
+      "polishedText": "Förbättrad text"
     },
     "debug": {
       "title": "Felsökning",

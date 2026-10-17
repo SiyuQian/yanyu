@@ -32,6 +32,7 @@ static MIGRATIONS: &[M] = &[
     M::up("ALTER TABLE transcription_history ADD COLUMN post_process_prompt TEXT;"),
     M::up("ALTER TABLE transcription_history ADD COLUMN post_process_requested BOOLEAN NOT NULL DEFAULT 0;"),
     M::up("ALTER TABLE transcription_history ADD COLUMN post_process_skip_reason TEXT;"),
+    M::up("ALTER TABLE transcription_history ADD COLUMN user_corrected_text TEXT;"),
 ];
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
@@ -66,6 +67,8 @@ pub struct HistoryEntry {
     pub post_process_requested: bool,
     /// Code for why local polishing kept the original text; `None` when polished or not attempted.
     pub post_process_skip_reason: Option<String>,
+    /// Exact user correction; recognition and post-processing remain unchanged.
+    pub user_corrected_text: Option<String>,
 }
 
 pub struct HistoryManager {
@@ -211,6 +214,7 @@ impl HistoryManager {
             post_process_prompt: row.get("post_process_prompt")?,
             post_process_requested: row.get("post_process_requested")?,
             post_process_skip_reason: row.get("post_process_skip_reason")?,
+            user_corrected_text: row.get("user_corrected_text")?,
         })
     }
 
@@ -269,6 +273,7 @@ impl HistoryManager {
             post_process_prompt,
             post_process_requested,
             post_process_skip_reason,
+            user_corrected_text: None,
         };
 
         debug!("Saved history entry with id {}", entry.id);
@@ -319,7 +324,7 @@ impl HistoryManager {
 
         let entry = conn
             .query_row(
-                "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason
+                "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason, user_corrected_text
                  FROM transcription_history WHERE id = ?1",
                 params![id],
                 Self::map_history_entry,
@@ -335,6 +340,42 @@ impl HistoryManager {
             error!("Failed to emit history-updated event: {}", e);
         }
 
+        Ok(entry)
+    }
+
+    /// Save an exact nonblank correction without changing source text or recordings.
+    pub fn update_correction(&self, id: i64, text: &str) -> Result<HistoryEntry> {
+        let conn = self.get_connection()?;
+        let entry = Self::update_correction_with_conn(&conn, id, text)?;
+        if let Err(error) = (HistoryUpdatePayload::Updated {
+            entry: entry.clone(),
+        })
+        .emit(&self.app_handle)
+        {
+            error!("Failed to emit history-updated event: {}", error);
+        }
+        Ok(entry)
+    }
+
+    fn update_correction_with_conn(conn: &Connection, id: i64, text: &str) -> Result<HistoryEntry> {
+        if text.trim().is_empty() {
+            return Err(anyhow!("Correction must not be blank"));
+        }
+        let transaction = conn.unchecked_transaction()?;
+        let updated = transaction.execute(
+            "UPDATE transcription_history SET user_corrected_text = ?1 WHERE id = ?2",
+            params![text, id],
+        )?;
+        if updated == 0 {
+            return Err(anyhow!("History entry {} not found", id));
+        }
+        let entry = transaction.query_row(
+            "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason, user_corrected_text
+             FROM transcription_history WHERE id = ?1",
+            params![id],
+            Self::map_history_entry,
+        )?;
+        transaction.commit()?;
         Ok(entry)
     }
 
@@ -470,7 +511,7 @@ impl HistoryManager {
             (Some(cursor_id), Some(lim)) => {
                 let fetch_count = (lim + 1) as i64;
                 let mut stmt = conn.prepare(
-                    "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason
+                    "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason, user_corrected_text
                      FROM transcription_history
                      WHERE id < ?1
                      ORDER BY id DESC
@@ -484,7 +525,7 @@ impl HistoryManager {
             (None, Some(lim)) => {
                 let fetch_count = (lim + 1) as i64;
                 let mut stmt = conn.prepare(
-                    "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason
+                    "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason, user_corrected_text
                      FROM transcription_history
                      ORDER BY id DESC
                      LIMIT ?1",
@@ -496,7 +537,7 @@ impl HistoryManager {
             }
             (_, None) => {
                 let mut stmt = conn.prepare(
-                    "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason
+                    "SELECT id, file_name, timestamp, saved, title, transcription_text, post_processed_text, post_process_prompt, post_process_requested, post_process_skip_reason, user_corrected_text
                      FROM transcription_history
                      ORDER BY id DESC",
                 )?;
@@ -528,7 +569,8 @@ impl HistoryManager {
                 post_processed_text,
                 post_process_prompt,
                 post_process_requested,
-                post_process_skip_reason
+                post_process_skip_reason,
+                user_corrected_text
              FROM transcription_history
              ORDER BY timestamp DESC
              LIMIT 1",
@@ -556,7 +598,8 @@ impl HistoryManager {
                 post_processed_text,
                 post_process_prompt,
                 post_process_requested,
-                post_process_skip_reason
+                post_process_skip_reason,
+                user_corrected_text
              FROM transcription_history
              WHERE transcription_text != ''
              ORDER BY timestamp DESC
@@ -611,7 +654,8 @@ impl HistoryManager {
                 post_processed_text,
                 post_process_prompt,
                 post_process_requested,
-                post_process_skip_reason
+                post_process_skip_reason,
+                user_corrected_text
              FROM transcription_history
              WHERE id = ?1",
         )?;
@@ -669,22 +713,10 @@ mod tests {
     use rusqlite::{params, Connection};
 
     fn setup_conn() -> Connection {
-        let conn = Connection::open_in_memory().expect("open in-memory db");
-        conn.execute_batch(
-            "CREATE TABLE transcription_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                file_name TEXT NOT NULL,
-                timestamp INTEGER NOT NULL,
-                saved BOOLEAN NOT NULL DEFAULT 0,
-                title TEXT NOT NULL,
-                transcription_text TEXT NOT NULL,
-                post_processed_text TEXT,
-                post_process_prompt TEXT,
-                post_process_requested BOOLEAN NOT NULL DEFAULT 0,
-                post_process_skip_reason TEXT
-            );",
-        )
-        .expect("create transcription_history table");
+        let mut conn = Connection::open_in_memory().expect("open in-memory db");
+        Migrations::new(MIGRATIONS.to_vec())
+            .to_latest(&mut conn)
+            .expect("migrate history");
         conn
     }
 
@@ -748,5 +780,152 @@ mod tests {
 
         assert_eq!(entry.timestamp, 100);
         assert_eq!(entry.transcription_text, "completed");
+    }
+    #[test]
+    fn correction_survives_reopen_without_changing_sources_or_audio() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("history.db");
+        let audio = dir.path().join("yanyu-100.wav");
+        fs::write(&audio, b"synthetic audio bytes").unwrap();
+        {
+            let mut conn = Connection::open(&path).unwrap();
+            Migrations::new(MIGRATIONS.to_vec())
+                .to_latest(&mut conn)
+                .unwrap();
+            insert_entry(&conn, 100, "recognized", Some("polished"));
+            conn.execute("UPDATE transcription_history SET saved = 1, post_process_prompt = 'prompt', post_process_requested = 1, post_process_skip_reason = 'reason'", []).unwrap();
+            let entry =
+                HistoryManager::update_correction_with_conn(&conn, 1, "  corrected term\n ")
+                    .unwrap();
+            assert_eq!(
+                entry.user_corrected_text.as_deref(),
+                Some("  corrected term\n ")
+            );
+        }
+        let conn = Connection::open(&path).unwrap();
+        let entry = HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            entry.user_corrected_text.as_deref(),
+            Some("  corrected term\n ")
+        );
+        assert_eq!(entry.transcription_text, "recognized");
+        assert_eq!(entry.post_processed_text.as_deref(), Some("polished"));
+        assert_eq!(entry.post_process_prompt.as_deref(), Some("prompt"));
+        assert_eq!(entry.post_process_skip_reason.as_deref(), Some("reason"));
+        assert!(entry.saved && entry.post_process_requested);
+        assert_eq!(
+            (
+                entry.timestamp,
+                entry.file_name.as_str(),
+                entry.title.as_str()
+            ),
+            (100, "yanyu-100.wav", "Recording 100")
+        );
+        assert_eq!(fs::read(audio).unwrap(), b"synthetic audio bytes");
+    }
+
+    #[test]
+    fn correction_readback_failure_rolls_back() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "recognized", Some("polished"));
+        HistoryManager::update_correction_with_conn(&conn, 1, "  saved\n ").unwrap();
+        conn.execute_batch(
+            "CREATE TRIGGER fail_correction_readback AFTER UPDATE OF user_corrected_text
+             ON transcription_history BEGIN
+                UPDATE transcription_history SET timestamp = 'invalid' WHERE id = NEW.id;
+             END;",
+        )
+        .unwrap();
+
+        let error = HistoryManager::update_correction_with_conn(&conn, 1, "replacement")
+            .expect_err("the write succeeds but reading its timestamp must fail");
+        assert!(matches!(
+            error.downcast_ref::<rusqlite::Error>(),
+            Some(rusqlite::Error::InvalidColumnType(_, name, _)) if name == "timestamp"
+        ));
+        let saved: String = conn
+            .query_row(
+                "SELECT user_corrected_text FROM transcription_history WHERE id = 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(saved, "  saved\n ");
+        let entry = HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(entry.timestamp, 100);
+        assert_eq!(entry.transcription_text, "recognized");
+        assert_eq!(entry.post_processed_text.as_deref(), Some("polished"));
+    }
+
+    #[test]
+    fn correction_rejects_blank_missing_and_failed_writes_without_mutating() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        Migrations::new(MIGRATIONS.to_vec())
+            .to_latest(&mut conn)
+            .unwrap();
+        insert_entry(&conn, 100, "recognized", Some("polished"));
+        HistoryManager::update_correction_with_conn(&conn, 1, "saved").unwrap();
+        for blank in ["", "   ", "\t\n"] {
+            assert!(HistoryManager::update_correction_with_conn(&conn, 1, blank).is_err());
+        }
+        assert!(HistoryManager::update_correction_with_conn(&conn, 999, "missing").is_err());
+        conn.pragma_update(None, "query_only", true).unwrap();
+        assert!(HistoryManager::update_correction_with_conn(&conn, 1, "failed").is_err());
+        let entry = HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(entry.user_corrected_text.as_deref(), Some("saved"));
+        assert_eq!(entry.transcription_text, "recognized");
+        assert_eq!(entry.post_processed_text.as_deref(), Some("polished"));
+    }
+
+    #[test]
+    fn populated_previous_schema_migrates_with_null_correction() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        Migrations::new(MIGRATIONS[..5].to_vec())
+            .to_latest(&mut conn)
+            .unwrap();
+        insert_entry(&conn, 100, "recognized", Some("polished"));
+        Migrations::new(MIGRATIONS.to_vec())
+            .to_latest(&mut conn)
+            .unwrap();
+        let entry = HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(entry.user_corrected_text, None);
+        assert_eq!(entry.transcription_text, "recognized");
+        assert_eq!(entry.post_processed_text.as_deref(), Some("polished"));
+        assert_eq!(entry.file_name, "yanyu-100.wav");
+    }
+
+    #[test]
+    fn tray_query_keeps_existing_raw_text_eligibility_and_maps_correction() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        Migrations::new(MIGRATIONS.to_vec())
+            .to_latest(&mut conn)
+            .unwrap();
+        assert!(HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .is_none());
+        insert_entry(&conn, 300, "", Some("inconsistent"));
+        assert!(HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .is_none());
+        insert_entry(&conn, 100, "completed", None);
+        HistoryManager::update_correction_with_conn(&conn, 2, "  corrected\n ").unwrap();
+        let entry = HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(entry.timestamp, 100);
+        assert_eq!(entry.user_corrected_text.as_deref(), Some("  corrected\n "));
+        insert_entry(&conn, 200, "   ", None);
+        let entry = HistoryManager::get_latest_completed_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(entry.transcription_text, "   ");
     }
 }

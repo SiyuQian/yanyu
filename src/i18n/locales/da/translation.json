@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Rediger transskription",
+      "correctedTranscript": "Rettet transskription",
+      "saveCorrection": "Gem",
+      "correctionRequired": "Indtast en transskription før du gemmer.",
+      "correctionSaveError": "Kunne ikke gemme transskriptionen. Prøv igen.",
+      "recognizedText": "Genkendt tekst",
+      "polishedText": "Forbedret tekst"
     },
     "debug": {
       "title": "Fejlfinding",
