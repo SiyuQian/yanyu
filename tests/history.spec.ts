@@ -53,15 +53,15 @@ async function mount(
             if (command === "get_history_entries")
               return { entries: [saved], has_more: false };
             if (command === "update_custom_words") {
-              const failure = localStorage.getItem("word-failure");
-              if (failure === "result") throw "write failed";
-              if (failure === "invoke") throw new Error("invoke failed");
               if (localStorage.getItem("word-pending"))
                 await new Promise<void>((resolve) => {
                   (
                     window as unknown as { finishWordUpdate: () => void }
                   ).finishWordUpdate = resolve;
                 });
+              const failure = localStorage.getItem("word-failure");
+              if (failure === "result") throw "write failed";
+              if (failure === "invoke") throw new Error("invoke failed");
               localStorage.setItem("custom-words", JSON.stringify(args.words));
               return null;
             }
@@ -563,23 +563,129 @@ for (const failure of ["result", "invoke"]) {
   test(`preserves vocabulary and reports ${failure} failure for history addition`, async ({
     page,
   }) => {
-    await mount(page, {
-      user_corrected_text: "Saved word",
-    });
-    await page.evaluate(() =>
-      localStorage.setItem("custom-words", '["existing"]'),
-    );
+    await mount(page, { user_corrected_text: "Saved word" }, ["existing"]);
+    await page.evaluate(() => localStorage.setItem("word-pending", "yes"));
     await page.evaluate(
       (mode) => localStorage.setItem("word-failure", mode),
       failure,
     );
     await selectSavedCorrection(page);
-    await page.getByRole("button", { name: "Add to vocabulary" }).click();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("button", { name: "Add to vocabulary" }),
+    ).toBeDisabled();
+    await page.evaluate(() =>
+      (
+        window as unknown as { finishWordUpdate: () => void }
+      ).finishWordUpdate(),
+    );
     await expect(page.getByRole("alert")).toHaveText(
       "Failed to update custom words. Please try again.",
     );
     expect(
       await page.evaluate(() => localStorage.getItem("custom-words")),
     ).toBe('["existing"]');
+    const add = page.getByRole("button", { name: "Add to vocabulary" });
+    await expect(add).toBeEnabled();
+    await page.evaluate(() => {
+      localStorage.removeItem("word-failure");
+      localStorage.removeItem("word-pending");
+    });
+    await add.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("status")).toHaveText("Added to vocabulary.");
+    expect(
+      await page.evaluate(() => localStorage.getItem("custom-words")),
+    ).toBe('["existing","Saved word"]');
   });
 }
+
+test("keeps the full wrapped saved correction visible after retry remount", async ({
+  page,
+}) => {
+  await mount(page, {
+    user_corrected_text: "Wrapped saved correction ".repeat(60),
+  });
+  const correction = savedCorrection(page);
+  await expect
+    .poll(() =>
+      correction.evaluate((node) => node.clientHeight - node.scrollHeight),
+    )
+    .toBeGreaterThanOrEqual(0);
+  await page
+    .getByRole("button", { name: "Re-transcribe", exact: true })
+    .click();
+  await expect(correction).toHaveCount(0);
+  await page.evaluate(() =>
+    (window as unknown as { finishRetry: () => void }).finishRetry(),
+  );
+  await expect(correction).toBeVisible();
+  await expect
+    .poll(() =>
+      correction.evaluate((node) => node.clientHeight - node.scrollHeight),
+    )
+    .toBeGreaterThanOrEqual(0);
+});
+
+test("fits the saved correction after width changes without resize feedback errors", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await mount(page, {
+    user_corrected_text: "Wrapped saved correction ".repeat(60),
+  });
+  const correction = savedCorrection(page);
+  await expect(correction).toBeVisible();
+  const initialHeight = await correction.evaluate((node) => node.clientHeight);
+  await page.setViewportSize({ width: 480, height: 900 });
+  await expect
+    .poll(() => correction.evaluate((node) => node.clientHeight))
+    .toBeGreaterThan(initialHeight);
+  await expect
+    .poll(() =>
+      correction.evaluate((node) => node.clientHeight - node.scrollHeight),
+    )
+    .toBeGreaterThanOrEqual(0);
+  await correction.evaluate((node) => {
+    node.parentElement!.style.width = "240px";
+  });
+  await expect
+    .poll(() =>
+      correction.evaluate((node) => node.clientHeight - node.scrollHeight),
+    )
+    .toBeGreaterThanOrEqual(0);
+  await page.evaluate(async () => {
+    for (let i = 0; i < 4; i++) await new Promise(requestAnimationFrame);
+  });
+  expect(errors).toEqual([]);
+});
+
+test("clears saved selection after keyboard focus leaves the text and Add region", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "Saved term" });
+  const add = page.getByRole("button", { name: "Add to vocabulary" });
+  await selectSavedCorrection(page);
+  await page.keyboard.press("Tab");
+  await expect(add).toBeFocused();
+  await expect(add).toBeEnabled();
+  await page.keyboard.press("Tab");
+  await expect(add).toBeDisabled();
+  expect(await page.evaluate(() => localStorage.getItem("custom-words"))).toBe(
+    "[]",
+  );
+});
+
+test("clears saved selection when leaving Add to select unrelated text", async ({
+  page,
+}) => {
+  await mount(page, { user_corrected_text: "Saved term" });
+  const add = page.getByRole("button", { name: "Add to vocabulary" });
+  await selectSavedCorrection(page);
+  await page.keyboard.press("Tab");
+  await page.getByText("recognized source", { exact: true }).dblclick();
+  await expect(add).toBeDisabled();
+});

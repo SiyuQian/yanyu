@@ -1,4 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
+import {
+  normalizeCustomWord,
+  getCustomWordValidationError,
+} from "@/utils/customWord";
 
 async function mount(page: Page, words: string[] = []) {
   await page.addInitScript((initialWords) => {
@@ -10,6 +14,14 @@ async function mount(page: Page, words: string[] = []) {
       __TAURI_INTERNALS__: {
         transformCallback: () => 1,
         invoke: async (command: string, args: Record<string, unknown>) => {
+          if (command === "change_audio_feedback_setting") {
+            await new Promise<void>((_resolve, reject) => {
+              (
+                window as unknown as { failAudioUpdate: () => void }
+              ).failAudioUpdate = () =>
+                reject(new Error("audio update failed"));
+            });
+          }
           if (command === "update_custom_words") {
             const failure = localStorage.getItem("word-failure");
             if (failure === "result") throw "write failed";
@@ -36,8 +48,8 @@ async function mount(page: Page, words: string[] = []) {
       import { CustomWords } from '/src/components/settings/CustomWords.tsx';
       import { useSettingsStore } from '/src/stores/settingsStore.ts';
       import '/src/i18n/index.ts'; import '/src/App.css';
-      useSettingsStore.setState({ settings: { custom_words: JSON.parse(localStorage.getItem('custom-words') || '[]') }, isLoading: false });
-      Object.assign(window, { updateWordsTwice: () => Promise.allSettled([
+      useSettingsStore.setState({ settings: { audio_feedback: false, custom_words: JSON.parse(localStorage.getItem('custom-words') || '[]') }, isLoading: false });
+      Object.assign(window, { beginAudioUpdate: () => useSettingsStore.getState().updateSetting('audio_feedback', true), readSettings: () => useSettingsStore.getState().settings, updateWordsTwice: () => Promise.allSettled([
         useSettingsStore.getState().updateCustomWords(['first']),
         useSettingsStore.getState().updateCustomWords(['second']),
       ]) });
@@ -182,4 +194,113 @@ test("store rejects a competing vocabulary write while one is pending", async ({
   expect(await page.evaluate(() => localStorage.getItem("custom-words"))).toBe(
     '["first"]',
   );
+});
+
+test("unrelated setting rollback preserves confirmed vocabulary", async ({
+  page,
+}) => {
+  await mount(page, ["Existing"]);
+  const pending = page.evaluate(() =>
+    (
+      window as unknown as { beginAudioUpdate: () => Promise<void> }
+    ).beginAudioUpdate(),
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          typeof (window as unknown as { failAudioUpdate?: unknown })
+            .failAudioUpdate,
+      ),
+    )
+    .toBe("function");
+  await wordInput(page).fill("Confirmed term");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Remove Confirmed term" }),
+  ).toBeVisible();
+  await page.evaluate(() =>
+    (window as unknown as { failAudioUpdate: () => void }).failAudioUpdate(),
+  );
+  await pending;
+  await expect(
+    page.getByRole("button", { name: "Remove Confirmed term" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      (
+        window as unknown as {
+          readSettings: () => {
+            audio_feedback: boolean;
+            custom_words: string[];
+          };
+        }
+      ).readSettings(),
+    ),
+  ).toEqual({
+    audio_feedback: false,
+    custom_words: ["Existing", "Confirmed term"],
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Remove Confirmed term" }),
+  ).toBeVisible();
+});
+
+for (const failure of ["result", "invoke"]) {
+  test(`preserves a dictionary word after ${failure} removal failure and removes it on retry and reload`, async ({
+    page,
+  }) => {
+    await mount(page, ["Keep", "Remove me"]);
+    const remove = page.getByRole("button", {
+      name: "Remove Remove me",
+      exact: true,
+    });
+    await page.evaluate(
+      (mode) => localStorage.setItem("word-failure", mode),
+      failure,
+    );
+    await remove.click();
+    await expect(page.getByRole("alert")).toHaveText(
+      "Failed to update custom words. Please try again.",
+    );
+    await expect(remove).toBeEnabled();
+    expect(
+      await page.evaluate(() => localStorage.getItem("custom-words")),
+    ).toBe('["Keep","Remove me"]');
+    await page.reload();
+    await expect(remove).toBeVisible();
+    await page.evaluate(() => localStorage.removeItem("word-failure"));
+    await remove.click();
+    await expect(remove).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Remove Keep", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await page.reload();
+    await expect(remove).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Remove Keep", exact: true }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(() => localStorage.getItem("custom-words")),
+    ).toBe('["Keep"]');
+  });
+}
+
+test("normalization preserves mixed Chinese, Latin case and combining marks", () => {
+  expect(normalizeCustomWord("  <言语>\u3000\"Acme\"\t\n'Cafe\u0301'  ")).toBe(
+    "言语 Acme Cafe\u0301",
+  );
+  expect(
+    getCustomWordValidationError("  <言语>\u3000\"Acme\"\t\n'Cafe\u0301'  "),
+  ).toBeNull();
+});
+
+test("measures normalized supplementary characters in UTF-16 units", () => {
+  const twentyFive = "😀".repeat(25);
+  expect(getCustomWordValidationError(twentyFive)).toBeNull();
+  expect(getCustomWordValidationError("😀".repeat(26))).toBe("tooLong");
+  expect(getCustomWordValidationError(`  <"${twentyFive}">  `)).toBeNull();
+  expect(normalizeCustomWord(`  <"${twentyFive}">  `)).toBe(twentyFive);
 });
