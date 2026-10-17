@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Transcript bewerken",
+      "correctedTranscript": "Gecorrigeerd transcript",
+      "saveCorrection": "Opslaan",
+      "correctionRequired": "Voer een transcript in voordat je opslaat.",
+      "correctionSaveError": "Transcript opslaan mislukt. Probeer het opnieuw.",
+      "recognizedText": "Herkende tekst",
+      "polishedText": "Verbeterde tekst"
     },
     "debug": {
       "title": "Probleemoplossing",

@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Upravit přepis",
+      "correctedTranscript": "Opravený přepis",
+      "saveCorrection": "Uložit",
+      "correctionRequired": "Před uložením zadejte přepis.",
+      "correctionSaveError": "Přepis se nepodařilo uložit. Zkuste to znovu.",
+      "recognizedText": "Rozpoznaný text",
+      "polishedText": "Upravený text"
     },
     "debug": {
       "title": "Ladění",

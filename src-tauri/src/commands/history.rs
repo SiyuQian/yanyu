@@ -1,6 +1,6 @@
 use crate::actions::process_transcription_output;
 use crate::managers::{
-    history::{HistoryManager, PaginatedHistory},
+    history::{HistoryEntry, HistoryManager, PaginatedHistory},
     transcription::TranscriptionManager,
 };
 use std::sync::Arc;
@@ -18,6 +18,19 @@ pub async fn get_history_entries(
         .get_history_entries(cursor, limit)
         .await
         .map_err(|e| e.to_string())
+}
+
+/// Save a separate user correction and return the persisted history entry.
+#[tauri::command]
+#[specta::specta]
+pub async fn update_history_entry_correction(
+    history_manager: State<'_, Arc<HistoryManager>>,
+    id: i64,
+    text: String,
+) -> Result<HistoryEntry, String> {
+    history_manager
+        .update_correction(id, &text)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

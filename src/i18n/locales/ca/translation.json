@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Edita la transcripció",
+      "correctedTranscript": "Transcripció corregida",
+      "saveCorrection": "Desa",
+      "correctionRequired": "Introduïu una transcripció abans de desar.",
+      "correctionSaveError": "No s’ha pogut desar la transcripció. Torneu-ho a provar.",
+      "recognizedText": "Text reconegut",
+      "polishedText": "Text polit"
     },
     "debug": {
       "title": "Depuració",

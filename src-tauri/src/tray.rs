@@ -590,9 +590,27 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
 
 fn last_transcript_text(entry: &HistoryEntry) -> &str {
     entry
-        .post_processed_text
+        .user_corrected_text
         .as_deref()
+        .or(entry.post_processed_text.as_deref())
         .unwrap_or(&entry.transcription_text)
+}
+
+fn write_last_transcript<E>(
+    entry: Option<&HistoryEntry>,
+    write: impl FnOnce(&str) -> Result<(), E>,
+) -> Result<(), E> {
+    let Some(entry) = entry else {
+        return Ok(());
+    };
+    let text = last_transcript_text(entry);
+    if text.trim().is_empty() {
+        warn!("Last completed transcription is empty; skipping tray copy.");
+        return Ok(());
+    }
+    write(text)?;
+    info!("Copied last transcript to clipboard via tray.");
+    Ok(())
 }
 
 pub fn set_tray_visibility(app: &AppHandle, visible: bool) {
@@ -646,18 +664,9 @@ pub fn copy_last_transcript(app: &AppHandle) {
         }
     };
 
-    let text = last_transcript_text(&entry);
-    if text.trim().is_empty() {
-        warn!("Last completed transcription is empty; skipping tray copy.");
-        return;
-    }
-
-    if let Err(err) = app.clipboard().write_text(text) {
+    if let Err(err) = write_last_transcript(Some(&entry), |text| app.clipboard().write_text(text)) {
         error!("Failed to copy last transcript to clipboard: {}", err);
-        return;
     }
-
-    info!("Copied last transcript to clipboard via tray.");
 }
 
 #[cfg(test)]
@@ -677,6 +686,7 @@ mod tests {
             post_process_prompt: None,
             post_process_requested: false,
             post_process_skip_reason: None,
+            user_corrected_text: None,
         }
     }
 
@@ -735,5 +745,38 @@ mod tests {
     #[test]
     fn idle_and_busy_menus_differ() {
         assert_ne!(inputs(false), inputs(true));
+    }
+    #[test]
+    fn tray_dispatch_preserves_exact_payload_and_skips_blank_selected_text() {
+        for (raw, polished, correction, expected) in [
+            (
+                "raw",
+                Some("polished"),
+                Some("  corrected\n "),
+                Some("  corrected\n "),
+            ),
+            ("raw", Some("  polished "), None, Some("  polished ")),
+            ("  raw ", None, None, Some("  raw ")),
+            ("raw", Some(""), None, None),
+            ("raw", Some(" \t\n"), None, None),
+            ("   ", None, None, None),
+        ] {
+            let mut entry = build_entry(raw, polished);
+            entry.user_corrected_text = correction.map(String::from);
+            let mut writes = Vec::new();
+            super::write_last_transcript(Some(&entry), |text| {
+                writes.push(text.to_owned());
+                Ok::<_, ()>(())
+            })
+            .unwrap();
+            assert_eq!(
+                writes,
+                expected.into_iter().map(String::from).collect::<Vec<_>>()
+            );
+        }
+        super::write_last_transcript(None, |_| -> Result<(), ()> {
+            panic!("empty history must not write")
+        })
+        .unwrap();
     }
 }
