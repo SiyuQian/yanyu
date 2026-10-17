@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "Sửa bản chép lời",
+      "correctedTranscript": "Bản chép lời đã sửa",
+      "saveCorrection": "Lưu",
+      "correctionRequired": "Nhập bản chép lời trước khi lưu.",
+      "correctionSaveError": "Không thể lưu bản chép lời. Vui lòng thử lại.",
+      "recognizedText": "Văn bản được nhận dạng",
+      "polishedText": "Văn bản đã trau chuốt"
     },
     "debug": {
       "title": "Gỡ lỗi",

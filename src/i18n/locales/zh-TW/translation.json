@@ -514,7 +514,14 @@
         "language_changed": "模型改變了語言或遺失了內容。",
         "identifier_changed": "模型改動了名稱、數字或程式術語。",
         "rewritten": "模型改寫了句子，而不只是刪除贅詞。"
-      }
+      },
+      "editTranscript": "編輯轉錄",
+      "correctedTranscript": "修正後的轉錄",
+      "saveCorrection": "儲存",
+      "correctionRequired": "請輸入轉錄文字後再儲存。",
+      "correctionSaveError": "儲存轉錄失敗，請重試。",
+      "recognizedText": "辨識原文",
+      "polishedText": "潤飾文字"
     },
     "debug": {
       "title": "偵錯",

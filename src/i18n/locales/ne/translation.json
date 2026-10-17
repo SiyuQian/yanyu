@@ -514,7 +514,14 @@
         "language_changed": "The model changed the language or dropped words.",
         "identifier_changed": "The model changed a name, number or code term.",
         "rewritten": "The model rephrased the text instead of only removing words."
-      }
+      },
+      "editTranscript": "ट्रान्सक्रिप्ट सम्पादन गर्नुहोस्",
+      "correctedTranscript": "सच्याइएको ट्रान्सक्रिप्ट",
+      "saveCorrection": "सुरक्षित गर्नुहोस्",
+      "correctionRequired": "सुरक्षित गर्नुअघि ट्रान्सक्रिप्ट प्रविष्ट गर्नुहोस्।",
+      "correctionSaveError": "ट्रान्सक्रिप्ट सुरक्षित गर्न सकिएन। फेरि प्रयास गर्नुहोस्।",
+      "recognizedText": "पहिचान गरिएको पाठ",
+      "polishedText": "परिमार्जित पाठ"
     },
     "debug": {
       "title": "डिबग",
