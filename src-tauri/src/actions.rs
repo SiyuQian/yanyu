@@ -5,7 +5,7 @@ use crate::audio_toolkit::{is_microphone_access_denied, is_no_input_device_error
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
 use crate::managers::local_polishing::{
-    check_output, eligible as should_polish_locally, LocalPolishingManager, PolishSkip,
+    check_output_with_terms, eligible as should_polish_locally, LocalPolishingManager, PolishSkip,
 };
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::StreamWorkKind;
@@ -362,12 +362,17 @@ async fn process_generated_transcription(
     settings: &AppSettings,
     transcription: &str,
 ) -> Result<String, PolishSkip> {
-    process_generated_with_deadline(transcription, generated_processing(settings, transcription))
-        .await
+    process_generated_with_deadline(
+        transcription,
+        &crate::personalization::terminology(&settings.custom_words),
+        generated_processing(settings, transcription),
+    )
+    .await
 }
 
 async fn process_generated_with_deadline<F>(
     transcription: &str,
+    terms: &[String],
     operation: F,
 ) -> Result<String, PolishSkip>
 where
@@ -376,7 +381,7 @@ where
     let text = tokio::time::timeout(Duration::from_secs(10), operation)
         .await
         .map_err(|_| PolishSkip::Timeout)??;
-    check_output(transcription, &text, true)
+    check_output_with_terms(transcription, &text, true, terms)
 }
 
 #[cfg(any(test, all(target_os = "macos", target_arch = "aarch64")))]
@@ -1136,6 +1141,7 @@ mod tests {
                 complete_unless_cancelled(
                     super::process_generated_with_deadline(
                         "hello",
+                        &[],
                         super::generated_apple_worker(
                             "fixture".into(),
                             move |rules, data, max_tokens| {
@@ -1378,6 +1384,35 @@ mod tests {
             assert_eq!(output.final_text, text);
             assert!(output.post_processed_text.is_none());
             assert!(output.post_process_prompt.is_none());
+        }
+    }
+
+    #[tokio::test]
+    async fn local_and_generated_terminology_outputs_use_the_same_policy() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.local_polishing_enabled = true;
+        settings.custom_words = vec!["repo".into()];
+        let original = "查看瑞泡的更新";
+        for candidate in ["查看repo的更新", "删除repo的更新"] {
+            let local = super::process_output_with_local_polisher(
+                &settings,
+                original,
+                |text, data| async move {
+                    crate::managers::local_polishing::check_request_output(&text, candidate, &data)
+                },
+            )
+            .await;
+            let terms = crate::personalization::terminology(&settings.custom_words);
+            let generated = super::process_generated_with_deadline(original, &terms, async {
+                Ok(candidate.into())
+            })
+            .await;
+            assert_eq!(
+                local.final_text,
+                generated.clone().unwrap_or_else(|_| original.into())
+            );
+            assert_eq!(generated.is_ok(), candidate == "查看repo的更新");
+            assert_eq!(local.post_processed_text.is_some(), generated.is_ok());
         }
     }
 
