@@ -17,6 +17,7 @@ interface DropdownProps {
   placeholder?: string;
   disabled?: boolean;
   onOpen?: () => void;
+  "aria-labelledby"?: string;
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -28,6 +29,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   placeholder = "Select an option...",
   disabled = false,
   onOpen,
+  "aria-labelledby": labelledBy,
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -70,6 +72,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
             ? "opacity-50 cursor-not-allowed"
             : "hover:bg-logo-primary/10 cursor-pointer hover:border-logo-primary"
         }`}
+        aria-labelledby={labelledBy}
+        aria-expanded={isOpen}
         onClick={handleToggle}
         disabled={disabled}
       >

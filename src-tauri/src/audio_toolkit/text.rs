@@ -322,6 +322,12 @@ fn gated_filler_words_for_language(lang: &str) -> &'static [&'static str] {
 
 static MULTI_SPACE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\s{2,}").unwrap());
 
+/// Chinese hesitation fillers. Han text has no word boundaries, so these cannot
+/// share the `\b` patterns above. Only characters that are fillers in nearly
+/// every use belong here: "额" (金额, 额外) and "啊"/"那个" (real particles and
+/// words) are excluded. A following comma goes with the filler.
+static HAN_FILLER_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[呃嗯]+[，,、]?\s*").unwrap());
+
 /// Collapses repeated words (3+ repetitions) to a single instance.
 /// E.g., "wh wh wh wh" -> "wh", "I I I I" -> "I"
 fn collapse_stutters(text: &str) -> String {
@@ -452,7 +458,11 @@ pub fn remove_filler_words(
     };
 
     // Remove filler words
-    let mut filtered = text.to_string();
+    let mut filtered = if custom_filler_words.is_none() {
+        HAN_FILLER_PATTERN.replace_all(text, "").into_owned()
+    } else {
+        text.to_string()
+    };
     for pattern in &patterns {
         filtered = remove_filler_matches(&filtered, pattern);
     }
@@ -688,6 +698,26 @@ mod tests {
         let text = "uh I think uhm this works";
         let result = filter_transcription_output(text, "xx", &None);
         assert_eq!(result, "I think this works");
+    }
+
+    #[test]
+    fn test_filter_han_fillers_without_language_evidence() {
+        for (text, expected) in [
+            (
+                "有时候没有显示，呃，before polish，然后嗯嗯我们",
+                "有时候没有显示，before polish，然后我们",
+            ),
+            ("比如说呃。", "比如说。"),
+            ("呃，帮我们再安装一下最新版。", "帮我们再安装一下最新版。"),
+            ("金额额外不变", "金额额外不变"),
+        ] {
+            assert_eq!(filter_transcription_output(text, "xx", &None), expected);
+        }
+        let custom = Some(vec!["foo".to_string()]);
+        assert_eq!(
+            filter_transcription_output("呃，好", "zh", &custom),
+            "呃，好"
+        );
     }
 
     #[test]
