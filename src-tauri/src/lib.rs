@@ -9,6 +9,7 @@ mod chinese_script;
 pub mod cli;
 mod clipboard;
 mod commands;
+mod correction;
 pub mod engine_supervisor;
 mod helpers;
 mod input;
@@ -659,6 +660,10 @@ pub fn run(cli_args: CliArgs) {
 
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
+            correction::get_correction_session,
+            correction::save_correction_draft,
+            correction::apply_correction,
+            correction::close_correction,
             commands::personalization::save_personalization,
             commands::personalization::dismiss_personalization_invitation,
             commands::personalization::delete_personalization,
@@ -1086,7 +1091,7 @@ pub fn run(cli_args: CliArgs) {
             Ok(())
         })
         .on_window_event(|window, event| match event {
-            tauri::WindowEvent::CloseRequested { api, .. } => {
+            tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
                 commands::personalization::cancel_active_trial(window.app_handle());
                 api.prevent_close();
                 let _res = window.hide();
