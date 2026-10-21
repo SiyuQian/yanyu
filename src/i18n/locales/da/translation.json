@@ -198,6 +198,10 @@
           "cancel": {
             "name": "Annulleringsgenvej",
             "description": "Tastaturgenvejen til at annullere den aktuelle optagelse."
+          },
+          "translate_selection": {
+            "name": "Oversæt markering",
+            "description": "Qwen3-0.6B deles af oversættelse og lokal tekstbehandling. Hent den manuelt."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "Oversæt markering",
+    "loading": "Oversætter lokalt…",
+    "close": "Luk",
+    "copy": "Kopiér oversættelse",
+    "copied": "Kopieret",
+    "openSettings": "Åbn modelindstillinger",
+    "modelTitle": "Delt lokal tekstmodel",
+    "modelDescription": "Qwen3-0.6B deles af oversættelse og lokal tekstbehandling. Hent den manuelt.",
+    "errors": {
+      "permission_denied": "Tillad Yanyu i Systemindstillinger → Anonymitet og sikkerhed → Tilgængelighed, og prøv igen.",
+      "unsupported_selection": "Denne app giver ikke adgang til markeret tekst. Prøv en anden app.",
+      "no_selection": "Ingen tekst markeret. Markér tekst i en anden app.",
+      "too_long": "Markér højst 2.000 tegn.",
+      "missing_model": "Hent Qwen3-0.6B manuelt i de generelle indstillinger.",
+      "unsupported": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
+      "load_failed": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
+      "inference_failed": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
+      "incomplete": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
+      "timeout": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
+      "cancelled": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
+      "unavailable": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
+      "copy_failed": "Kunne ikke kopiere oversættelsen. Prøv igen."
+    }
   }
 }

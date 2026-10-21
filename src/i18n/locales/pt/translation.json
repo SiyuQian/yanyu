@@ -198,6 +198,10 @@
           "cancel": {
             "name": "Atalho de Cancelar",
             "description": "O atalho de teclado para cancelar a gravação atual."
+          },
+          "translate_selection": {
+            "name": "Traduzir seleção",
+            "description": "O Qwen3-0.6B é partilhado pela tradução e revisão local. Transfira-o manualmente."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "Traduzir seleção",
+    "loading": "A traduzir localmente…",
+    "close": "Fechar",
+    "copy": "Copiar tradução",
+    "copied": "Copiado",
+    "openSettings": "Abrir definições do modelo",
+    "modelTitle": "Modelo de texto local partilhado",
+    "modelDescription": "O Qwen3-0.6B é partilhado pela tradução e revisão local. Transfira-o manualmente.",
+    "errors": {
+      "permission_denied": "Permita o Yanyu em Definições do Sistema → Privacidade e segurança → Acessibilidade e tente novamente.",
+      "unsupported_selection": "Esta aplicação não fornece o texto selecionado. Tente noutra aplicação.",
+      "no_selection": "Nenhum texto selecionado. Selecione texto noutra aplicação.",
+      "too_long": "Selecione até 2.000 caracteres.",
+      "missing_model": "Transfira manualmente o Qwen3-0.6B nas definições gerais.",
+      "unsupported": "A tradução local falhou. Tente um texto mais curto.",
+      "load_failed": "A tradução local falhou. Tente um texto mais curto.",
+      "inference_failed": "A tradução local falhou. Tente um texto mais curto.",
+      "incomplete": "A tradução local falhou. Tente um texto mais curto.",
+      "timeout": "A tradução local falhou. Tente um texto mais curto.",
+      "cancelled": "A tradução local falhou. Tente um texto mais curto.",
+      "unavailable": "A tradução local falhou. Tente um texto mais curto.",
+      "copy_failed": "Não foi possível copiar a tradução. Tente novamente."
+    }
   }
 }

@@ -914,6 +914,18 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
 
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    bindings.insert(
+        "translate_selection".into(),
+        ShortcutBinding {
+            id: "translate_selection".into(),
+            name: "Translate selection".into(),
+            description: "Translate selected text locally into Simplified Chinese.".into(),
+            default_binding: "option+shift+t".into(),
+            current_binding: "option+shift+t".into(),
+        },
+    );
+
     AppSettings {
         settings_schema_version: default_settings_schema_version(),
         bindings,
@@ -1265,6 +1277,19 @@ pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeri
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn translation_default_is_configurable_and_only_present_on_supported_devices() {
+        let settings = super::get_default_settings();
+        let binding = settings.bindings.get("translate_selection");
+        if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+            let binding = binding.expect("translation shortcut");
+            assert_eq!(binding.default_binding, "option+shift+t");
+            assert_eq!(binding.current_binding, "option+shift+t");
+            assert_eq!(binding.id, "translate_selection");
+        } else {
+            assert!(binding.is_none());
+        }
+    }
     use super::*;
 
     #[test]

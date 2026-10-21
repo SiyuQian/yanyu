@@ -198,6 +198,10 @@
           "cancel": {
             "name": "Kortkommando för att avbryta",
             "description": "Kortkommandot för att avbryta den aktuella inspelningen."
+          },
+          "translate_selection": {
+            "name": "Översätt markering",
+            "description": "Qwen3-0.6B delas av översättning och lokal textbearbetning. Hämta den manuellt."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "Översätt markering",
+    "loading": "Översätter lokalt…",
+    "close": "Stäng",
+    "copy": "Kopiera översättning",
+    "copied": "Kopierat",
+    "openSettings": "Öppna modellinställningar",
+    "modelTitle": "Delad lokal textmodell",
+    "modelDescription": "Qwen3-0.6B delas av översättning och lokal textbearbetning. Hämta den manuellt.",
+    "errors": {
+      "permission_denied": "Tillåt Yanyu i Systeminställningar → Integritet och säkerhet → Hjälpmedel och försök igen.",
+      "unsupported_selection": "Appen tillhandahåller inte markerad text. Prova en annan app.",
+      "no_selection": "Ingen text markerad. Markera text i en annan app.",
+      "too_long": "Markera högst 2 000 tecken.",
+      "missing_model": "Hämta Qwen3-0.6B manuellt i de allmänna inställningarna.",
+      "unsupported": "Lokal översättning misslyckades. Prova kortare text.",
+      "load_failed": "Lokal översättning misslyckades. Prova kortare text.",
+      "inference_failed": "Lokal översättning misslyckades. Prova kortare text.",
+      "incomplete": "Lokal översättning misslyckades. Prova kortare text.",
+      "timeout": "Lokal översättning misslyckades. Prova kortare text.",
+      "cancelled": "Lokal översättning misslyckades. Prova kortare text.",
+      "unavailable": "Lokal översättning misslyckades. Prova kortare text.",
+      "copy_failed": "Kunde inte kopiera översättningen. Försök igen."
+    }
   }
 }

@@ -218,6 +218,10 @@
           "cancel": {
             "name": "Scorciatoia Annulla",
             "description": "La scorciatoia da tastiera per annullare la registrazione in corso."
+          },
+          "translate_selection": {
+            "name": "Traduci selezione",
+            "description": "Qwen3-0.6B è condiviso tra traduzione e correzione locale. Scaricalo manualmente."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "Traduci selezione",
+    "loading": "Traduzione locale…",
+    "close": "Chiudi",
+    "copy": "Copia traduzione",
+    "copied": "Copiato",
+    "openSettings": "Apri impostazioni modello",
+    "modelTitle": "Modello di testo locale condiviso",
+    "modelDescription": "Qwen3-0.6B è condiviso tra traduzione e correzione locale. Scaricalo manualmente.",
+    "errors": {
+      "permission_denied": "Consenti Yanyu in Impostazioni di Sistema → Privacy e sicurezza → Accessibilità e riprova.",
+      "unsupported_selection": "Questa app non fornisce il testo selezionato. Prova in un’altra app.",
+      "no_selection": "Nessun testo selezionato. Seleziona del testo in un’altra app.",
+      "too_long": "Seleziona al massimo 2.000 caratteri.",
+      "missing_model": "Scarica manualmente Qwen3-0.6B nelle impostazioni generali.",
+      "unsupported": "Traduzione locale non riuscita. Riprova con un testo più breve.",
+      "load_failed": "Traduzione locale non riuscita. Riprova con un testo più breve.",
+      "inference_failed": "Traduzione locale non riuscita. Riprova con un testo più breve.",
+      "incomplete": "Traduzione locale non riuscita. Riprova con un testo più breve.",
+      "timeout": "Traduzione locale non riuscita. Riprova con un testo più breve.",
+      "cancelled": "Traduzione locale non riuscita. Riprova con un testo più breve.",
+      "unavailable": "Traduzione locale non riuscita. Riprova con un testo più breve.",
+      "copy_failed": "Impossibile copiare la traduzione. Riprova."
+    }
   }
 }

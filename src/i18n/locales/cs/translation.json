@@ -218,6 +218,10 @@
           "cancel": {
             "name": "Zkratka zrušení",
             "description": "Klávesová zkratka pro zrušení aktuálního nahrávání."
+          },
+          "translate_selection": {
+            "name": "Přeložit výběr",
+            "description": "Qwen3-0.6B slouží pro překlad a místní úpravu textu. Stáhněte jej ručně."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "Přeložit výběr",
+    "loading": "Překládání místně…",
+    "close": "Zavřít",
+    "copy": "Kopírovat překlad",
+    "copied": "Zkopírováno",
+    "openSettings": "Otevřít nastavení modelu",
+    "modelTitle": "Sdílený místní textový model",
+    "modelDescription": "Qwen3-0.6B slouží pro překlad a místní úpravu textu. Stáhněte jej ručně.",
+    "errors": {
+      "permission_denied": "Povolte Yanyu v Nastavení systému → Soukromí a zabezpečení → Zpřístupnění a zkuste to znovu.",
+      "unsupported_selection": "Tato aplikace neposkytuje vybraný text. Zkuste jinou aplikaci.",
+      "no_selection": "Není vybrán žádný text. Vyberte text v jiné aplikaci.",
+      "too_long": "Vyberte nejvýše 2 000 znaků.",
+      "missing_model": "Stáhněte Qwen3-0.6B ručně v obecném nastavení.",
+      "unsupported": "Místní překlad selhal. Zkuste kratší text.",
+      "load_failed": "Místní překlad selhal. Zkuste kratší text.",
+      "inference_failed": "Místní překlad selhal. Zkuste kratší text.",
+      "incomplete": "Místní překlad selhal. Zkuste kratší text.",
+      "timeout": "Místní překlad selhal. Zkuste kratší text.",
+      "cancelled": "Místní překlad selhal. Zkuste kratší text.",
+      "unavailable": "Místní překlad selhal. Zkuste kratší text.",
+      "copy_failed": "Překlad se nepodařilo zkopírovat. Zkuste to znovu."
+    }
   }
 }

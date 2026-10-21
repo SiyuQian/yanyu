@@ -198,6 +198,10 @@
           "cancel": {
             "name": "रद्द करने का शॉर्टकट",
             "description": "मौजूदा रिकॉर्डिंग रद्द करने के लिए कीबोर्ड शॉर्टकट."
+          },
+          "translate_selection": {
+            "name": "चुने गए पाठ का अनुवाद",
+            "description": "Qwen3-0.6B अनुवाद और स्थानीय सुधार के लिए साझा है। इसे स्वयं डाउनलोड करें।"
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "चुने गए पाठ का अनुवाद",
+    "loading": "स्थानीय अनुवाद जारी है…",
+    "close": "बंद करें",
+    "copy": "अनुवाद कॉपी करें",
+    "copied": "कॉपी किया गया",
+    "openSettings": "मॉडल सेटिंग खोलें",
+    "modelTitle": "साझा स्थानीय पाठ मॉडल",
+    "modelDescription": "Qwen3-0.6B अनुवाद और स्थानीय सुधार के लिए साझा है। इसे स्वयं डाउनलोड करें।",
+    "errors": {
+      "permission_denied": "सिस्टम सेटिंग → गोपनीयता और सुरक्षा → सुलभता में Yanyu को अनुमति दें और फिर कोशिश करें।",
+      "unsupported_selection": "यह ऐप चुना गया पाठ उपलब्ध नहीं कराता। दूसरे ऐप में कोशिश करें।",
+      "no_selection": "कोई पाठ नहीं चुना गया। दूसरे ऐप में पाठ चुनें।",
+      "too_long": "अधिकतम 2,000 अक्षर चुनें।",
+      "missing_model": "सामान्य सेटिंग में Qwen3-0.6B स्वयं डाउनलोड करें।",
+      "unsupported": "स्थानीय अनुवाद विफल हुआ। छोटा पाठ चुनकर फिर कोशिश करें।",
+      "load_failed": "स्थानीय अनुवाद विफल हुआ। छोटा पाठ चुनकर फिर कोशिश करें।",
+      "inference_failed": "स्थानीय अनुवाद विफल हुआ। छोटा पाठ चुनकर फिर कोशिश करें।",
+      "incomplete": "स्थानीय अनुवाद विफल हुआ। छोटा पाठ चुनकर फिर कोशिश करें।",
+      "timeout": "स्थानीय अनुवाद विफल हुआ। छोटा पाठ चुनकर फिर कोशिश करें।",
+      "cancelled": "स्थानीय अनुवाद विफल हुआ। छोटा पाठ चुनकर फिर कोशिश करें।",
+      "unavailable": "स्थानीय अनुवाद विफल हुआ। छोटा पाठ चुनकर फिर कोशिश करें।",
+      "copy_failed": "अनुवाद कॉपी नहीं हो सका। फिर कोशिश करें।"
+    }
   }
 }
