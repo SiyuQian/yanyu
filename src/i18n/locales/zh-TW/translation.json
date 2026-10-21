@@ -199,6 +199,10 @@
           "cancel": {
             "name": "取消聽寫",
             "description": "用於取消目前錄製的鍵盤快捷鍵"
+          },
+          "translate_selection": {
+            "name": "選取文字翻譯",
+            "description": "Qwen3-0.6B 用於選取文字翻譯和選用的本機潤飾。請手動下載模型。"
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "发言人识别和纪要准确性仍处于实验阶段。请核对完整转写：小型纪要模型可能遗漏任务或错误分类提案。",
     "notesDraft": "自动生成的会议纪要是草稿。请逐条核对引用来源：可能遗漏任务或错误分类提案。",
     "captureIncomplete": "此录音不完整，后续转写或纪要无法恢复缺失音频。请先回放检查，再重试处理。"
+  },
+  "translation": {
+    "title": "選取文字翻譯",
+    "loading": "正在本機翻譯…",
+    "close": "關閉",
+    "copy": "複製譯文",
+    "copied": "已複製",
+    "openSettings": "開啟模型設定",
+    "modelTitle": "共用本機文字模型",
+    "modelDescription": "Qwen3-0.6B 用於選取文字翻譯和選用的本機潤飾。請手動下載模型。",
+    "errors": {
+      "permission_denied": "請在系統設定 → 隱私權與安全性 → 輔助使用中允許 Yanyu，再選取文字並重試。",
+      "unsupported_selection": "此應用程式未透過輔助使用提供選取文字。請在其他應用程式中重試。",
+      "no_selection": "找不到選取文字。請在其他應用程式中選取文字並重試。",
+      "too_long": "請選取不超過 2,000 個字元。",
+      "missing_model": "請在一般設定中手動下載 Qwen3-0.6B，再重試翻譯。",
+      "unsupported": "本機翻譯失敗。請選取較短的文字並重試。",
+      "load_failed": "本機翻譯失敗。請選取較短的文字並重試。",
+      "inference_failed": "本機翻譯失敗。請選取較短的文字並重試。",
+      "incomplete": "本機翻譯失敗。請選取較短的文字並重試。",
+      "timeout": "本機翻譯失敗。請選取較短的文字並重試。",
+      "cancelled": "本機翻譯失敗。請選取較短的文字並重試。",
+      "unavailable": "本機翻譯失敗。請選取較短的文字並重試。",
+      "copy_failed": "無法複製譯文。請重試。"
+    }
   }
 }

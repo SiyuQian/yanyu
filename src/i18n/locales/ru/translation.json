@@ -219,6 +219,10 @@
           "cancel": {
             "name": "Горячая клавиша отмены",
             "description": "Сочетание клавиш для отмены текущей записи."
+          },
+          "translate_selection": {
+            "name": "Перевести выделенное",
+            "description": "Qwen3-0.6B используется для перевода и локальной правки. Загрузите модель вручную."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Перевести выделенное",
+    "loading": "Локальный перевод…",
+    "close": "Закрыть",
+    "copy": "Копировать перевод",
+    "copied": "Скопировано",
+    "openSettings": "Открыть настройки модели",
+    "modelTitle": "Общая локальная текстовая модель",
+    "modelDescription": "Qwen3-0.6B используется для перевода и локальной правки. Загрузите модель вручную.",
+    "errors": {
+      "permission_denied": "Разрешите Yanyu в Системных настройках → Конфиденциальность и безопасность → Универсальный доступ и повторите попытку.",
+      "unsupported_selection": "Приложение не предоставляет выделенный текст. Попробуйте другое приложение.",
+      "no_selection": "Нет выделенного текста. Выделите текст в другом приложении.",
+      "too_long": "Выделите не более 2000 символов.",
+      "missing_model": "Загрузите Qwen3-0.6B вручную в общих настройках.",
+      "unsupported": "Локальный перевод не удался. Попробуйте более короткий текст.",
+      "load_failed": "Локальный перевод не удался. Попробуйте более короткий текст.",
+      "inference_failed": "Локальный перевод не удался. Попробуйте более короткий текст.",
+      "incomplete": "Локальный перевод не удался. Попробуйте более короткий текст.",
+      "timeout": "Локальный перевод не удался. Попробуйте более короткий текст.",
+      "cancelled": "Локальный перевод не удался. Попробуйте более короткий текст.",
+      "unavailable": "Локальный перевод не удался. Попробуйте более короткий текст.",
+      "copy_failed": "Не удалось скопировать перевод. Повторите попытку."
+    }
   }
 }

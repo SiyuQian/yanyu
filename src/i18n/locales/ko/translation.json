@@ -199,6 +199,10 @@
           "cancel": {
             "name": "취소 단축키",
             "description": "현재 녹음을 취소하는 키보드 단축키입니다."
+          },
+          "translate_selection": {
+            "name": "선택 텍스트 번역",
+            "description": "Qwen3-0.6B는 번역과 로컬 다듬기에 공유됩니다. 직접 다운로드하세요."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "선택 텍스트 번역",
+    "loading": "로컬 번역 중…",
+    "close": "닫기",
+    "copy": "번역 복사",
+    "copied": "복사됨",
+    "openSettings": "모델 설정 열기",
+    "modelTitle": "공유 로컬 텍스트 모델",
+    "modelDescription": "Qwen3-0.6B는 번역과 로컬 다듬기에 공유됩니다. 직접 다운로드하세요.",
+    "errors": {
+      "permission_denied": "시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용에서 Yanyu를 허용한 뒤 다시 시도하세요.",
+      "unsupported_selection": "이 앱은 선택한 텍스트를 제공하지 않습니다. 다른 앱에서 시도하세요.",
+      "no_selection": "선택한 텍스트가 없습니다. 다른 앱에서 텍스트를 선택하세요.",
+      "too_long": "최대 2,000자를 선택하세요.",
+      "missing_model": "일반 설정에서 Qwen3-0.6B를 직접 다운로드하세요.",
+      "unsupported": "로컬 번역에 실패했습니다. 더 짧은 텍스트로 다시 시도하세요.",
+      "load_failed": "로컬 번역에 실패했습니다. 더 짧은 텍스트로 다시 시도하세요.",
+      "inference_failed": "로컬 번역에 실패했습니다. 더 짧은 텍스트로 다시 시도하세요.",
+      "incomplete": "로컬 번역에 실패했습니다. 더 짧은 텍스트로 다시 시도하세요.",
+      "timeout": "로컬 번역에 실패했습니다. 더 짧은 텍스트로 다시 시도하세요.",
+      "cancelled": "로컬 번역에 실패했습니다. 더 짧은 텍스트로 다시 시도하세요.",
+      "unavailable": "로컬 번역에 실패했습니다. 더 짧은 텍스트로 다시 시도하세요.",
+      "copy_failed": "번역을 복사하지 못했습니다. 다시 시도하세요."
+    }
   }
 }

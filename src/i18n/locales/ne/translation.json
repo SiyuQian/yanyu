@@ -199,6 +199,10 @@
           "cancel": {
             "name": "रद्द सर्टकट",
             "description": "हालको रेकर्डिङ रद्द गर्ने किबोर्ड सर्टकट।"
+          },
+          "translate_selection": {
+            "name": "छानिएको पाठ अनुवाद गर्नुहोस्",
+            "description": "Qwen3-0.6B अनुवाद र स्थानीय परिमार्जनका लागि साझा छ। यसलाई आफैँ डाउनलोड गर्नुहोस्।"
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "छानिएको पाठ अनुवाद गर्नुहोस्",
+    "loading": "स्थानीय अनुवाद हुँदैछ…",
+    "close": "बन्द गर्नुहोस्",
+    "copy": "अनुवाद प्रतिलिपि गर्नुहोस्",
+    "copied": "प्रतिलिपि गरियो",
+    "openSettings": "मोडेल सेटिङ खोल्नुहोस्",
+    "modelTitle": "साझा स्थानीय पाठ मोडेल",
+    "modelDescription": "Qwen3-0.6B अनुवाद र स्थानीय परिमार्जनका लागि साझा छ। यसलाई आफैँ डाउनलोड गर्नुहोस्।",
+    "errors": {
+      "permission_denied": "प्रणाली सेटिङ → गोपनीयता र सुरक्षा → पहुँचयोग्यतामा Yanyu लाई अनुमति दिएर फेरि प्रयास गर्नुहोस्।",
+      "unsupported_selection": "यो एपले छानिएको पाठ उपलब्ध गराउँदैन। अर्को एपमा प्रयास गर्नुहोस्।",
+      "no_selection": "कुनै पाठ छानिएको छैन। अर्को एपमा पाठ छान्नुहोस्।",
+      "too_long": "बढीमा 2,000 अक्षर छान्नुहोस्।",
+      "missing_model": "सामान्य सेटिङमा Qwen3-0.6B आफैँ डाउनलोड गर्नुहोस्।",
+      "unsupported": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
+      "load_failed": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
+      "inference_failed": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
+      "incomplete": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
+      "timeout": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
+      "cancelled": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
+      "unavailable": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
+      "copy_failed": "अनुवाद प्रतिलिपि गर्न सकिएन। फेरि प्रयास गर्नुहोस्।"
+    }
   }
 }

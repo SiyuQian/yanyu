@@ -219,6 +219,10 @@
           "cancel": {
             "name": "キャンセルのショートカット",
             "description": "現在の録音をキャンセルするためのキーボードショートカット。"
+          },
+          "translate_selection": {
+            "name": "選択テキストの翻訳",
+            "description": "Qwen3-0.6B は翻訳とローカル校正で共有されます。手動でダウンロードしてください。"
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "選択テキストの翻訳",
+    "loading": "ローカルで翻訳中…",
+    "close": "閉じる",
+    "copy": "訳文をコピー",
+    "copied": "コピーしました",
+    "openSettings": "モデル設定を開く",
+    "modelTitle": "共有ローカルテキストモデル",
+    "modelDescription": "Qwen3-0.6B は翻訳とローカル校正で共有されます。手動でダウンロードしてください。",
+    "errors": {
+      "permission_denied": "システム設定 → プライバシーとセキュリティ → アクセシビリティで Yanyu を許可して再試行してください。",
+      "unsupported_selection": "このアプリでは選択テキストを取得できません。別のアプリで試してください。",
+      "no_selection": "選択テキストがありません。別のアプリでテキストを選択してください。",
+      "too_long": "2,000 文字以内を選択してください。",
+      "missing_model": "一般設定で Qwen3-0.6B を手動でダウンロードしてください。",
+      "unsupported": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "load_failed": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "inference_failed": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "incomplete": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "timeout": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "cancelled": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "unavailable": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "copy_failed": "訳文をコピーできませんでした。再試行してください。"
+    }
   }
 }

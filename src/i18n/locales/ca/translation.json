@@ -199,6 +199,10 @@
           "cancel": {
             "name": "Drecera de cancel·lació",
             "description": "La drecera de teclat per cancel·lar l'enregistrament actual."
+          },
+          "translate_selection": {
+            "name": "Tradueix la selecció",
+            "description": "Qwen3-0.6B es comparteix entre traducció i correcció local. Baixeu-lo manualment."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Tradueix la selecció",
+    "loading": "Traduint localment…",
+    "close": "Tanca",
+    "copy": "Copia la traducció",
+    "copied": "Copiat",
+    "openSettings": "Obre la configuració del model",
+    "modelTitle": "Model de text local compartit",
+    "modelDescription": "Qwen3-0.6B es comparteix entre traducció i correcció local. Baixeu-lo manualment.",
+    "errors": {
+      "permission_denied": "Permeteu Yanyu a Configuració del sistema → Privadesa i seguretat → Accessibilitat i torneu-ho a provar.",
+      "unsupported_selection": "Aquesta aplicació no proporciona el text seleccionat. Proveu una altra aplicació.",
+      "no_selection": "No hi ha text seleccionat. Seleccioneu text en una altra aplicació.",
+      "too_long": "Seleccioneu fins a 2.000 caràcters.",
+      "missing_model": "Baixeu Qwen3-0.6B manualment a la configuració general.",
+      "unsupported": "La traducció local ha fallat. Proveu un text més curt.",
+      "load_failed": "La traducció local ha fallat. Proveu un text més curt.",
+      "inference_failed": "La traducció local ha fallat. Proveu un text més curt.",
+      "incomplete": "La traducció local ha fallat. Proveu un text més curt.",
+      "timeout": "La traducció local ha fallat. Proveu un text més curt.",
+      "cancelled": "La traducció local ha fallat. Proveu un text més curt.",
+      "unavailable": "La traducció local ha fallat. Proveu un text més curt.",
+      "copy_failed": "No s’ha pogut copiar la traducció. Torneu-ho a provar."
+    }
   }
 }

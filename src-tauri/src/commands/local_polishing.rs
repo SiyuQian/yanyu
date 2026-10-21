@@ -51,8 +51,9 @@ pub fn delete_local_polishing_model(
     app: AppHandle,
     manager: State<'_, Arc<LocalPolishingManager>>,
 ) -> Result<(), String> {
+    manager.delete()?;
     let mut settings = get_settings(&app);
     settings.local_polishing_enabled = false;
     write_settings(&app, settings);
-    manager.delete()
+    Ok(())
 }

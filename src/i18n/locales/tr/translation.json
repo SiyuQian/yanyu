@@ -219,6 +219,10 @@
           "cancel": {
             "name": "İptal Kısayolu",
             "description": "Mevcut kaydı iptal etmek için klavye kısayolu."
+          },
+          "translate_selection": {
+            "name": "Seçimi çevir",
+            "description": "Qwen3-0.6B çeviri ve yerel düzenleme için paylaşılır. Elle indirin."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Seçimi çevir",
+    "loading": "Yerel olarak çevriliyor…",
+    "close": "Kapat",
+    "copy": "Çeviriyi kopyala",
+    "copied": "Kopyalandı",
+    "openSettings": "Model ayarlarını aç",
+    "modelTitle": "Paylaşılan yerel metin modeli",
+    "modelDescription": "Qwen3-0.6B çeviri ve yerel düzenleme için paylaşılır. Elle indirin.",
+    "errors": {
+      "permission_denied": "Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik bölümünde Yanyu’ya izin verip yeniden deneyin.",
+      "unsupported_selection": "Bu uygulama seçili metni sağlamıyor. Başka bir uygulama deneyin.",
+      "no_selection": "Seçili metin bulunamadı. Başka bir uygulamada metin seçin.",
+      "too_long": "En fazla 2.000 karakter seçin.",
+      "missing_model": "Genel ayarlardan Qwen3-0.6B modelini elle indirin.",
+      "unsupported": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "load_failed": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "inference_failed": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "incomplete": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "timeout": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "cancelled": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "unavailable": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "copy_failed": "Çeviri kopyalanamadı. Yeniden deneyin."
+    }
   }
 }

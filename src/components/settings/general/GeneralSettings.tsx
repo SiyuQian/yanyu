@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { type } from "@tauri-apps/plugin-os";
+import { arch, type } from "@tauri-apps/plugin-os";
 import { Cpu, Keyboard, Volume2 } from "lucide-react";
 import { useModelStore } from "../../../stores/modelStore";
 import { MicrophoneSelector } from "../MicrophoneSelector";
@@ -48,6 +48,9 @@ export const GeneralSettings: React.FC = () => {
         title={t("settings.general.shortcutsTitle")}
       >
         <ShortcutInput shortcutId="transcribe" grouped={true} />
+        {type() === "macos" && arch() === "aarch64" && (
+          <ShortcutInput shortcutId="translate_selection" grouped={true} />
+        )}
         <ShortcutActivationSetting descriptionMode="inline" grouped={true} />
         {/* Cancel shortcut remains hidden on Linux because of dynamic shortcut instability. */}
         {!isLinux && <ShortcutInput shortcutId="cancel" grouped={true} />}

@@ -199,6 +199,10 @@
           "cancel": {
             "name": "Бърз клавиш за отказ",
             "description": "Клавишната комбинация за отмяна на текущия запис."
+          },
+          "translate_selection": {
+            "name": "Превод на избрания текст",
+            "description": "Qwen3-0.6B се използва за превод и локална редакция. Изтеглете го ръчно."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Превод на избрания текст",
+    "loading": "Локален превод…",
+    "close": "Затвори",
+    "copy": "Копирай превода",
+    "copied": "Копирано",
+    "openSettings": "Отвори настройките на модела",
+    "modelTitle": "Споделен локален текстов модел",
+    "modelDescription": "Qwen3-0.6B се използва за превод и локална редакция. Изтеглете го ръчно.",
+    "errors": {
+      "permission_denied": "Разрешете Yanyu в Системни настройки → Поверителност и сигурност → Достъпност и опитайте отново.",
+      "unsupported_selection": "Това приложение не предоставя избрания текст. Опитайте друго приложение.",
+      "no_selection": "Няма избран текст. Изберете текст в друго приложение.",
+      "too_long": "Изберете до 2000 знака.",
+      "missing_model": "Изтеглете Qwen3-0.6B ръчно в общите настройки.",
+      "unsupported": "Локалният превод е неуспешен. Опитайте по-кратък текст.",
+      "load_failed": "Локалният превод е неуспешен. Опитайте по-кратък текст.",
+      "inference_failed": "Локалният превод е неуспешен. Опитайте по-кратък текст.",
+      "incomplete": "Локалният превод е неуспешен. Опитайте по-кратък текст.",
+      "timeout": "Локалният превод е неуспешен. Опитайте по-кратък текст.",
+      "cancelled": "Локалният превод е неуспешен. Опитайте по-кратък текст.",
+      "unavailable": "Локалният превод е неуспешен. Опитайте по-кратък текст.",
+      "copy_failed": "Преводът не може да се копира. Опитайте отново."
+    }
   }
 }

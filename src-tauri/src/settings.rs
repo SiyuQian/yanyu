@@ -914,6 +914,18 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
 
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    bindings.insert(
+        "translate_selection".into(),
+        ShortcutBinding {
+            id: "translate_selection".into(),
+            name: "Translate selection".into(),
+            description: "Translate selected text locally into Simplified Chinese.".into(),
+            default_binding: "option+shift+t".into(),
+            current_binding: "option+shift+t".into(),
+        },
+    );
+
     AppSettings {
         settings_schema_version: default_settings_schema_version(),
         bindings,
@@ -1043,13 +1055,8 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
             updated = true;
         }
 
-        // Merge in any bindings added since this store was written.
-        for (key, value) in get_default_settings().bindings {
-            if let std::collections::hash_map::Entry::Vacant(entry) = settings.bindings.entry(key) {
-                debug!("Adding missing binding: {}", entry.key());
-                entry.insert(value);
-                updated = true;
-            }
+        if merge_missing_bindings(&mut settings) {
+            updated = true;
         }
 
         if updated {
@@ -1068,6 +1075,35 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
     }
 
     settings
+}
+
+fn merge_missing_bindings(settings: &mut AppSettings) -> bool {
+    let mut updated = false;
+    let mut defaults: Vec<_> = get_default_settings().bindings.into_iter().collect();
+    defaults.sort_by(|a, b| a.0.cmp(&b.0));
+    for (key, mut value) in defaults {
+        if settings.bindings.contains_key(&key) {
+            continue;
+        }
+        // An upgrade must preserve user assignments, including modifier aliases.
+        if key == "translate_selection"
+            && crate::shortcut::validate_binding_change(
+                &settings.bindings,
+                &key,
+                &value.current_binding,
+                settings.keyboard_implementation,
+            )
+            .is_err()
+        {
+            value.current_binding.clear();
+        }
+        if let std::collections::hash_map::Entry::Vacant(entry) = settings.bindings.entry(key) {
+            debug!("Adding missing binding: {}", entry.key());
+            entry.insert(value);
+            updated = true;
+        }
+    }
+    updated
 }
 
 /// Rebuilds settings from a store value that failed to deserialize as a whole.
@@ -1265,6 +1301,77 @@ pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeri
 
 #[cfg(test)]
 mod tests {
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    #[test]
+    fn translation_upgrade_preserves_existing_normalized_shortcuts() {
+        for implementation in [
+            KeyboardImplementation::Tauri,
+            KeyboardImplementation::HandyKeys,
+        ] {
+            for existing in ["option+shift+t", "alt+shift+t", "shift+alt+t"] {
+                let mut original = get_default_settings();
+                original.keyboard_implementation = implementation;
+                original.bindings.remove("translate_selection");
+                original
+                    .bindings
+                    .get_mut("transcribe")
+                    .unwrap()
+                    .current_binding = existing.into();
+                let raw = serde_json::to_value(&original).unwrap();
+                let mut upgraded: AppSettings = serde_json::from_value(raw.clone()).unwrap();
+                apply_settings_migrations(&mut upgraded, &raw);
+                assert!(merge_missing_bindings(&mut upgraded));
+                assert_eq!(upgraded.bindings["transcribe"].current_binding, existing);
+                let translation = &upgraded.bindings["translate_selection"];
+                assert_eq!(translation.default_binding, "option+shift+t");
+                assert_eq!(
+                    translation.current_binding, "",
+                    "{implementation:?}: {existing}"
+                );
+                assert!(!merge_missing_bindings(&mut upgraded));
+                let stored = serde_json::to_value(&upgraded).unwrap();
+                let mut reloaded: AppSettings = serde_json::from_value(stored).unwrap();
+                assert!(!merge_missing_bindings(&mut reloaded));
+                assert_eq!(reloaded.bindings["translate_selection"].current_binding, "");
+            }
+        }
+    }
+
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    #[test]
+    fn translation_upgrade_adds_a_free_default_and_preserves_a_custom_translation() {
+        let mut settings = get_default_settings();
+        settings.bindings.remove("translate_selection");
+        assert!(merge_missing_bindings(&mut settings));
+        assert_eq!(
+            settings.bindings["translate_selection"].current_binding,
+            "option+shift+t"
+        );
+        settings
+            .bindings
+            .get_mut("translate_selection")
+            .unwrap()
+            .current_binding = "ctrl+shift+y".into();
+        assert!(!merge_missing_bindings(&mut settings));
+        assert_eq!(
+            settings.bindings["translate_selection"].current_binding,
+            "ctrl+shift+y"
+        );
+    }
+
+    #[test]
+    fn translation_default_is_configurable_and_only_present_on_supported_devices() {
+        let settings = super::get_default_settings();
+        let binding = settings.bindings.get("translate_selection");
+        if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+            let binding = binding.expect("translation shortcut");
+            assert_eq!(binding.default_binding, "option+shift+t");
+            assert_eq!(binding.current_binding, "option+shift+t");
+            assert_eq!(binding.id, "translate_selection");
+        } else {
+            assert!(binding.is_none());
+        }
+    }
     use super::*;
 
     #[test]

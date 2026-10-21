@@ -63,67 +63,80 @@ export function LocalPolishingSettings() {
   const downloading = status?.phase === "downloading";
 
   return (
-    <SettingsGroup
-      variant="card"
-      icon={<Sparkles size={20} />}
-      title={t("settings.localPolishing.title")}
-    >
-      <div className="py-3 space-y-3">
-        <ToggleSwitch
-          checked={getSetting("local_polishing_enabled") ?? false}
-          onChange={(enabled) =>
-            updateSetting("local_polishing_enabled", enabled)
-          }
-          disabled={!status?.supported}
-          isUpdating={isUpdating("local_polishing_enabled")}
-          label={t("settings.localPolishing.label")}
-          description={t("settings.localPolishing.description")}
-          descriptionMode="inline"
-          grouped
-        />
-        <p className="text-sm text-text/70" role="status" aria-live="polite">
-          {t(`settings.localPolishing.states.${status?.phase ?? "loading"}`)}
-        </p>
-        {downloading && (
-          <progress
-            className="w-full"
-            value={status?.progress ?? 0}
-            max={1}
-            aria-label={t("settings.localPolishing.progress")}
+    <>
+      <SettingsGroup
+        variant="card"
+        icon={<Sparkles size={20} />}
+        title={t("settings.localPolishing.title")}
+      >
+        <div className="py-3">
+          <ToggleSwitch
+            checked={getSetting("local_polishing_enabled") ?? false}
+            onChange={(enabled) =>
+              updateSetting("local_polishing_enabled", enabled)
+            }
+            disabled={!status?.supported}
+            isUpdating={isUpdating("local_polishing_enabled")}
+            label={t("settings.localPolishing.label")}
+            description={t("settings.localPolishing.description")}
+            descriptionMode="inline"
+            grouped
           />
-        )}
-        {(error || status?.error) && (
-          <p className="text-sm text-red-500" role="alert">
-            {t("settings.localPolishing.error")}
-          </p>
-        )}
-        <div className="flex gap-2">
-          {downloading ? (
-            <Button
-              variant="secondary"
-              disabled={pending}
-              onClick={() => void act("cancel")}
-            >
-              {t("settings.localPolishing.cancel")}
-            </Button>
-          ) : (
-            <Button
-              variant="secondary"
-              disabled={pending || !status?.supported || status.downloaded}
-              onClick={() => void act("download")}
-            >
-              {t("settings.localPolishing.download")}
-            </Button>
-          )}
-          <Button
-            variant="danger-ghost"
-            disabled={pending || (!status?.downloaded && !downloading)}
-            onClick={() => void act("delete")}
-          >
-            {t("settings.localPolishing.delete")}
-          </Button>
         </div>
-      </div>
-    </SettingsGroup>
+      </SettingsGroup>
+      <SettingsGroup
+        variant="card"
+        icon={<Sparkles size={20} />}
+        title={t("translation.modelTitle")}
+      >
+        <div id="translation-model-resources" className="py-3 space-y-3">
+          <p className="text-sm text-text/70">
+            {t("translation.modelDescription")}
+          </p>
+          <p className="text-sm text-text/70" role="status" aria-live="polite">
+            {t(`settings.localPolishing.states.${status?.phase ?? "loading"}`)}
+          </p>
+          {downloading && (
+            <progress
+              className="w-full"
+              value={status?.progress ?? 0}
+              max={1}
+              aria-label={t("settings.localPolishing.progress")}
+            />
+          )}
+          {(error || status?.error) && (
+            <p className="text-sm text-red-500" role="alert">
+              {t("settings.localPolishing.error")}
+            </p>
+          )}
+          <div className="flex gap-2">
+            {downloading ? (
+              <Button
+                variant="secondary"
+                disabled={pending}
+                onClick={() => void act("cancel")}
+              >
+                {t("settings.localPolishing.cancel")}
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                disabled={pending || !status?.supported || status.downloaded}
+                onClick={() => void act("download")}
+              >
+                {t("settings.localPolishing.download")}
+              </Button>
+            )}
+            <Button
+              variant="danger-ghost"
+              disabled={pending || (!status?.downloaded && !downloading)}
+              onClick={() => void act("delete")}
+            >
+              {t("settings.localPolishing.delete")}
+            </Button>
+          </div>
+        </div>
+      </SettingsGroup>
+    </>
   );
 }

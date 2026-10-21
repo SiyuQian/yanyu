@@ -219,6 +219,10 @@
           "cancel": {
             "name": "Raccourci d'Annulation",
             "description": "Le raccourci clavier pour annuler l'enregistrement en cours."
+          },
+          "translate_selection": {
+            "name": "Traduire la sélection",
+            "description": "Qwen3-0.6B est partagé entre la traduction et la correction locale. Téléchargez-le manuellement."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Traduire la sélection",
+    "loading": "Traduction locale…",
+    "close": "Fermer",
+    "copy": "Copier la traduction",
+    "copied": "Copié",
+    "openSettings": "Ouvrir les réglages du modèle",
+    "modelTitle": "Modèle de texte local partagé",
+    "modelDescription": "Qwen3-0.6B est partagé entre la traduction et la correction locale. Téléchargez-le manuellement.",
+    "errors": {
+      "permission_denied": "Autorisez Yanyu dans Réglages Système → Confidentialité et sécurité → Accessibilité, puis réessayez.",
+      "unsupported_selection": "Cette application ne fournit pas le texte sélectionné. Essayez dans une autre application.",
+      "no_selection": "Aucun texte sélectionné. Sélectionnez du texte dans une autre application.",
+      "too_long": "Sélectionnez au maximum 2 000 caractères.",
+      "missing_model": "Téléchargez manuellement Qwen3-0.6B dans les réglages généraux.",
+      "unsupported": "Échec de la traduction locale. Réessayez avec un texte plus court.",
+      "load_failed": "Échec de la traduction locale. Réessayez avec un texte plus court.",
+      "inference_failed": "Échec de la traduction locale. Réessayez avec un texte plus court.",
+      "incomplete": "Échec de la traduction locale. Réessayez avec un texte plus court.",
+      "timeout": "Échec de la traduction locale. Réessayez avec un texte plus court.",
+      "cancelled": "Échec de la traduction locale. Réessayez avec un texte plus court.",
+      "unavailable": "Échec de la traduction locale. Réessayez avec un texte plus court.",
+      "copy_failed": "Impossible de copier la traduction. Réessayez."
+    }
   }
 }

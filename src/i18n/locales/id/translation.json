@@ -199,6 +199,10 @@
           "cancel": {
             "name": "Pintasan Batal",
             "description": "Pintasan keyboard untuk membatalkan perekaman saat ini."
+          },
+          "translate_selection": {
+            "name": "Terjemahkan pilihan",
+            "description": "Qwen3-0.6B digunakan untuk terjemahan dan penyuntingan lokal. Unduh secara manual."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Terjemahkan pilihan",
+    "loading": "Menerjemahkan secara lokal…",
+    "close": "Tutup",
+    "copy": "Salin terjemahan",
+    "copied": "Disalin",
+    "openSettings": "Buka pengaturan model",
+    "modelTitle": "Model teks lokal bersama",
+    "modelDescription": "Qwen3-0.6B digunakan untuk terjemahan dan penyuntingan lokal. Unduh secara manual.",
+    "errors": {
+      "permission_denied": "Izinkan Yanyu di Pengaturan Sistem → Privasi & Keamanan → Aksesibilitas, lalu coba lagi.",
+      "unsupported_selection": "Aplikasi ini tidak menyediakan teks yang dipilih. Coba aplikasi lain.",
+      "no_selection": "Tidak ada teks yang dipilih. Pilih teks di aplikasi lain.",
+      "too_long": "Pilih maksimal 2.000 karakter.",
+      "missing_model": "Unduh Qwen3-0.6B secara manual di pengaturan umum.",
+      "unsupported": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",
+      "load_failed": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",
+      "inference_failed": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",
+      "incomplete": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",
+      "timeout": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",
+      "cancelled": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",
+      "unavailable": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",
+      "copy_failed": "Tidak dapat menyalin terjemahan. Coba lagi."
+    }
   }
 }

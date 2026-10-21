@@ -199,6 +199,10 @@
           "cancel": {
             "name": "Cancel Shortcut",
             "description": "The keyboard shortcut to cancel the current recording."
+          },
+          "translate_selection": {
+            "name": "Translate selection",
+            "description": "Translate selected text locally into Simplified Chinese."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Selection translation",
+    "loading": "Translating locally…",
+    "close": "Close",
+    "copy": "Copy translation",
+    "copied": "Copied",
+    "openSettings": "Open model settings",
+    "modelTitle": "Shared local text model",
+    "modelDescription": "Qwen3-0.6B is shared by selection translation and optional Local polishing. Download it explicitly to use either feature.",
+    "errors": {
+      "permission_denied": "Allow Yanyu in System Settings → Privacy & Security → Accessibility, then select text and try again.",
+      "unsupported_selection": "This app does not expose selected text through Accessibility. Select text in another app and try again.",
+      "no_selection": "No selected text was found. Select text in another app and try again.",
+      "too_long": "Select up to 2,000 characters and try again.",
+      "missing_model": "Download Qwen3-0.6B in General settings to translate locally. The download starts only when you choose Download.",
+      "unsupported": "Selection translation requires an Apple Silicon Mac.",
+      "load_failed": "The local model could not load. Check the model download in General settings and try again.",
+      "inference_failed": "Local translation failed. Try a shorter selection.",
+      "incomplete": "The model did not finish a translation. Try a shorter selection.",
+      "timeout": "Local translation timed out. Try a shorter selection.",
+      "cancelled": "Translation was cancelled. Select text and try again.",
+      "unavailable": "Translation is unavailable. Select text in another app and try again.",
+      "copy_failed": "Could not copy the translation. Try again."
+    }
   }
 }

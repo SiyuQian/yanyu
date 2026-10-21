@@ -219,6 +219,10 @@
           "cancel": {
             "name": "Phím tắt hủy",
             "description": "Phím tắt để hủy bản ghi hiện tại."
+          },
+          "translate_selection": {
+            "name": "Dịch văn bản đã chọn",
+            "description": "Qwen3-0.6B dùng chung cho dịch và chỉnh sửa cục bộ. Hãy tải xuống thủ công."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Dịch văn bản đã chọn",
+    "loading": "Đang dịch cục bộ…",
+    "close": "Đóng",
+    "copy": "Sao chép bản dịch",
+    "copied": "Đã sao chép",
+    "openSettings": "Mở cài đặt mô hình",
+    "modelTitle": "Mô hình văn bản cục bộ dùng chung",
+    "modelDescription": "Qwen3-0.6B dùng chung cho dịch và chỉnh sửa cục bộ. Hãy tải xuống thủ công.",
+    "errors": {
+      "permission_denied": "Cho phép Yanyu trong Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, rồi thử lại.",
+      "unsupported_selection": "Ứng dụng này không cung cấp văn bản đã chọn. Hãy thử ứng dụng khác.",
+      "no_selection": "Không có văn bản được chọn. Hãy chọn văn bản trong ứng dụng khác.",
+      "too_long": "Chọn tối đa 2.000 ký tự.",
+      "missing_model": "Tải Qwen3-0.6B thủ công trong cài đặt chung.",
+      "unsupported": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",
+      "load_failed": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",
+      "inference_failed": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",
+      "incomplete": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",
+      "timeout": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",
+      "cancelled": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",
+      "unavailable": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",
+      "copy_failed": "Không thể sao chép bản dịch. Hãy thử lại."
+    }
   }
 }

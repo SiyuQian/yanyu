@@ -98,6 +98,20 @@ function App() {
     return () => window.removeEventListener("yanyu-settings-section", navigate);
   }, []);
 
+  useEffect(() => {
+    const unlisten = listen("translation-model-settings", () => {
+      setCurrentSection("general");
+      requestAnimationFrame(() =>
+        document
+          .getElementById("translation-model-resources")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      );
+    });
+    return () => {
+      void unlisten.then((cleanup) => cleanup());
+    };
+  }, []);
+
   // Reset the scroll position whenever the active section changes.
   useLayoutEffect(() => {
     settingsScrollRef.current?.scrollTo({ top: 0 });

@@ -219,6 +219,10 @@
           "cancel": {
             "name": "Skrót anulowania",
             "description": "Skrót klawiaturowy do anulowania bieżącego nagrywania."
+          },
+          "translate_selection": {
+            "name": "Tłumacz zaznaczenie",
+            "description": "Qwen3-0.6B służy do tłumaczenia i lokalnej korekty. Pobierz go ręcznie."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Tłumacz zaznaczenie",
+    "loading": "Tłumaczenie lokalne…",
+    "close": "Zamknij",
+    "copy": "Kopiuj tłumaczenie",
+    "copied": "Skopiowano",
+    "openSettings": "Otwórz ustawienia modelu",
+    "modelTitle": "Wspólny lokalny model tekstowy",
+    "modelDescription": "Qwen3-0.6B służy do tłumaczenia i lokalnej korekty. Pobierz go ręcznie.",
+    "errors": {
+      "permission_denied": "Zezwól Yanyu w Ustawieniach systemowych → Prywatność i ochrona → Dostępność i spróbuj ponownie.",
+      "unsupported_selection": "Ta aplikacja nie udostępnia zaznaczonego tekstu. Spróbuj w innej aplikacji.",
+      "no_selection": "Brak zaznaczonego tekstu. Zaznacz tekst w innej aplikacji.",
+      "too_long": "Zaznacz maksymalnie 2000 znaków.",
+      "missing_model": "Pobierz Qwen3-0.6B ręcznie w ustawieniach ogólnych.",
+      "unsupported": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",
+      "load_failed": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",
+      "inference_failed": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",
+      "incomplete": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",
+      "timeout": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",
+      "cancelled": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",
+      "unavailable": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",
+      "copy_failed": "Nie udało się skopiować tłumaczenia. Spróbuj ponownie."
+    }
   }
 }

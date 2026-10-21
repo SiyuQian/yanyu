@@ -199,6 +199,10 @@
           "cancel": {
             "name": "Sneltoets voor annuleren",
             "description": "De sneltoets om de huidige opname te annuleren."
+          },
+          "translate_selection": {
+            "name": "Selectie vertalen",
+            "description": "Qwen3-0.6B wordt gedeeld door vertaling en lokale tekstcorrectie. Download het handmatig."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Selectie vertalen",
+    "loading": "Lokaal vertalen…",
+    "close": "Sluiten",
+    "copy": "Vertaling kopiëren",
+    "copied": "Gekopieerd",
+    "openSettings": "Modelinstellingen openen",
+    "modelTitle": "Gedeeld lokaal tekstmodel",
+    "modelDescription": "Qwen3-0.6B wordt gedeeld door vertaling en lokale tekstcorrectie. Download het handmatig.",
+    "errors": {
+      "permission_denied": "Sta Yanyu toe in Systeeminstellingen → Privacy en beveiliging → Toegankelijkheid en probeer opnieuw.",
+      "unsupported_selection": "Deze app geeft de geselecteerde tekst niet door. Probeer een andere app.",
+      "no_selection": "Geen tekst geselecteerd. Selecteer tekst in een andere app.",
+      "too_long": "Selecteer maximaal 2.000 tekens.",
+      "missing_model": "Download Qwen3-0.6B handmatig in de algemene instellingen.",
+      "unsupported": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "load_failed": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "inference_failed": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "incomplete": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "timeout": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "cancelled": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "unavailable": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "copy_failed": "Kopiëren van de vertaling mislukt. Probeer opnieuw."
+    }
   }
 }

@@ -199,6 +199,10 @@
           "cancel": {
             "name": "קיצור מקשים לביטול",
             "description": "קיצור המקלדת לביטול ההקלטה הנוכחית."
+          },
+          "translate_selection": {
+            "name": "תרגום הבחירה",
+            "description": "Qwen3-0.6B משמש לתרגום ולעריכה מקומית. יש להוריד אותו ידנית."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "תרגום הבחירה",
+    "loading": "מתרגם מקומית…",
+    "close": "סגירה",
+    "copy": "העתקת התרגום",
+    "copied": "הועתק",
+    "openSettings": "פתיחת הגדרות המודל",
+    "modelTitle": "מודל טקסט מקומי משותף",
+    "modelDescription": "Qwen3-0.6B משמש לתרגום ולעריכה מקומית. יש להוריד אותו ידנית.",
+    "errors": {
+      "permission_denied": "יש לאפשר את Yanyu בהגדרות המערכת ← פרטיות ואבטחה ← נגישות ולנסות שוב.",
+      "unsupported_selection": "יישום זה אינו מספק את הטקסט שנבחר. נסו ביישום אחר.",
+      "no_selection": "לא נמצא טקסט נבחר. בחרו טקסט ביישום אחר.",
+      "too_long": "בחרו עד 2,000 תווים.",
+      "missing_model": "הורידו את Qwen3-0.6B ידנית בהגדרות הכלליות.",
+      "unsupported": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
+      "load_failed": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
+      "inference_failed": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
+      "incomplete": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
+      "timeout": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
+      "cancelled": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
+      "unavailable": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
+      "copy_failed": "לא ניתן להעתיק את התרגום. נסו שוב."
+    }
   }
 }

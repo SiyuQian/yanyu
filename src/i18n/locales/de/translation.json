@@ -219,6 +219,10 @@
           "cancel": {
             "name": "Abbrechen-Tastenkürzel",
             "description": "Das Tastenkürzel zum Abbrechen der aktuellen Aufnahme."
+          },
+          "translate_selection": {
+            "name": "Auswahl übersetzen",
+            "description": "Qwen3-0.6B wird für Übersetzung und lokale Textkorrektur verwendet. Laden Sie es manuell herunter."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "Auswahl übersetzen",
+    "loading": "Lokale Übersetzung…",
+    "close": "Schließen",
+    "copy": "Übersetzung kopieren",
+    "copied": "Kopiert",
+    "openSettings": "Modelleinstellungen öffnen",
+    "modelTitle": "Gemeinsames lokales Textmodell",
+    "modelDescription": "Qwen3-0.6B wird für Übersetzung und lokale Textkorrektur verwendet. Laden Sie es manuell herunter.",
+    "errors": {
+      "permission_denied": "Erlauben Sie Yanyu unter Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen und versuchen Sie es erneut.",
+      "unsupported_selection": "Diese App stellt den ausgewählten Text nicht bereit. Versuchen Sie es in einer anderen App.",
+      "no_selection": "Kein Text ausgewählt. Wählen Sie Text in einer anderen App aus.",
+      "too_long": "Wählen Sie höchstens 2.000 Zeichen aus.",
+      "missing_model": "Laden Sie Qwen3-0.6B manuell in den allgemeinen Einstellungen herunter.",
+      "unsupported": "Lokale Übersetzung fehlgeschlagen. Versuchen Sie einen kürzeren Text.",
+      "load_failed": "Lokale Übersetzung fehlgeschlagen. Versuchen Sie einen kürzeren Text.",
+      "inference_failed": "Lokale Übersetzung fehlgeschlagen. Versuchen Sie einen kürzeren Text.",
+      "incomplete": "Lokale Übersetzung fehlgeschlagen. Versuchen Sie einen kürzeren Text.",
+      "timeout": "Lokale Übersetzung fehlgeschlagen. Versuchen Sie einen kürzeren Text.",
+      "cancelled": "Lokale Übersetzung fehlgeschlagen. Versuchen Sie einen kürzeren Text.",
+      "unavailable": "Lokale Übersetzung fehlgeschlagen. Versuchen Sie einen kürzeren Text.",
+      "copy_failed": "Übersetzung konnte nicht kopiert werden. Versuchen Sie es erneut."
+    }
   }
 }

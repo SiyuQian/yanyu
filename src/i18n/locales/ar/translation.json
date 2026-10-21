@@ -196,6 +196,10 @@
           "cancel": {
             "name": "اختصار الإلغاء",
             "description": ".اختصار لوحة المفاتيح لإلغاء التسجيل الحالي"
+          },
+          "translate_selection": {
+            "name": "ترجمة النص المحدد",
+            "description": "يُستخدم Qwen3-0.6B للترجمة والتنقيح المحلي. نزّله يدويًا."
           }
         },
         "errors": {
@@ -919,5 +923,30 @@
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
     "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+  },
+  "translation": {
+    "title": "ترجمة النص المحدد",
+    "loading": "جارٍ الترجمة محليًا…",
+    "close": "إغلاق",
+    "copy": "نسخ الترجمة",
+    "copied": "تم النسخ",
+    "openSettings": "فتح إعدادات النموذج",
+    "modelTitle": "نموذج نص محلي مشترك",
+    "modelDescription": "يُستخدم Qwen3-0.6B للترجمة والتنقيح المحلي. نزّله يدويًا.",
+    "errors": {
+      "permission_denied": "اسمح لـ Yanyu في إعدادات النظام ← الخصوصية والأمان ← تسهيلات الاستخدام، ثم أعد المحاولة.",
+      "unsupported_selection": "لا يتيح هذا التطبيق النص المحدد. جرّب تطبيقًا آخر.",
+      "no_selection": "لم يتم العثور على نص محدد. حدد نصًا في تطبيق آخر.",
+      "too_long": "حدد ما لا يزيد عن 2000 حرف.",
+      "missing_model": "نزّل Qwen3-0.6B يدويًا من الإعدادات العامة.",
+      "unsupported": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "load_failed": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "inference_failed": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "incomplete": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "timeout": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "cancelled": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "unavailable": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "copy_failed": "تعذر نسخ الترجمة. أعد المحاولة."
+    }
   }
 }

@@ -511,7 +511,7 @@ fn unregister_all_shortcuts(app: &AppHandle, implementation: KeyboardImplementat
     }
 }
 
-fn validate_binding_change(
+pub(crate) fn validate_binding_change(
     bindings: &std::collections::HashMap<String, ShortcutBinding>,
     id: &str,
     binding: &str,
@@ -551,6 +551,9 @@ fn validate_bindings_for_implementation(
 ) -> Result<(), String> {
     let mut candidates = bindings.clone();
     for (id, binding) in &mut candidates {
+        if id == "translate_selection" && binding.current_binding.is_empty() {
+            continue;
+        }
         if let Err(error) =
             validate_shortcut_for_implementation(&binding.current_binding, implementation)
         {
@@ -561,6 +564,9 @@ fn validate_bindings_for_implementation(
         }
     }
     for (id, binding) in &candidates {
+        if id == "translate_selection" && binding.current_binding.is_empty() {
+            continue;
+        }
         validate_binding_change(&candidates, id, &binding.current_binding, implementation)?;
     }
     Ok(())
@@ -588,6 +594,9 @@ fn register_all_shortcuts_for_implementation(
         }
 
         let mut binding = stored_binding;
+        if id == "translate_selection" && binding.current_binding.is_empty() {
+            continue;
+        }
 
         // Validate the shortcut for the target implementation
         if let Err(e) =
@@ -1546,6 +1555,38 @@ pub async fn get_available_accelerators(
 mod tests {
     use handy_keys::Hotkey;
     use tauri_plugin_global_shortcut::Shortcut;
+
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    #[test]
+    fn switch_preserves_translation_left_unassigned_after_upgrade() {
+        let mut bindings = crate::settings::get_default_settings().bindings;
+        bindings.get_mut("transcribe").unwrap().current_binding = "alt+shift+t".into();
+        bindings
+            .get_mut("translate_selection")
+            .unwrap()
+            .current_binding
+            .clear();
+        for implementation in [
+            crate::settings::KeyboardImplementation::Tauri,
+            crate::settings::KeyboardImplementation::HandyKeys,
+        ] {
+            assert!(super::validate_bindings_for_implementation(&bindings, implementation).is_ok());
+            assert!(super::validate_binding_change(
+                &bindings,
+                "translate_selection",
+                "option+shift+t",
+                implementation
+            )
+            .is_err());
+            assert!(super::validate_binding_change(
+                &bindings,
+                "translate_selection",
+                "option+shift+y",
+                implementation
+            )
+            .is_ok());
+        }
+    }
 
     #[test]
     fn switch_rejects_an_incompatible_dynamic_cancel_binding() {

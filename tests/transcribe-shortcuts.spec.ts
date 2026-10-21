@@ -49,7 +49,15 @@ for (const implementation of ["tauri", "handy_keys"]) {
           localStorage.getItem("shortcut-test-settings") ||
             JSON.stringify({
               keyboard_implementation: implementation,
-              bindings: { transcribe: binding },
+              bindings: {
+                transcribe: binding,
+                translate_selection: {
+                  ...binding,
+                  id: "translate_selection",
+                  current_binding: "option+shift+t",
+                  default_binding: "option+shift+t",
+                },
+              },
             }),
         );
         const callbacks = new Map<number, (event: unknown) => Promise<void>>();
@@ -149,12 +157,29 @@ for (const implementation of ["tauri", "handy_keys"]) {
         const settings = await window.__TAURI_INTERNALS__.invoke('get_app_settings');
         useSettingsStore.setState({ settings, isLoading: false });
         ReactDOM.createRoot(document.getElementById('root')).render(
-          React.createElement(ShortcutInput, { shortcutId: 'transcribe', grouped: true })
+          React.createElement(React.Fragment, null, React.createElement(ShortcutInput, { shortcutId: 'transcribe', grouped: true }), React.createElement(ShortcutInput, { shortcutId: 'translate_selection', grouped: true }))
         );
       `,
         }),
       );
       await page.goto("/");
+    });
+
+    test("translation shortcut can be edited and persists across reload", async ({
+      page,
+    }) => {
+      await expect(
+        page.getByText("Translate selection", { exact: true }),
+      ).toBeVisible();
+      await page.getByRole("button", { name: /Shift.*T/ }).click();
+      await capture(page, "Control+Shift+u");
+      await expect(
+        page.getByRole("button", { name: "Ctrl + Shift + U", exact: true }),
+      ).toBeVisible();
+      await page.reload();
+      await expect(
+        page.getByRole("button", { name: "Ctrl + Shift + U", exact: true }),
+      ).toBeVisible();
     });
 
     test("add, edit, reload and remove an additional transcribe shortcut", async ({
