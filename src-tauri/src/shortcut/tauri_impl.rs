@@ -69,6 +69,9 @@ pub fn validate_shortcut(raw: &str) -> Result<(), String> {
 
 /// Register a shortcut using Tauri's global-shortcut plugin
 pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+    if binding.id == "translate_selection" && binding.current_binding.is_empty() {
+        return Ok(());
+    }
     if binding.id == "transcribe_with_post_process" {
         return Err("The dedicated post-processing shortcut was removed".into());
     }
@@ -138,6 +141,9 @@ pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<()
 
 /// Unregister a shortcut from Tauri's global-shortcut plugin
 pub fn unregister_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+    if binding.id == "translate_selection" && binding.current_binding.is_empty() {
+        return Ok(());
+    }
     let shortcut = match binding.current_binding.parse::<Shortcut>() {
         Ok(s) => s,
         Err(e) => {

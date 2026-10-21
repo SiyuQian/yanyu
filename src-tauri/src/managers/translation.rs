@@ -8,17 +8,66 @@ use std::sync::{
 };
 use tauri::{AppHandle, Emitter, Manager};
 
+/// Transient snapshot sent to the translation webview and returned by its state command.
 #[derive(Clone, Default, Serialize, specta::Type)]
 pub struct TranslationState {
+    /// Empty before the first request. Then `loading` during capture/inference,
+    /// `result` on success, `error` on failure, or `idle` after dismissal.
     pub phase: String,
+    /// Completed translation in `result` only. Serialized as null in all other phases.
     pub text: Option<String>,
+    /// Stable localization key in `error` only. Serialized as null otherwise.
     pub error: Option<String>,
+    /// Increments on start, accepted completion, and dismissal, wrapping at u32::MAX.
+    /// Stale completions leave it unchanged. Copy requires the current result revision.
     pub revision: u32,
 }
 #[derive(Default)]
 struct Inner {
     state: TranslationState,
     cancel: Option<Arc<AtomicBool>>,
+}
+impl Inner {
+    fn begin(&mut self) -> Option<Arc<AtomicBool>> {
+        if self.cancel.is_some() {
+            return None;
+        }
+        let cancel = Arc::new(AtomicBool::new(false));
+        self.cancel = Some(cancel.clone());
+        self.state.revision = self.state.revision.wrapping_add(1);
+        self.state.phase = "loading".into();
+        self.state.text = None;
+        self.state.error = None;
+        Some(cancel)
+    }
+    fn complete(&mut self, cancel: &Arc<AtomicBool>, result: Result<String, String>) -> bool {
+        // A dismissed request must never overwrite the next selection's state.
+        if !self.cancel.as_ref().is_some_and(|c| Arc::ptr_eq(c, cancel)) {
+            return false;
+        }
+        self.cancel = None;
+        self.state.revision = self.state.revision.wrapping_add(1);
+        match result {
+            Ok(text) => {
+                self.state.phase = "result".into();
+                self.state.text = Some(text);
+            }
+            Err(error) => {
+                self.state.phase = "error".into();
+                self.state.error = Some(error);
+            }
+        }
+        true
+    }
+    fn dismiss(&mut self) {
+        if let Some(cancel) = self.cancel.take() {
+            cancel.store(true, Ordering::Release);
+        }
+        self.state.revision = self.state.revision.wrapping_add(1);
+        self.state.phase = "idle".into();
+        self.state.text = None;
+        self.state.error = None;
+    }
 }
 #[derive(Default)]
 pub struct TranslationManager(Mutex<Inner>);
@@ -44,15 +93,9 @@ impl TranslationManager {
         let manager = app.state::<Self>();
         let cancel = {
             let mut inner = manager.0.lock().unwrap_or_else(|e| e.into_inner());
-            if inner.cancel.is_some() {
+            let Some(cancel) = inner.begin() else {
                 return;
-            }
-            let cancel = Arc::new(AtomicBool::new(false));
-            inner.cancel = Some(cancel.clone());
-            inner.state.revision = inner.state.revision.wrapping_add(1);
-            inner.state.phase = "loading".into();
-            inner.state.text = None;
-            inner.state.error = None;
+            };
             cancel
         };
         let selection = selection::capture();
@@ -75,26 +118,8 @@ impl TranslationManager {
             };
             let manager = handle.state::<Self>();
             let mut inner = manager.0.lock().unwrap_or_else(|e| e.into_inner());
-            // A dismissed request must never overwrite the next selection's state.
-            if cancel.load(Ordering::Acquire)
-                || !inner
-                    .cancel
-                    .as_ref()
-                    .is_some_and(|c| Arc::ptr_eq(c, &cancel))
-            {
+            if !inner.complete(&cancel, result) {
                 return;
-            }
-            inner.cancel = None;
-            inner.state.revision = inner.state.revision.wrapping_add(1);
-            match result {
-                Ok(text) => {
-                    inner.state.phase = "result".into();
-                    inner.state.text = Some(text);
-                }
-                Err(error) => {
-                    inner.state.phase = "error".into();
-                    inner.state.error = Some(error);
-                }
             }
             drop(inner);
             manager.emit(&handle);
@@ -103,13 +128,7 @@ impl TranslationManager {
     /// Cancel work, discard transient selection/result state, and hide the popover.
     pub fn dismiss(&self, app: &AppHandle) {
         let mut inner = self.0.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(cancel) = inner.cancel.take() {
-            cancel.store(true, Ordering::Release);
-        }
-        inner.state.revision = inner.state.revision.wrapping_add(1);
-        inner.state.phase = "idle".into();
-        inner.state.text = None;
-        inner.state.error = None;
+        inner.dismiss();
         drop(inner);
         self.emit(app);
         if let Some(window) = app.get_webview_window("translation_overlay") {
@@ -117,5 +136,56 @@ impl TranslationManager {
                 log::warn!("Could not hide translation window: {error}");
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn timeout_publishes_error_and_allows_a_subsequent_request() {
+        let mut inner = Inner::default();
+        let timed_out = inner.begin().unwrap();
+        assert!(inner.begin().is_none());
+        // The inference deadline cancels background work before returning the error.
+        timed_out.store(true, Ordering::Release);
+        assert!(inner.complete(&timed_out, Err("timeout".into())));
+        assert!(inner.cancel.is_none());
+        assert_eq!(inner.state.phase, "error");
+        assert_eq!(inner.state.error.as_deref(), Some("timeout"));
+        assert!(inner.state.text.is_none());
+        assert_eq!(inner.state.revision, 2);
+
+        let next = inner
+            .begin()
+            .expect("timeout must release the active request");
+        assert_eq!(inner.state.phase, "loading");
+        assert!(inner.state.error.is_none());
+        assert!(inner.complete(&next, Ok("你好".into())));
+        assert_eq!(inner.state.phase, "result");
+        assert_eq!(inner.state.text.as_deref(), Some("你好"));
+        assert!(inner.state.error.is_none());
+        assert_eq!(inner.state.revision, 4);
+    }
+
+    #[test]
+    fn dismissed_and_stale_requests_cannot_publish_or_release_a_new_request() {
+        let mut inner = Inner::default();
+        let dismissed = inner.begin().unwrap();
+        inner.dismiss();
+        assert!(dismissed.load(Ordering::Acquire));
+        assert!(!inner.complete(&dismissed, Ok("late".into())));
+        assert_eq!(inner.state.phase, "idle");
+        assert_eq!(inner.state.revision, 2);
+        let current = inner.begin().unwrap();
+        assert!(!inner.complete(&dismissed, Err("timeout".into())));
+        assert!(Arc::ptr_eq(inner.cancel.as_ref().unwrap(), &current));
+        assert_eq!(inner.state.phase, "loading");
+        assert_eq!(inner.state.revision, 3);
+        assert!(inner.complete(&current, Ok("新的".into())));
+        assert!(!inner.complete(&current, Err("late duplicate".into())));
+        assert_eq!(inner.state.text.as_deref(), Some("新的"));
+        assert_eq!(inner.state.revision, 4);
     }
 }

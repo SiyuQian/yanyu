@@ -114,8 +114,9 @@ pub(super) fn capture() -> Result<Selection, SelectionError> {
     }
     let system = Owned(system);
     // Bound unresponsive target applications; no synthetic copy shortcut is ever sent.
-    unsafe {
-        AXUIElementSetMessagingTimeout(system.0, 1.0);
+    let result = unsafe { AXUIElementSetMessagingTimeout(system.0, 1.0) };
+    if result != 0 {
+        return Err(error(result));
     }
     let application = attribute(system.0, c"AXFocusedApplication")?;
     let focused = attribute(application.0, c"AXFocusedUIElement")?;

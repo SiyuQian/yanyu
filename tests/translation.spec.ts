@@ -5,11 +5,15 @@ test.beforeEach(async ({ page }) => {
     const callbacks = new Map<number, (event: unknown) => void>();
     let next = 0;
     let listener = 0;
+    let themeListener = 0;
     let state = { phase: "loading", text: null, error: null, revision: 1 };
     Object.assign(window, {
       setTranslation: (nextState: typeof state) => {
         state = nextState;
         callbacks.get(listener)?.({ payload: state });
+      },
+      setTheme: (theme: string) => {
+        callbacks.get(themeListener)?.({ payload: theme });
       },
       __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: () => {} },
       __TAURI_INTERNALS__: {
@@ -21,10 +25,13 @@ test.beforeEach(async ({ page }) => {
           if (command === "plugin:event|listen") {
             if (args.event === "translation-state")
               listener = Number(args.handler);
+            if (args.event === "theme-changed")
+              themeListener = Number(args.handler);
             return Number(args.handler);
           }
           if (command === "get_translation_state") return state;
-          if (command === "get_app_settings") return { app_language: "en" };
+          if (command === "get_app_settings")
+            return { app_language: "en", theme: "dark" };
           if (command === "copy_translation") {
             localStorage.setItem("clipboard", state.text || "");
             return null;
@@ -106,3 +113,21 @@ for (const error of [
     );
   });
 }
+
+test("translation reconciles persisted theme and follows live changes", async ({
+  page,
+}) => {
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.evaluate(() => {
+    (window as unknown as { setTheme: (theme: string) => void }).setTheme(
+      "light",
+    );
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.evaluate(() => {
+    (window as unknown as { setTheme: (theme: string) => void }).setTheme(
+      "system",
+    );
+  });
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme");
+});
