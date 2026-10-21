@@ -1,3 +1,4 @@
+import { MeetingsPage } from "@/components/meetings/MeetingsPage";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -47,6 +48,12 @@ export const SECTIONS_CONFIG = {
     labelKey: "sidebar.general",
     icon: Mic,
     component: GeneralSettings,
+    enabled: () => true,
+  },
+  meetings: {
+    labelKey: "sidebar.meetings",
+    icon: BookA,
+    component: MeetingsPage,
     enabled: () => true,
   },
   history: {
