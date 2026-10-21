@@ -218,6 +218,10 @@
           "cancel": {
             "name": "取消听写",
             "description": "用于取消当前录制的键盘快捷键。"
+          },
+          "translate_selection": {
+            "name": "划词翻译",
+            "description": "将选中文字本地翻译为简体中文。"
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "已保存，请启用本地润色并完成模型设置",
     "localTrialInfo": "可选的一分钟试用：录音并停止后，在这台 Mac 上使用与日常听写相同的本地润色处理转写，不回退到外部服务。仅预览，不粘贴、不发送消息、不写入历史或保存录音。该样本不能证明整体准确率提高。",
     "localTrialSucceeded": "本地润色为该样本返回了可用结果。请检查原意和语言是否保留。"
+  },
+  "translation": {
+    "title": "划词翻译",
+    "loading": "正在本地翻译…",
+    "close": "关闭",
+    "copy": "复制译文",
+    "copied": "已复制",
+    "openSettings": "打开模型设置",
+    "modelTitle": "共享本地文本模型",
+    "modelDescription": "Qwen3-0.6B 用于划词翻译和可选的本地润色。请手动下载模型以使用这些功能。",
+    "errors": {
+      "permission_denied": "请在系统设置 → 隐私与安全性 → 辅助功能中允许 Yanyu，然后重新选中文字并重试。",
+      "unsupported_selection": "此应用未通过辅助功能提供选中文字。请在其他应用中选中文字并重试。",
+      "no_selection": "未找到选中文字。请在其他应用中选中文字并重试。",
+      "too_long": "请最多选择 2,000 个字符后重试。",
+      "missing_model": "请在常规设置中下载 Qwen3-0.6B 以使用本地翻译。只有点击下载后才会开始下载。",
+      "unsupported": "划词翻译需要 Apple Silicon Mac。",
+      "load_failed": "无法加载本地模型。请在常规设置中检查模型下载并重试。",
+      "inference_failed": "本地翻译失败。请尝试选择较短的文本。",
+      "incomplete": "模型未完成翻译。请尝试选择较短的文本。",
+      "timeout": "本地翻译超时。请尝试选择较短的文本。",
+      "cancelled": "翻译已取消。请重新选中文字并重试。",
+      "unavailable": "翻译不可用。请在其他应用中选中文字并重试。",
+      "copy_failed": "无法复制译文。请重试。"
+    }
   }
 }

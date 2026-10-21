@@ -195,6 +195,10 @@
           "cancel": {
             "name": "اختصار الإلغاء",
             "description": ".اختصار لوحة المفاتيح لإلغاء التسجيل الحالي"
+          },
+          "translate_selection": {
+            "name": "ترجمة النص المحدد",
+            "description": "يُستخدم Qwen3-0.6B للترجمة والتنقيح المحلي. نزّله يدويًا."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "ترجمة النص المحدد",
+    "loading": "جارٍ الترجمة محليًا…",
+    "close": "إغلاق",
+    "copy": "نسخ الترجمة",
+    "copied": "تم النسخ",
+    "openSettings": "فتح إعدادات النموذج",
+    "modelTitle": "نموذج نص محلي مشترك",
+    "modelDescription": "يُستخدم Qwen3-0.6B للترجمة والتنقيح المحلي. نزّله يدويًا.",
+    "errors": {
+      "permission_denied": "اسمح لـ Yanyu في إعدادات النظام ← الخصوصية والأمان ← تسهيلات الاستخدام، ثم أعد المحاولة.",
+      "unsupported_selection": "لا يتيح هذا التطبيق النص المحدد. جرّب تطبيقًا آخر.",
+      "no_selection": "لم يتم العثور على نص محدد. حدد نصًا في تطبيق آخر.",
+      "too_long": "حدد ما لا يزيد عن 2000 حرف.",
+      "missing_model": "نزّل Qwen3-0.6B يدويًا من الإعدادات العامة.",
+      "unsupported": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "load_failed": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "inference_failed": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "incomplete": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "timeout": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "cancelled": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "unavailable": "فشلت الترجمة المحلية. جرّب نصًا أقصر.",
+      "copy_failed": "تعذر نسخ الترجمة. أعد المحاولة."
+    }
   }
 }

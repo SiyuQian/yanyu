@@ -218,6 +218,10 @@
           "cancel": {
             "name": "キャンセルのショートカット",
             "description": "現在の録音をキャンセルするためのキーボードショートカット。"
+          },
+          "translate_selection": {
+            "name": "選択テキストの翻訳",
+            "description": "Qwen3-0.6B は翻訳とローカル校正で共有されます。手動でダウンロードしてください。"
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "選択テキストの翻訳",
+    "loading": "ローカルで翻訳中…",
+    "close": "閉じる",
+    "copy": "訳文をコピー",
+    "copied": "コピーしました",
+    "openSettings": "モデル設定を開く",
+    "modelTitle": "共有ローカルテキストモデル",
+    "modelDescription": "Qwen3-0.6B は翻訳とローカル校正で共有されます。手動でダウンロードしてください。",
+    "errors": {
+      "permission_denied": "システム設定 → プライバシーとセキュリティ → アクセシビリティで Yanyu を許可して再試行してください。",
+      "unsupported_selection": "このアプリでは選択テキストを取得できません。別のアプリで試してください。",
+      "no_selection": "選択テキストがありません。別のアプリでテキストを選択してください。",
+      "too_long": "2,000 文字以内を選択してください。",
+      "missing_model": "一般設定で Qwen3-0.6B を手動でダウンロードしてください。",
+      "unsupported": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "load_failed": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "inference_failed": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "incomplete": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "timeout": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "cancelled": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "unavailable": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
+      "copy_failed": "訳文をコピーできませんでした。再試行してください。"
+    }
   }
 }

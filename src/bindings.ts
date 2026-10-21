@@ -90,6 +90,40 @@ async cancelPersonalizationTrial(id: string) : Promise<Result<null, string>> {
 }
 },
 /**
+ * Return transient translation state; nothing is stored on disk.
+ */
+async getTranslationState() : Promise<TranslationState> {
+    return await TAURI_INVOKE("get_translation_state");
+},
+/**
+ * Copy only the current completed translation, after the popover's explicit Copy action.
+ */
+async copyTranslation(revision: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("copy_translation", { revision }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Dismiss the popover and cancel work without clipboard access.
+ */
+async dismissTranslation() : Promise<void> {
+    await TAURI_INVOKE("dismiss_translation");
+},
+/**
+ * Open shared model resources in General settings; never start a download.
+ */
+async openTranslationModelSettings() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_translation_model_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Returns the current local-polishing download and model status.
  */
 async getLocalPolishingStatus() : Promise<LocalPolishingStatus> {
@@ -1368,6 +1402,7 @@ export type StreamWorkKind = "transcribing" | "polishing"
  */
 export type Theme = "system" | "light" | "dark"
 export type TranscribeAcceleratorSetting = "auto" | "cpu" | "gpu"
+export type TranslationState = { phase: string; text: string | null; error: string | null; revision: number }
 /**
  * Ephemeral recognition and processing results for a preview comparison.
  */

@@ -198,6 +198,10 @@
           "cancel": {
             "name": "Гаряча клавіша скасування",
             "description": "Комбінація клавіш для скасування поточного запису."
+          },
+          "translate_selection": {
+            "name": "Перекласти виділене",
+            "description": "Qwen3-0.6B використовується для перекладу та локального редагування. Завантажте модель вручну."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "Перекласти виділене",
+    "loading": "Локальний переклад…",
+    "close": "Закрити",
+    "copy": "Копіювати переклад",
+    "copied": "Скопійовано",
+    "openSettings": "Відкрити налаштування моделі",
+    "modelTitle": "Спільна локальна текстова модель",
+    "modelDescription": "Qwen3-0.6B використовується для перекладу та локального редагування. Завантажте модель вручну.",
+    "errors": {
+      "permission_denied": "Дозвольте Yanyu в Системних параметрах → Приватність і безпека → Доступність і повторіть спробу.",
+      "unsupported_selection": "Ця програма не надає виділений текст. Спробуйте іншу програму.",
+      "no_selection": "Немає виділеного тексту. Виділіть текст в іншій програмі.",
+      "too_long": "Виділіть не більше 2000 символів.",
+      "missing_model": "Завантажте Qwen3-0.6B вручну в загальних налаштуваннях.",
+      "unsupported": "Локальний переклад не вдався. Спробуйте коротший текст.",
+      "load_failed": "Локальний переклад не вдався. Спробуйте коротший текст.",
+      "inference_failed": "Локальний переклад не вдався. Спробуйте коротший текст.",
+      "incomplete": "Локальний переклад не вдався. Спробуйте коротший текст.",
+      "timeout": "Локальний переклад не вдався. Спробуйте коротший текст.",
+      "cancelled": "Локальний переклад не вдався. Спробуйте коротший текст.",
+      "unavailable": "Локальний переклад не вдався. Спробуйте коротший текст.",
+      "copy_failed": "Не вдалося скопіювати переклад. Повторіть спробу."
+    }
   }
 }

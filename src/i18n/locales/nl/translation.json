@@ -198,6 +198,10 @@
           "cancel": {
             "name": "Sneltoets voor annuleren",
             "description": "De sneltoets om de huidige opname te annuleren."
+          },
+          "translate_selection": {
+            "name": "Selectie vertalen",
+            "description": "Qwen3-0.6B wordt gedeeld door vertaling en lokale tekstcorrectie. Download het handmatig."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "Selectie vertalen",
+    "loading": "Lokaal vertalen…",
+    "close": "Sluiten",
+    "copy": "Vertaling kopiëren",
+    "copied": "Gekopieerd",
+    "openSettings": "Modelinstellingen openen",
+    "modelTitle": "Gedeeld lokaal tekstmodel",
+    "modelDescription": "Qwen3-0.6B wordt gedeeld door vertaling en lokale tekstcorrectie. Download het handmatig.",
+    "errors": {
+      "permission_denied": "Sta Yanyu toe in Systeeminstellingen → Privacy en beveiliging → Toegankelijkheid en probeer opnieuw.",
+      "unsupported_selection": "Deze app geeft de geselecteerde tekst niet door. Probeer een andere app.",
+      "no_selection": "Geen tekst geselecteerd. Selecteer tekst in een andere app.",
+      "too_long": "Selecteer maximaal 2.000 tekens.",
+      "missing_model": "Download Qwen3-0.6B handmatig in de algemene instellingen.",
+      "unsupported": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "load_failed": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "inference_failed": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "incomplete": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "timeout": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "cancelled": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "unavailable": "Lokale vertaling mislukt. Probeer kortere tekst.",
+      "copy_failed": "Kopiëren van de vertaling mislukt. Probeer opnieuw."
+    }
   }
 }

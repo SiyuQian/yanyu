@@ -20,10 +20,12 @@ mod paste_tx;
 mod personalization;
 pub mod portable;
 mod secure_input;
+mod selection;
 mod settings;
 mod shortcut;
 mod signal_handle;
 mod transcription_coordinator;
+mod translation_overlay;
 mod tray;
 mod tray_i18n;
 mod utils;
@@ -223,6 +225,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     );
     app_handle.manage(polishing_manager.clone());
     polishing_manager.set_enabled(settings::get_settings(app_handle).local_polishing_enabled);
+    app_handle.manage(managers::translation::TranslationManager::default());
     app_handle.manage(tray::TrayState::new());
 
     // Note: Shortcuts are NOT initialized here.
@@ -667,6 +670,10 @@ pub fn run(cli_args: CliArgs) {
             commands::personalization::start_personalization_trial,
             commands::personalization::stop_personalization_trial,
             commands::personalization::cancel_personalization_trial,
+            commands::translation::get_translation_state,
+            commands::translation::copy_translation,
+            commands::translation::dismiss_translation,
+            commands::translation::open_translation_model_settings,
             commands::local_polishing::get_local_polishing_status,
             commands::local_polishing::set_local_polishing_enabled,
             commands::local_polishing::download_local_polishing_model,
@@ -802,7 +809,7 @@ pub fn run(cli_args: CliArgs) {
     specta_builder
         .export(
             Typescript::default().bigint(BigIntExportBehavior::Number),
-            "../src/bindings.ts",
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/bindings.ts"),
         )
         .expect("Failed to export typescript bindings");
 
@@ -1086,7 +1093,7 @@ pub fn run(cli_args: CliArgs) {
             Ok(())
         })
         .on_window_event(|window, event| match event {
-            tauri::WindowEvent::CloseRequested { api, .. } => {
+            tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
                 commands::personalization::cancel_active_trial(window.app_handle());
                 api.prevent_close();
                 let _res = window.hide();

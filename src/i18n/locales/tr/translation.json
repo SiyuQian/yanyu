@@ -218,6 +218,10 @@
           "cancel": {
             "name": "İptal Kısayolu",
             "description": "Mevcut kaydı iptal etmek için klavye kısayolu."
+          },
+          "translate_selection": {
+            "name": "Seçimi çevir",
+            "description": "Qwen3-0.6B çeviri ve yerel düzenleme için paylaşılır. Elle indirin."
           }
         },
         "errors": {
@@ -848,5 +852,30 @@
     "localPending": "Saved; enable local polishing and finish model setup",
     "localTrialInfo": "Optional one-minute trial. Recording and stopping processes recognized text on this Mac using the same local polishing as daily dictation. No external service fallback. Preview only, with no paste, messages, history or saved audio. This sample does not prove a general accuracy gain.",
     "localTrialSucceeded": "Local polishing returned a usable result for this sample. Check that meaning and languages were preserved."
+  },
+  "translation": {
+    "title": "Seçimi çevir",
+    "loading": "Yerel olarak çevriliyor…",
+    "close": "Kapat",
+    "copy": "Çeviriyi kopyala",
+    "copied": "Kopyalandı",
+    "openSettings": "Model ayarlarını aç",
+    "modelTitle": "Paylaşılan yerel metin modeli",
+    "modelDescription": "Qwen3-0.6B çeviri ve yerel düzenleme için paylaşılır. Elle indirin.",
+    "errors": {
+      "permission_denied": "Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik bölümünde Yanyu’ya izin verip yeniden deneyin.",
+      "unsupported_selection": "Bu uygulama seçili metni sağlamıyor. Başka bir uygulama deneyin.",
+      "no_selection": "Seçili metin bulunamadı. Başka bir uygulamada metin seçin.",
+      "too_long": "En fazla 2.000 karakter seçin.",
+      "missing_model": "Genel ayarlardan Qwen3-0.6B modelini elle indirin.",
+      "unsupported": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "load_failed": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "inference_failed": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "incomplete": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "timeout": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "cancelled": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "unavailable": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
+      "copy_failed": "Çeviri kopyalanamadı. Yeniden deneyin."
+    }
   }
 }

@@ -394,7 +394,7 @@ mod imp {
 
     /// Desired fallback for one binding, computed without plugin calls.
     enum ShadowPlan {
-        /// Modifier-only or mouse-based; unaffected by secure input.
+        /// Unassigned, modifier-only or mouse-based; no fallback needed.
         Immune,
         /// Cannot be represented through Carbon.
         Uncovered,
@@ -406,6 +406,11 @@ mod imp {
     }
 
     fn plan_fallback_binding(id: &str, binding: &ShortcutBinding) -> ShadowPlan {
+        // A conflicting upgrade default leaves translation intentionally unassigned.
+        if id == "translate_selection" && binding.current_binding.is_empty() {
+            return ShadowPlan::Immune;
+        }
+
         let Ok(hotkey) = binding.current_binding.parse::<handy_keys::Hotkey>() else {
             warn!(
                 "SecureInput fallback: '{}' has unparseable binding '{}', skipping",
@@ -615,6 +620,50 @@ mod imp {
         state.cancel_requested.store(false, Ordering::SeqCst);
         if state.is_sustained() {
             schedule_reconcile(app);
+        }
+    }
+
+    #[cfg(all(test, target_arch = "aarch64"))]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn unassigned_translation_does_not_trigger_secure_input_warning() {
+            let mut binding =
+                settings::get_default_settings().bindings["translate_selection"].clone();
+            binding.current_binding.clear();
+            let mut fallback = FallbackState::default();
+            match plan_fallback_binding(&binding.id, &binding) {
+                ShadowPlan::Immune => {}
+                ShadowPlan::Uncovered => fallback.uncovered.push(binding.id.clone()),
+                ShadowPlan::Shadow { .. } => {
+                    panic!("unassigned translation must not need a shadow")
+                }
+            }
+            assert!(fallback.uncovered.is_empty());
+
+            let state = SecureInputState::new();
+            state.sustained.store(true, Ordering::SeqCst);
+            *state.fallback.lock().unwrap() = fallback;
+            assert!(!state.warning_active());
+            assert!(binding.current_binding.is_empty());
+        }
+
+        #[test]
+        fn configured_translation_keeps_secure_input_fallback() {
+            let mut binding =
+                settings::get_default_settings().bindings["translate_selection"].clone();
+            for shortcut in ["option+shift+t", "ctrl+shift+y"] {
+                binding.current_binding = shortcut.into();
+                let ShadowPlan::Shadow { shadow, degraded } =
+                    plan_fallback_binding(&binding.id, &binding)
+                else {
+                    panic!("configured translation needs a Carbon shadow");
+                };
+                assert_eq!(shadow.id, "translate_selection");
+                assert_eq!(shadow.current_binding, shortcut);
+                assert!(!degraded);
+            }
         }
     }
 
