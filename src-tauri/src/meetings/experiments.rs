@@ -221,7 +221,7 @@ fn two_hour_storage_recovery() {
     meeting.mic_frames = count;
     meeting.system_frames = count;
     store.save(&meeting).unwrap();
-    store.recover_records(store.list().unwrap()).unwrap();
+    store.recover_interrupted().unwrap();
     let recovered = store.get(&meeting.id).unwrap();
     assert_eq!(recovered.duration_ms, 7_200_000);
     let mut reader = hound::WavReader::open(directory.join("playback.wav")).unwrap();

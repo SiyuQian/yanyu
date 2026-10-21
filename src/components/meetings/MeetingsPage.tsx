@@ -7,6 +7,7 @@ import {
   type MeetingControl,
   type MeetingMode,
   type MeetingSetup,
+  type MeetingSummary,
   type Result,
 } from "@/bindings";
 import { Dialog } from "@/components/ui/Dialog";
@@ -18,9 +19,9 @@ const time = (ms: number) =>
     .padStart(2, "0")}:${Math.floor((ms / 1000) % 60)
     .toString()
     .padStart(2, "0")}`;
-const recording = (meeting: Meeting) =>
+const recording = (meeting: { status: string }) =>
   ["recording", "paused"].includes(meeting.status);
-const processing = (meeting: Meeting) =>
+const processing = (meeting: { status: string }) =>
   ["transcribing", "summarizing"].includes(meeting.status);
 function unwrap<T>(result: Result<T, string>): T {
   if (result.status === "error") throw result.error;
@@ -28,9 +29,16 @@ function unwrap<T>(result: Result<T, string>): T {
 }
 export function MeetingsPage() {
   const { t } = useTranslation();
-  const [rows, setRows] = useState<Meeting[]>([]);
+  const [rows, setRows] = useState<MeetingSummary[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [durabilityWarning, setDurabilityWarning] = useState<string>();
+  const [activeRows, setActiveRows] = useState<MeetingSummary[]>([]);
+  const [current, setCurrent] = useState<Meeting>();
   const [setup, setSetup] = useState<MeetingSetup>();
   const [selected, setSelected] = useState<string>();
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
   const [draft, setDraft] = useState<Meeting>();
   const [mode, setMode] = useState<MeetingMode>("in_person");
   const [pending, setPending] = useState(false);
@@ -42,30 +50,78 @@ export function MeetingsPage() {
   const player = useRef<HTMLAudioElement>(null);
   const refresh = useCallback(async () => {
     const [list, availability] = await Promise.all([
-      commands.meetingList(),
+      commands.meetingList(offset),
       commands.meetingSetup(),
     ]);
-    const entries = unwrap(list);
+    const page = unwrap(list);
+    const entries = page.items;
     setRows(entries);
+    setHasMore(page.has_more);
+    setActiveRows(page.active);
     setSetup(availability);
     setSelected((current) =>
-      current && entries.some((row) => row.id === current)
+      current && [...entries, ...page.active].some((row) => row.id === current)
         ? current
         : (entries.find(recording)?.id ?? entries[0]?.id),
     );
-  }, []);
+    return [...entries, ...page.active];
+  }, [offset]);
   useEffect(() => {
-    const update = () =>
-      refresh().catch((problem) => setError(String(problem)));
-    void update();
-    const interval = window.setInterval(update, 1000);
-    return () => window.clearInterval(interval);
+    void refresh().catch((problem) => setError(String(problem)));
   }, [refresh]);
+  const currentSummary = [...rows, ...activeRows].find(
+    (row) => row.id === selected,
+  );
   useEffect(() => {
-    if (!dirtyRef.current) setDraft(rows.find((row) => row.id === selected));
-  }, [rows, selected]);
-  const current = rows.find((row) => row.id === selected);
-  const active = rows.find(recording);
+    if (!selected) {
+      setCurrent(undefined);
+      setDraft(undefined);
+      return;
+    }
+    let disposed = false;
+    void commands
+      .meetingGet(selected)
+      .then((result) => {
+        if (disposed) return;
+        const detail = unwrap(result);
+        setCurrent(detail);
+        if (!dirtyRef.current) setDraft(detail);
+      })
+      .catch((problem) => {
+        if (!disposed) setError(String(problem));
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [
+    selected,
+    currentSummary?.status,
+    currentSummary?.duration_ms,
+    currentSummary?.completed_ms,
+  ]);
+  useEffect(() => {
+    if (
+      !activeRows.some(
+        (row) =>
+          row.status === "recording" ||
+          row.status === "paused" ||
+          processing(row),
+      )
+    )
+      return;
+    let running = false;
+    const interval = window.setInterval(() => {
+      if (running) return;
+      running = true;
+      void refresh()
+        .catch((problem) => setError(String(problem)))
+        .finally(() => {
+          running = false;
+        });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [refresh, activeRows]);
+  const active = activeRows.find(recording);
   const busy = !!current && (recording(current) || processing(current));
   useEffect(() => {
     setAudio(undefined);
@@ -88,9 +144,18 @@ export function MeetingsPage() {
   const act = async (action: () => Promise<void>) => {
     setPending(true);
     setError(undefined);
+    setDurabilityWarning(undefined);
     try {
       await action();
-      await refresh();
+      const entries = await refresh();
+      const id = selectedRef.current;
+      if (id && entries.some((row) => row.id === id)) {
+        const detail = unwrap(await commands.meetingGet(id));
+        if (selectedRef.current === id) {
+          setCurrent(detail);
+          if (!dirtyRef.current) setDraft(detail);
+        }
+      }
     } catch (problem) {
       setError(String(problem));
     } finally {
@@ -111,13 +176,11 @@ export function MeetingsPage() {
       ),
     );
   };
-  const control = (meeting: Meeting, action: MeetingControl) =>
+  const control = (meeting: { id: string }, action: MeetingControl) =>
     void act(async () => {
       unwrap(await commands.meetingControl(meeting.id, action));
       if (action === "stop") {
-        const stopped = unwrap(await commands.meetingList()).find(
-          (row) => row.id === meeting.id,
-        );
+        const stopped = unwrap(await commands.meetingGet(meeting.id));
         if (
           stopped &&
           !stopped.capture_error &&
@@ -235,7 +298,12 @@ export function MeetingsPage() {
       <div className="space-y-2" aria-label={t("meetings.history")}>
         <h2 className="font-semibold">{t("meetings.history")}</h2>
         {!rows.length && <p>{t("meetings.empty")}</p>}
-        {rows.map((row) => (
+        {[
+          ...activeRows.filter(
+            (active) => !rows.some((row) => row.id === active.id),
+          ),
+          ...rows,
+        ].map((row) => (
           <button
             type="button"
             key={row.id}
@@ -262,13 +330,34 @@ export function MeetingsPage() {
           </button>
         ))}
       </div>
-      {draft && current && (
+      <div className="flex gap-2">
+        <Button
+          variant="secondary"
+          disabled={offset === 0 || pending || dirty}
+          onClick={() => setOffset(Math.max(0, offset - 50))}
+        >
+          {t("meetings.previousPage")}
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={!hasMore || pending || dirty}
+          onClick={() => setOffset(offset + 50)}
+        >
+          {t("meetings.nextPage")}
+        </Button>
+      </div>
+      {draft && current && draft.id === current.id && (
         <article className="rounded-lg border border-mid-gray/20 p-4 space-y-4">
           <p role="status" aria-live="polite">
             {t(`meetings.status.${current.status}`)}
             {processing(current) &&
               ` · ${time(current.completed_ms)} / ${time(current.duration_ms)}`}
           </p>
+          {durabilityWarning && (
+            <p role="alert" className="text-warning">
+              {t("meetings.durabilityWarning")} <span>{durabilityWarning}</span>
+            </p>
+          )}
           <label className="block">
             {t("meetings.meetingTitle")}
             <input
@@ -390,6 +479,8 @@ export function MeetingsPage() {
                   dirtyRef.current = false;
                   setDirty(false);
                   setDraft(saved);
+                  setCurrent(saved);
+                  setDurabilityWarning(saved.durability_warning ?? undefined);
                 })
               }
             >
@@ -414,7 +505,7 @@ export function MeetingsPage() {
                 disabled={
                   pending ||
                   dirty ||
-                  !setup?.moss_installed ||
+                  (!current.transcript_complete && !setup?.moss_installed) ||
                   !setup?.qwen_installed ||
                   !setup?.available
                 }

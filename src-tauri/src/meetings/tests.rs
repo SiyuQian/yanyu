@@ -12,7 +12,7 @@ fn recovery_uses_committed_frames_and_discards_partial_tail() {
     meeting.mic_frames = 16;
     meeting.system_frames = 8;
     store.save(&meeting).unwrap();
-    store.recover_records(store.list().unwrap()).unwrap();
+    store.recover_interrupted().unwrap();
     let recovered = store.get(&meeting.id).unwrap();
     assert_eq!(recovered.status, MeetingStatus::Recoverable);
     assert_eq!((recovered.mic_frames, recovered.system_frames), (16, 8));
@@ -135,4 +135,119 @@ fn transcript_edits_invalidate_notes_without_changing_audio_references() {
     let markdown = store.markdown(&saved.id).unwrap();
     assert!(markdown.contains("**Alice**: Corrected"));
     assert!(markdown.contains("id=\"s0\""));
+}
+
+#[test]
+fn markdown_preserves_quality_warnings() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = Store::new(dir.path().into()).unwrap();
+    let mut meeting = store.create(MeetingMode::InPerson).unwrap();
+    meeting.notes = "Old notes".into();
+    meeting.notes_stale = true;
+    meeting.segments.push(MeetingSegment {
+        id: "s1".into(),
+        start_ms: 0,
+        end_ms: 2000,
+        text: "A proposal".into(),
+        speaker: Some("speaker_1".into()),
+        uncertain: true,
+    });
+    meeting.speakers.insert("speaker_1".into(), "Alice".into());
+    store.save(&meeting).unwrap();
+    let markdown = store.markdown(&meeting.id).unwrap();
+    assert!(markdown.contains("draft"));
+    assert!(markdown.contains("out of date"));
+    assert!(markdown.contains("Alice (speaker attribution uncertain)"));
+}
+
+#[test]
+fn missing_required_track_does_not_publish_partial_playback() {
+    for mode in [MeetingMode::InPerson, MeetingMode::Online] {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::new(dir.path().into()).unwrap();
+        let mut meeting = store.create(mode).unwrap();
+        let path = store.directory(&meeting.id).unwrap();
+        if mode == MeetingMode::Online {
+            std::fs::write(path.join("mic.pcm"), [0u8; 64]).unwrap();
+        }
+        meeting.mic_frames = 16;
+        meeting.system_frames = if mode == MeetingMode::Online { 16 } else { 0 };
+        assert!(store.finalize_audio(&mut meeting).is_err());
+        assert!(!path.join("playback.wav").exists());
+    }
+}
+#[test]
+fn in_person_finalization_allows_absent_system_track() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = Store::new(dir.path().into()).unwrap();
+    let mut meeting = store.create(MeetingMode::InPerson).unwrap();
+    std::fs::write(
+        store.directory(&meeting.id).unwrap().join("mic.pcm"),
+        [0u8; 64],
+    )
+    .unwrap();
+    meeting.mic_frames = 16;
+    store.finalize_audio(&mut meeting).unwrap();
+    assert_eq!(meeting.duration_ms, 1);
+}
+
+#[test]
+fn history_summaries_omit_retained_transcript_and_notes() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = Store::new(directory.path().into()).unwrap();
+    let mut meeting = store.create(MeetingMode::InPerson).unwrap();
+    meeting.notes = "Private retained notes".repeat(1000);
+    store.save(&meeting).unwrap();
+    let payload = serde_json::to_string(&store.list().unwrap()).unwrap();
+    assert!(!payload.contains("Private retained notes"));
+    assert!(!payload.contains("segments"));
+    assert!(payload.contains(&meeting.id));
+}
+
+#[test]
+fn history_pages_are_bounded_and_do_not_read_transcript_files() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = Store::new(directory.path().into()).unwrap();
+    for _ in 0..53 {
+        let meeting = store.create(MeetingMode::InPerson).unwrap();
+        // Summaries remain usable without deserializing the large detail record.
+        std::fs::write(
+            store.directory(&meeting.id).unwrap().join("meeting.json"),
+            "not a detail response",
+        )
+        .unwrap();
+    }
+    let store = Store::new(directory.path().into()).unwrap();
+    let first = store.page(0).unwrap();
+    let last = store.page(50).unwrap();
+    assert_eq!(first.items.len(), 50);
+    assert!(first.has_more);
+    assert_eq!(last.items.len(), 3);
+    assert!(!last.has_more);
+    assert!(last
+        .items
+        .iter()
+        .all(|row| !first.items.iter().any(|first| first.id == row.id)));
+}
+
+#[cfg(unix)]
+#[test]
+fn summary_cache_does_not_follow_symlinks() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = Store::new(directory.path().into()).unwrap();
+    let mut meeting = store.create(MeetingMode::InPerson).unwrap();
+    let path = store.directory(&meeting.id).unwrap();
+    let outside = directory.path().join("unrelated.txt");
+    std::fs::write(&outside, "Keep this file").unwrap();
+    std::os::unix::fs::symlink(&outside, path.join("summary.json.tmp")).unwrap();
+    meeting.title = "Real title".into();
+    store.save(&meeting).unwrap();
+    assert_eq!(std::fs::read_to_string(&outside).unwrap(), "Keep this file");
+    std::fs::remove_file(path.join("summary.json")).unwrap();
+    let mut forged = MeetingSummary::from(&meeting);
+    forged.title = "Outside title".into();
+    std::fs::write(&outside, serde_json::to_vec(&forged).unwrap()).unwrap();
+    std::os::unix::fs::symlink(&outside, path.join("summary.json")).unwrap();
+    let store = Store::new(directory.path().into()).unwrap();
+    assert_eq!(store.page(0).unwrap().items[0].title, "Real title");
 }

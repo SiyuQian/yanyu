@@ -15,7 +15,7 @@ mod native {
         pub fn meeting_available() -> i32;
         fn meeting_start(path: *const c_char, online: i32, error: *mut *mut c_char) -> *mut c_void;
         fn meeting_pause(handle: *mut c_void, pause: i32) -> *mut c_char;
-        fn meeting_stop(handle: *mut c_void);
+        fn meeting_stop(handle: *mut c_void) -> *mut c_char;
         fn meeting_error(handle: *mut c_void) -> *mut c_char;
         fn meeting_string_free(error: *mut c_char);
     }
@@ -49,6 +49,19 @@ mod native {
             }
             Ok(Self(handle as usize))
         }
+        pub fn stop(&mut self) -> Option<String> {
+            let handle = std::mem::replace(&mut self.0, 0);
+            if handle == 0 {
+                return None;
+            }
+            // SAFETY: consume the retained handle exactly once, after all callbacks finish.
+            let result = unsafe { meeting_stop(handle as *mut c_void) };
+            if result.is_null() {
+                None
+            } else {
+                Some(error(result))
+            }
+        }
         pub fn error(&self) -> Option<String> {
             let pointer = unsafe { meeting_error(self.0 as *mut c_void) };
             if pointer.is_null() {
@@ -74,8 +87,8 @@ mod native {
     }
     impl Drop for Capture {
         fn drop(&mut self) {
-            unsafe {
-                meeting_stop(self.0 as *mut c_void);
+            if let Some(error) = self.stop() {
+                log::error!("Meeting capture dropped with failure: {error}");
             }
         }
     }
@@ -100,6 +113,9 @@ impl Capture {
         anyhow::bail!("unsupported")
     }
     pub fn error(&self) -> Option<String> {
+        None
+    }
+    pub fn stop(&mut self) -> Option<String> {
         None
     }
     pub fn pause(&self, _: bool) -> anyhow::Result<()> {

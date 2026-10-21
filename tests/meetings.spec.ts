@@ -39,6 +39,14 @@ async function mount(
       let rows = JSON.parse(
         localStorage.getItem("meetings-fixture") || "null",
       ) || [initial];
+      if (localStorage.getItem("fixture-many-meetings")) {
+        rows = Array.from({ length: 53 }, (_, index) => ({
+          ...initial,
+          id: index.toString(16).padStart(32, "0"),
+          title: `Meeting ${index}`,
+          notes: `Details ${index}`,
+        }));
+      }
       Object.assign(window, {
         __TAURI_OS_PLUGIN_INTERNALS__: { os_type: "macos", platform: "macos" },
         __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: () => {} },
@@ -49,10 +57,45 @@ async function mount(
             if (command === "meeting_setup")
               return {
                 available: true,
-                moss_installed: !missing,
+                moss_installed:
+                  !missing && !localStorage.getItem("fixture-no-moss"),
                 qwen_installed: !missing,
               };
-            if (command === "meeting_list") return rows;
+            if (command === "meeting_list") {
+              const offset = Number(args.offset || 0);
+              return {
+                items: rows
+                  .slice(offset, offset + 50)
+                  .map(
+                    ({
+                      id,
+                      title,
+                      created_at,
+                      status,
+                      duration_ms,
+                      completed_ms,
+                    }: typeof initial) => ({
+                      id,
+                      title,
+                      created_at,
+                      status,
+                      duration_ms,
+                      completed_ms,
+                    }),
+                  ),
+                active: rows.filter((row: typeof initial) =>
+                  [
+                    "recording",
+                    "paused",
+                    "transcribing",
+                    "summarizing",
+                  ].includes(row.status),
+                ),
+                has_more: rows.length > offset + 50,
+              };
+            }
+            if (command === "meeting_get")
+              return rows.find((row: typeof initial) => row.id === args.id);
             if (command === "meeting_audio") return "/synthetic.wav";
             if (command === "meeting_edit") {
               const edited = args.meeting as typeof initial;
@@ -60,7 +103,12 @@ async function mount(
                 row.id === edited.id ? edited : row,
               );
               localStorage.setItem("meetings-fixture", JSON.stringify(rows));
-              return edited;
+              return {
+                ...edited,
+                durability_warning: localStorage.getItem("fixture-sync-failure")
+                  ? "injected directory sync failure"
+                  : null,
+              };
             }
             if (command === "meeting_export") {
               localStorage.setItem("meeting-export", JSON.stringify(rows[0]));
@@ -309,4 +357,74 @@ test("incomplete capture requires explicit retry and stays visibly incomplete", 
   await expect(
     page.getByText("This recording is incomplete.", { exact: false }),
   ).toBeVisible();
+});
+
+test("regenerates_notes_without_moss_for_complete_transcript", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("fixture-no-moss", "1");
+    localStorage.setItem("meeting-process-attempt", "1");
+  });
+  await mount(page);
+  await page
+    .getByRole("button", { name: "Regenerate local notes", exact: true })
+    .click({ timeout: 3000 });
+  await expect(
+    page.getByRole("textbox", { name: "Meeting notes" }),
+  ).toHaveValue("Locally generated fixture notes");
+});
+
+test("committed_edit_shows_durability_warning_without_retaining_dirty_draft", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("fixture-sync-failure", "1"),
+  );
+  await mount(page);
+  await page
+    .getByRole("textbox", { name: "Meeting title", exact: true })
+    .fill("Committed title");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("The edit was saved");
+  await expect(
+    page.getByRole("button", { name: "Save changes", exact: true }),
+  ).toBeDisabled();
+  await page.reload();
+  await expect(
+    page.getByRole("textbox", { name: "Meeting title", exact: true }),
+  ).toHaveValue("Committed title");
+});
+
+test("pages_through_retained_history_and_loads_selected_details", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("fixture-many-meetings", "1"),
+  );
+  await mount(page);
+  await expect(
+    page.getByRole("button", { name: "Meeting 49", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Meeting 50", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Next meetings", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Meeting 50", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Meeting notes", exact: true }),
+  ).toHaveValue("Details 50");
+  await expect(
+    page.getByRole("button", { name: "Next meetings", exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Previous meetings", exact: true })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Meeting notes", exact: true }),
+  ).toHaveValue("Details 0");
 });

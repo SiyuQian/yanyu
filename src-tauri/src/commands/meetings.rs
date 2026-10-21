@@ -1,7 +1,7 @@
 //! Typed local-only meeting commands. Expensive operations run on blocking workers.
 use crate::{
     managers::model::ModelManager,
-    meetings::{Meeting, MeetingManager, MeetingMode},
+    meetings::{Meeting, MeetingManager, MeetingMode, MeetingPage},
 };
 use std::{path::PathBuf, sync::Arc};
 use tauri::{Manager, State};
@@ -35,6 +35,7 @@ fn moss(models: &ModelManager) -> Option<PathBuf> {
         .find(|m| m.is_downloaded && m.filename.starts_with("MOSS-Transcribe-Diarize-"))
         .and_then(|m| models.get_model_path(&m.id).ok())
 }
+/// Report platform availability and explicitly installed prerequisites without downloading models.
 #[tauri::command]
 #[specta::specta]
 pub fn meeting_setup(
@@ -48,12 +49,30 @@ pub fn meeting_setup(
             && manager.summary_directory.join("tokenizer.json").is_file(),
     }
 }
+/// Return up to 50 lightweight history rows at `offset`, newest first, plus active records.
+/// Full transcripts and notes are available through `meeting_get`; failures preserve local files.
 #[tauri::command]
 #[specta::specta]
-pub async fn meeting_list(manager: State<'_, Arc<MeetingManager>>) -> Result<Vec<Meeting>, String> {
+pub async fn meeting_list(
+    manager: State<'_, Arc<MeetingManager>>,
+    offset: u32,
+) -> Result<MeetingPage, String> {
     let manager = manager.inner().clone();
-    blocking(move || manager.list()).await
+    blocking(move || manager.list(offset)).await
 }
+/// Read one complete local record by its validated opaque ID. Missing or invalid IDs return an error.
+#[tauri::command]
+#[specta::specta]
+pub async fn meeting_get(
+    manager: State<'_, Arc<MeetingManager>>,
+    id: String,
+) -> Result<Meeting, String> {
+    let manager = manager.inner().clone();
+    blocking(move || manager.get(&id)).await
+}
+/// Start microphone capture, plus computer audio in online mode.
+/// Requires Apple Silicon macOS 13+, permissions, and no active recording.
+/// Success returns the persisted recording; startup failures retain a failed local record.
 #[tauri::command]
 #[specta::specta]
 pub async fn meeting_start(
@@ -63,6 +82,9 @@ pub async fn meeting_start(
     let manager = manager.inner().clone();
     blocking(move || manager.start(mode)).await
 }
+/// Pause, resume, or stop the matching active recording, or cancel its processing job.
+/// Stop waits for native finalization; capture failures retain recoverable audio and return an error.
+/// Cancellation requests interruption and retains completed checkpoints; it does not await the job.
 #[tauri::command]
 #[specta::specta]
 pub async fn meeting_control(
@@ -79,6 +101,10 @@ pub async fn meeting_control(
     })
     .await
 }
+/// Start a local background processing job for an idle record; success means queued, not completed.
+/// `summary_only` requires a completed transcript and only Qwen; otherwise installed MOSS is also required.
+/// `labels` are the discussion, decisions, and action-item headings in that order.
+/// Poll the record for progress or failure; recordings and completed transcript checkpoints are retained.
 #[tauri::command]
 #[specta::specta]
 pub async fn meeting_process(
@@ -92,6 +118,9 @@ pub async fn meeting_process(
     let manager = manager.inner().clone();
     blocking(move || manager.process(id, model, summary_only, labels)).await
 }
+/// Save editable title, transcript text, speaker display names, and notes for an idle record.
+/// Validates IDs and size limits, preserves capture data, and marks notes stale after transcript changes.
+/// Returns the committed record; `durability_warning` reports a post-commit directory-sync failure separately.
 #[tauri::command]
 #[specta::specta]
 pub async fn meeting_edit(
@@ -108,6 +137,7 @@ pub async fn meeting_edit(
     })
     .await
 }
+/// Permanently remove an idle local record and its owned audio files. Busy or invalid records are rejected.
 #[tauri::command]
 #[specta::specta]
 pub async fn meeting_delete(
@@ -124,6 +154,7 @@ pub async fn meeting_delete(
     })
     .await
 }
+/// Return the owned playback WAV path for a valid record. Missing or symlinked audio returns an error.
 #[tauri::command]
 #[specta::specta]
 pub async fn meeting_audio(
@@ -143,6 +174,8 @@ pub async fn meeting_audio(
     })
     .await
 }
+/// Ask for a Markdown destination and export the retained notes, transcript, citations, and quality warnings.
+/// Returns false when the save dialog is cancelled; file or record failures return an error.
 #[tauri::command]
 #[specta::specta]
 pub async fn meeting_export(app: tauri::AppHandle, id: String) -> Result<bool, String> {

@@ -10,7 +10,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, Mutex, MutexGuard,
+        Arc, Condvar, Mutex, MutexGuard,
     },
 };
 use transcribe_cpp::{Backend, Diarize, RunOptions, TimestampKind};
@@ -32,26 +32,29 @@ pub struct MeetingManager {
     active: Mutex<Option<Active>>,
     processing: Mutex<Option<Processing>>,
     pub summary_directory: PathBuf,
+    initialization: (Mutex<bool>, Condvar),
 }
 impl MeetingManager {
     pub fn new(root: PathBuf, summary_directory: PathBuf) -> anyhow::Result<Arc<Self>> {
         let store = Store::new(root)?;
-        let existing_records = store.list()?;
 
         let manager = Arc::new(Self {
             store: Mutex::new(store),
             active: Mutex::new(None),
             processing: Mutex::new(None),
             summary_directory,
+            initialization: (Mutex::new(false), Condvar::new()),
         });
         let weak = Arc::downgrade(&manager);
         std::thread::Builder::new()
             .name("meeting-capture-state".into())
             .spawn(move || {
                 if let Some(manager) = weak.upgrade() {
-                    if let Err(error) = lock(&manager.store).recover_records(existing_records) {
+                    if let Err(error) = lock(&manager.store).recover_interrupted() {
                         log::error!("Meeting startup recovery: {error}");
                     }
+                    *lock(&manager.initialization.0) = true;
+                    manager.initialization.1.notify_all();
                 }
                 loop {
                     std::thread::sleep(std::time::Duration::from_millis(500));
@@ -63,10 +66,27 @@ impl MeetingManager {
             })?;
         Ok(manager)
     }
-    pub fn list(&self) -> anyhow::Result<Vec<Meeting>> {
-        lock(&self.store).list()
+    fn await_initialization(&self) {
+        let (ready, signal) = &self.initialization;
+        let mut ready = lock(ready);
+        while !*ready {
+            ready = signal
+                .wait(ready)
+                .unwrap_or_else(|error| error.into_inner());
+        }
+    }
+    /// Fetch a bounded history page after background recovery completes.
+    pub fn list(&self, offset: u32) -> anyhow::Result<super::MeetingPage> {
+        self.await_initialization();
+        lock(&self.store).page(offset)
+    }
+    /// Fetch one full record after background recovery completes.
+    pub fn get(&self, id: &str) -> anyhow::Result<Meeting> {
+        self.await_initialization();
+        lock(&self.store).get(id)
     }
     pub fn start(&self, mode: MeetingMode) -> anyhow::Result<Meeting> {
+        self.await_initialization();
         anyhow::ensure!(capture::available(), "unsupported");
         let mut active = lock(&self.active);
         anyhow::ensure!(active.is_none(), "meeting_recording_busy");
@@ -102,7 +122,7 @@ impl MeetingManager {
         } else {
             MeetingStatus::Recording
         };
-        store.save(&meeting)
+        store.save(&meeting).map(|_| ())
     }
     fn refresh_capture(&self) -> anyhow::Result<()> {
         let mut active = lock(&self.active);
@@ -127,13 +147,18 @@ impl MeetingManager {
         if let Some(error) = error {
             meeting.capture_error = Some(error.clone());
             meeting.error = Some(error);
-            drop(active.take());
+            if let Some(mut current) = active.take() {
+                if let Some(error) = current.capture.stop() {
+                    meeting.capture_error = Some(error.clone());
+                    meeting.error = Some(error);
+                }
+            }
             meeting.status = MeetingStatus::Recoverable;
             if let Err(error) = store.finalize_audio(&mut meeting) {
                 meeting.error = Some(error.to_string());
             }
         }
-        store.save(&meeting)
+        store.save(&meeting).map(|_| ())
     }
     pub fn stop(&self, id: &str) -> anyhow::Result<Meeting> {
         let mut active = lock(&self.active);
@@ -141,22 +166,10 @@ impl MeetingManager {
             active.as_ref().is_some_and(|a| a.id == id),
             "capture_not_active"
         );
-        drop(active.take());
+        let failure = active.take().and_then(|mut current| current.capture.stop());
         let store = lock(&self.store);
         let mut meeting = store.get(id)?;
-        if let Err(error) = store.finalize_audio(&mut meeting) {
-            meeting.status = MeetingStatus::Recoverable;
-            meeting.capture_error = Some(error.to_string());
-            meeting.error = Some(error.to_string());
-            store.save(&meeting)?;
-            return Err(error);
-        }
-        meeting.status = if meeting.error.is_some() {
-            MeetingStatus::Recoverable
-        } else {
-            MeetingStatus::Recorded
-        };
-        store.save(&meeting)?;
+        finalize_capture(&store, &mut meeting, failure)?;
         Ok(meeting)
     }
     pub fn cancel(&self, id: &str) -> anyhow::Result<()> {
@@ -188,6 +201,7 @@ impl MeetingManager {
         summary_only: bool,
         labels: [String; 3],
     ) -> anyhow::Result<()> {
+        self.await_initialization();
         anyhow::ensure!(capture::available(), "unsupported");
         anyhow::ensure!(
             labels.iter().all(|s| !s.is_empty() && s.len() < 200),
@@ -418,6 +432,32 @@ impl MeetingManager {
         result
     }
 }
+fn finalize_capture(
+    store: &Store,
+    meeting: &mut Meeting,
+    failure: Option<String>,
+) -> anyhow::Result<()> {
+    if let Some(error) = failure {
+        meeting.capture_error = Some(error.clone());
+        meeting.error = Some(error);
+    }
+    if let Err(error) = store.finalize_audio(meeting) {
+        meeting
+            .capture_error
+            .get_or_insert_with(|| error.to_string());
+        meeting.error = Some(error.to_string());
+    }
+    meeting.status = if meeting.capture_error.is_some() {
+        MeetingStatus::Recoverable
+    } else {
+        MeetingStatus::Recorded
+    };
+    store.save(meeting)?;
+    if let Some(error) = &meeting.capture_error {
+        anyhow::bail!("{error}");
+    }
+    Ok(())
+}
 fn save_failure_diagnostic(
     directory: &Path,
     failure: &crate::engine_supervisor::RunFailure,
@@ -435,6 +475,29 @@ fn check_cancel(cancel: &AtomicBool) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn final_native_failure_retains_committed_audio_and_recoverable_status() {
+        use crate::meetings::{MeetingMode, MeetingStatus, Store};
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::new(dir.path().into()).unwrap();
+        let mut meeting = store.create(MeetingMode::InPerson).unwrap();
+        let path = store.directory(&meeting.id).unwrap();
+        std::fs::write(path.join("mic.pcm"), [0u8; 128]).unwrap();
+        std::fs::write(
+            path.join("capture.json"),
+            r#"{"mic_frames":16,"system_frames":0,"paused":false,"error":null}"#,
+        )
+        .unwrap();
+        assert!(
+            super::finalize_capture(&store, &mut meeting, Some("capture_disk_error".into()))
+                .is_err()
+        );
+        let saved = store.get(&meeting.id).unwrap();
+        assert_eq!(saved.capture_error.as_deref(), Some("capture_disk_error"));
+        assert_eq!(saved.status, MeetingStatus::Recoverable);
+        assert_eq!(saved.mic_frames, 16);
+        assert!(path.join("playback.wav").is_file());
+    }
     #[test]
     fn incomplete_native_output_is_diagnostic_only_and_retains_partial_text() {
         let dir = tempfile::tempdir().unwrap();

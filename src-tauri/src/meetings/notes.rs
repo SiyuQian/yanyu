@@ -109,7 +109,11 @@ fn chunk_source(
     while let Some(row) = pending.pop_front() {
         let mut candidate = chunk.clone();
         candidate.push(row.clone());
-        if token_count(&prompt(&candidate, false)?)? <= 2048 {
+        if token_count(&prompt(std::slice::from_ref(&row), false)?)? <= 1024
+            && token_count(&prompt(std::slice::from_ref(&row), true)?)? <= 1024
+            && token_count(&prompt(&candidate, false)?)? <= 2048
+            && token_count(&prompt(&candidate, true)?)? <= 2048
+        {
             chunk = candidate;
             continue;
         }
@@ -140,10 +144,56 @@ pub fn generate(
 ) -> anyhow::Result<String> {
     anyhow::ensure!(!source.is_empty(), "no_transcript");
     let mut model = crate::managers::local_polishing::NativeModel::load(directory, cancel)?;
-    let chunks = chunk_source(source, |prompt| model.token_count(prompt))?;
+    generate_with(
+        source,
+        labels,
+        &mut NativeClassifier {
+            model: &mut model,
+            cancel,
+        },
+    )
+}
+trait Classifier {
+    fn token_count(&self, text: &str) -> anyhow::Result<usize>;
+    fn classify(&mut self, rows: &[MeetingSegment], reduce: bool) -> anyhow::Result<Selection>;
+}
+struct NativeClassifier<'a> {
+    model: &'a mut crate::managers::local_polishing::NativeModel,
+    cancel: &'a std::sync::atomic::AtomicBool,
+}
+impl Classifier for NativeClassifier<'_> {
+    fn token_count(&self, text: &str) -> anyhow::Result<usize> {
+        self.model.token_count(text)
+    }
+    fn classify(&mut self, rows: &[MeetingSegment], reduce: bool) -> anyhow::Result<Selection> {
+        run(self.model, rows, reduce, self.cancel)
+    }
+}
+fn generate_with(
+    source: &[MeetingSegment],
+    labels: &[String; 3],
+    model: &mut impl Classifier,
+) -> anyhow::Result<String> {
+    let mut chunks = chunk_source(source, |prompt| model.token_count(prompt))?;
+    let mut provenance = std::collections::HashMap::new();
+    for (index, row) in chunks.iter_mut().flatten().enumerate() {
+        let original = row.id.clone();
+        if source
+            .iter()
+            .find(|source| source.id == original)
+            .is_some_and(|source| source.text != row.text)
+        {
+            row.id = format!("fragment_{index}");
+            while source.iter().any(|source| source.id == row.id) {
+                row.id.push('_');
+            }
+        }
+        provenance.insert(row.id.clone(), original);
+    }
+    let fragments: Vec<_> = chunks.iter().flatten().cloned().collect();
     let mut combined = Selection::default();
     for rows in chunks {
-        let selection = run(&mut model, &rows, false, cancel)?;
+        let selection = model.classify(&rows, false)?;
         combined.discussion.extend(selection.discussion);
         combined.decisions.extend(selection.decisions);
         combined.actions.extend(selection.actions);
@@ -158,7 +208,7 @@ pub fn generate(
         .retain(|action| seen.insert(action.sources.clone()));
     let maximum_rounds = (combined.discussion.len().max(1) as f64).log2().ceil() as usize + 1;
     for _ in 0..maximum_rounds {
-        let selected: Vec<_> = source
+        let selected: Vec<_> = fragments
             .iter()
             .filter(|r| combined.discussion.contains(&r.id))
             .cloned()
@@ -173,7 +223,7 @@ pub fn generate(
             candidate.push(row.clone());
             if model.token_count(&prompt(&candidate, true)?)? > 2048 {
                 anyhow::ensure!(group.len() >= 2, "notes_reduction_stalled");
-                let result = run(&mut model, &group, true, cancel)?;
+                let result = model.classify(&group, true)?;
                 anyhow::ensure!(
                     !result.discussion.is_empty() && result.discussion.len() <= group.len() / 2,
                     "notes_reduction_stalled"
@@ -184,7 +234,7 @@ pub fn generate(
             group.push(row);
         }
         if group.len() > 1 {
-            let result = run(&mut model, &group, true, cancel)?;
+            let result = model.classify(&group, true)?;
             anyhow::ensure!(
                 !result.discussion.is_empty() && result.discussion.len() <= group.len() / 2,
                 "notes_reduction_stalled"
@@ -199,7 +249,7 @@ pub fn generate(
         );
         combined.discussion = reduced;
     }
-    let final_discussion: Vec<_> = source
+    let final_discussion: Vec<_> = fragments
         .iter()
         .filter(|r| combined.discussion.contains(&r.id))
         .cloned()
@@ -223,11 +273,14 @@ pub fn generate(
     ] {
         markdown.push_str(&format!("## {label}\n\n"));
         let mut seen = std::collections::HashSet::new();
-        for id in ids {
+        for fragment_id in ids {
+            let Some(id) = provenance.get(&fragment_id) else {
+                anyhow::bail!("invalid_note_citation");
+            };
             if !seen.insert(id.clone()) {
                 continue;
             }
-            if let Some(row) = source.iter().find(|s| s.id == id) {
+            if let Some(row) = source.iter().find(|s| s.id == *id) {
                 markdown.push_str(&format!("- {} ([{}](#{}))\n", row.text, row.id, row.id));
             }
         }
@@ -247,6 +300,33 @@ mod tests {
             speaker: None,
             uncertain: true,
         }]
+    }
+    #[test]
+    fn oversized_discussion_segment_survives_generation() {
+        let mut source = source();
+        source[0].text = "A topic with supporting detail. ".repeat(3000);
+        let labels = ["Discussion".into(), "Decisions".into(), "Actions".into()];
+        // A real model is external; this classifier selects evidence without changing its text.
+        let result = generate_with(&source, &labels, &mut EvidenceClassifier).unwrap();
+        assert!(result.contains(&source[0].text));
+        assert!(result.contains("[s1](#s1)"));
+    }
+    struct EvidenceClassifier;
+    impl Classifier for EvidenceClassifier {
+        fn token_count(&self, text: &str) -> anyhow::Result<usize> {
+            Ok(text.chars().count() / 4)
+        }
+        fn classify(&mut self, rows: &[MeetingSegment], reduce: bool) -> anyhow::Result<Selection> {
+            assert!(self.token_count(&prompt(rows, reduce)?)? <= 2048);
+            Ok(Selection {
+                discussion: rows
+                    .iter()
+                    .take(if reduce { rows.len() / 2 } else { rows.len() })
+                    .map(|row| row.id.clone())
+                    .collect(),
+                ..Default::default()
+            })
+        }
     }
     #[test]
     fn token_bounded_chunks_preserve_every_character_and_source_identity() {

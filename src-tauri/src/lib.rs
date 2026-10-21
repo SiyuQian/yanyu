@@ -650,6 +650,7 @@ fn command_builder() -> Builder<tauri::Wry> {
         .commands(collect_commands![
             commands::meetings::meeting_setup,
             commands::meetings::meeting_list,
+            commands::meetings::meeting_get,
             commands::meetings::meeting_start,
             commands::meetings::meeting_control,
             commands::meetings::meeting_process,

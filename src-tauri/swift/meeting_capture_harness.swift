@@ -38,6 +38,21 @@ import AVFoundation
         capture.writer.sync {}
         precondition(capture.failure == "capture_disk_error", "disk failure must be explicit")
         await capture.stop()
+        let finalDirectory = directory.appendingPathComponent("final-stop")
+        try FileManager.default.createDirectory(at: finalDirectory, withIntermediateDirectories: true)
+        let finalCapture = try MeetingCapture(directory: finalDirectory.path, online: false)
+        finalCapture.establishOrigin()
+        finalCapture.accept(buffer, at: finalCapture.origin, source: 0)
+        finalCapture.writer.sync { finalCapture.commit() }
+        let committed = try Data(contentsOf: finalDirectory.appendingPathComponent("capture.json"))
+        try FileManager.default.createDirectory(at: finalDirectory.appendingPathComponent("capture.json.tmp"), withIntermediateDirectories: false)
+        let handle = Unmanaged.passRetained(finalCapture).toOpaque()
+        let stopError = meetingStop(handle)
+        precondition(stopError != nil, "final snapshot failure must reach the Rust caller")
+        precondition(String(cString: stopError!) == "capture_disk_error")
+        meetingStringFree(stopError)
+        let retained = try Data(contentsOf: finalDirectory.appendingPathComponent("capture.json"))
+        precondition(retained == committed)
         print("Synthetic native capture: gap, overlap, pause/resume, durable snapshot and disk failure PASS")
     }
 }

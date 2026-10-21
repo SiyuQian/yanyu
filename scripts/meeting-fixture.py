@@ -35,13 +35,21 @@ def create_fixture(output: pathlib.Path, duration: int = 0) -> None:
                         if duration and cursor + count > duration * 16000:
                             writer.writeframes(b"\0\0" * (duration * 16000 - cursor))
                             cursor = duration * 16000
+                            result["end_ms"] = cursor // 16
+                            manifest["windows"].append(result)
                             (output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
                             return
                         result["turns"].append({**turn, "text": text, "start_ms": cursor // 16, "end_ms": (cursor + count) // 16})
                         writer.writeframes(reader.readframes(count))
                         cursor += count
-                    writer.writeframes(b"\0\0" * 8000)
-                    cursor += 8000
+                    silence = min(8000, duration * 16000 - cursor) if duration else 8000
+                    writer.writeframes(b"\0\0" * silence)
+                    cursor += silence
+                    if duration and cursor == duration * 16000:
+                        result["end_ms"] = cursor // 16
+                        manifest["windows"].append(result)
+                        (output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+                        return
                 result["end_ms"] = cursor // 16
                 manifest["windows"].append(result)
             if not duration:

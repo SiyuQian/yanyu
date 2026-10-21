@@ -103,6 +103,20 @@ pub fn reconcile(
     });
     let complete = all_valid && aligned && meeting.speakers.keys().all(|id| coverage.contains(id));
     let first_window = meeting.speakers.is_empty();
+    let usable_voices: BTreeSet<_> = bodies[0]
+        .iter()
+        .enumerate()
+        .filter(|(index, candidate)| {
+            candidate.t1_ms - candidate.t0_ms >= 1000
+                && !bodies[0].iter().enumerate().any(|(other, row)| {
+                    other != *index
+                        && row.speaker_id != candidate.speaker_id
+                        && row.t0_ms < candidate.t1_ms
+                        && candidate.t0_ms < row.t1_ms
+                })
+        })
+        .map(|(_, row)| row.speaker_id)
+        .collect();
     let mut new_ids = BTreeMap::new();
     let mut output = vec![];
     for (index, row) in bodies[0].iter().enumerate() {
@@ -137,6 +151,9 @@ pub fn reconcile(
             && timing_valid
             && row.speaker_id > 0
             && (complete || first_window)
+            && all_valid
+            && aligned
+            && usable_voices.contains(&row.speaker_id)
         {
             speaker = Some(
                 new_ids
@@ -197,6 +214,44 @@ mod tests {
             text: text.into(),
             ..Default::default()
         }
+    }
+    #[test]
+    fn brief_voice_does_not_block_later_canonical_speakers() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::new(dir.path().into()).unwrap();
+        let mut meeting = store.create(MeetingMode::InPerson).unwrap();
+        let output = reconcile(
+            &mut meeting,
+            &[BankResult {
+                anchors: vec![],
+                prefix_ms: 0,
+                segments: vec![row(0, 300, 1, "yes"), row(500, 2500, 2, "long response")],
+            }],
+            0,
+            3000,
+        )
+        .unwrap();
+        assert!(output[0].uncertain && output[0].speaker.is_none());
+        assert_eq!(meeting.speakers.len(), 1);
+        assert_eq!(meeting.references.len(), 1);
+        let reference = meeting.references[0].clone();
+        let output = reconcile(
+            &mut meeting,
+            &[BankResult {
+                anchors: vec![reference],
+                prefix_ms: 2250,
+                segments: vec![
+                    row(0, 2000, 8, "reference"),
+                    row(2250, 4250, 3, "new voice"),
+                ],
+            }],
+            3000,
+            5000,
+        )
+        .unwrap();
+        assert!(!output[0].uncertain);
+        assert_eq!(meeting.speakers.len(), 2);
+        assert_eq!(meeting.references.len(), 2);
     }
     #[test]
     fn a_segment_crossing_the_reference_boundary_is_never_saved_as_body_text() {

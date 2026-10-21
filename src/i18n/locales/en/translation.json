@@ -922,7 +922,10 @@
     },
     "qualityWarning": "Speaker identity and note accuracy are experimental. Review the full transcript: the small note model can miss tasks or misclassify proposals.",
     "notesDraft": "Generated meeting notes are a draft. Verify each source citation: tasks can be missed and proposals can be misclassified.",
-    "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing."
+    "captureIncomplete": "This recording is incomplete. Later transcription or notes cannot restore missing audio. Review playback before retrying processing.",
+    "previousPage": "Previous meetings",
+    "nextPage": "Next meetings",
+    "durabilityWarning": "The edit was saved, but crash durability could not be confirmed. Keep a copy of important changes."
   },
   "translation": {
     "title": "Selection translation",

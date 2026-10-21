@@ -182,11 +182,13 @@ private func resultString(_ value: String) -> UnsafeMutablePointer<CChar>? { str
     do { try Unmanaged<MeetingCapture>.fromOpaque(handle).takeUnretainedValue().pause(pause != 0); return nil }
     catch { return resultString("capture_not_active") }
 }
-@_cdecl("meeting_stop") public func meetingStop(_ handle: UnsafeMutableRawPointer) {
-    guard #available(macOS 13, *) else { return }
+@_cdecl("meeting_stop") public func meetingStop(_ handle: UnsafeMutableRawPointer) -> UnsafeMutablePointer<CChar>? {
+    guard #available(macOS 13, *) else { return resultString("unsupported") }
     let capture = Unmanaged<MeetingCapture>.fromOpaque(handle).takeRetainedValue()
     let semaphore = DispatchSemaphore(value: 0)
     Task { await capture.stop(); semaphore.signal() }; semaphore.wait()
+    capture.gate.lock(); defer { capture.gate.unlock() }
+    return capture.failure.flatMap { resultString($0) }
 }
 @_cdecl("meeting_error") public func meetingError(_ handle: UnsafeMutableRawPointer) -> UnsafeMutablePointer<CChar>? {
     guard #available(macOS 13, *) else { return resultString("unsupported") }
