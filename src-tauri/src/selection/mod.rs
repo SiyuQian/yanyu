@@ -2,6 +2,9 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod macos;
 
+/// Maximum number of Unicode scalar values accepted for selection translation.
+pub const MAX_SELECTION_CHARACTERS: usize = 10_000;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SelectionError {
     PermissionDenied,
@@ -41,7 +44,7 @@ pub fn capture() -> Result<Selection, SelectionError> {
 fn validate_text(text: String) -> Result<String, SelectionError> {
     if text.trim().is_empty() {
         Err(SelectionError::NoSelection)
-    } else if text.chars().count() > 2000 {
+    } else if text.chars().count() > MAX_SELECTION_CHARACTERS {
         Err(SelectionError::TooLong)
     } else {
         Ok(text)
@@ -57,7 +60,7 @@ mod tests {
             Err(SelectionError::NoSelection)
         );
         assert_eq!(
-            validate_text("a".repeat(2001)),
+            validate_text("a".repeat(MAX_SELECTION_CHARACTERS + 1)),
             Err(SelectionError::TooLong)
         );
         assert_eq!(validate_text(" hello\n".into()), Ok(" hello\n".into()));

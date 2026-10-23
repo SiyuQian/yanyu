@@ -16,6 +16,10 @@ use std::{
 
 pub const OUTPUT_BUDGET: Duration = Duration::from_millis(500);
 const SUPPORTED: bool = cfg!(all(target_os = "macos", target_arch = "aarch64"));
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+const TRANSLATION_CHUNK_TOKENS: usize = 1024;
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+const TRANSLATION_OUTPUT_TOKENS: usize = 2048;
 struct Artifact {
     name: &'static str,
     url: &'static str,
@@ -222,10 +226,10 @@ impl LocalPolishingManager {
         if text.trim().is_empty() {
             return Err("no_selection".into());
         }
-        if text.chars().count() > 2000 {
+        if text.chars().count() > crate::selection::MAX_SELECTION_CHARACTERS {
             return Err("too_long".into());
         }
-        let deadline = Instant::now() + Duration::from_secs(90);
+        let deadline = Instant::now() + Duration::from_secs(180);
         let mut model = loop {
             check_stop(&cancel, Some(deadline)).map_err(|_| "cancelled".to_string())?;
             {
@@ -261,8 +265,7 @@ impl LocalPolishingManager {
                     );
                 }
                 let model = model.as_mut().ok_or("load_failed")?;
-                let generation_deadline = deadline.min(Instant::now() + Duration::from_secs(30));
-                let result = model.translate(&original, generation_deadline, &cancel);
+                let result = model.translate(&original, deadline, &cancel);
                 model.clear();
                 result
             })();
@@ -559,19 +562,38 @@ impl NativeModel {
         deadline: Instant,
         cancel: &AtomicBool,
     ) -> Result<String, String> {
-        let output = self
-            .generate_text(&translation_prompt(text), 1024, deadline, cancel)
-            .map_err(|_| {
+        let chunks = translation_chunks(&self.tokenizer, text)?;
+        let mut translated = String::new();
+        for (source, separator) in chunks {
+            check_stop(cancel, Some(deadline)).map_err(|_| {
                 if cancel.load(Ordering::Acquire) {
                     "cancelled"
-                } else if Instant::now() >= deadline {
-                    "timeout"
                 } else {
-                    "inference_failed"
+                    "timeout"
                 }
-                .to_string()
             })?;
-        translation_output(output)
+            let generation_deadline = deadline.min(Instant::now() + Duration::from_secs(30));
+            let output = self
+                .generate_text(
+                    &translation_prompt(&source),
+                    TRANSLATION_OUTPUT_TOKENS,
+                    generation_deadline,
+                    cancel,
+                )
+                .map_err(|_| {
+                    if cancel.load(Ordering::Acquire) {
+                        "cancelled"
+                    } else if Instant::now() >= generation_deadline {
+                        "timeout"
+                    } else {
+                        "inference_failed"
+                    }
+                    .to_string()
+                })?;
+            translated.push_str(&translation_output(output)?);
+            translated.push_str(&separator);
+        }
+        Ok(translated.trim().to_string())
     }
     fn generate_text(
         &mut self,
@@ -617,6 +639,99 @@ impl NativeModel {
         Ok(None)
     }
 }
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+fn translation_chunks(
+    tokenizer: &tokenizers::Tokenizer,
+    text: &str,
+) -> Result<Vec<(String, String)>, String> {
+    let mut chunks = Vec::new();
+    let mut remaining = text;
+    while !remaining.is_empty() {
+        if remaining.trim().is_empty() {
+            if let Some((_, separator)) = chunks.last_mut() {
+                separator.push_str(remaining);
+            }
+            break;
+        }
+        let boundaries: Vec<(usize, usize, char)> = remaining
+            .char_indices()
+            .map(|(start, character)| (start, start + character.len_utf8(), character))
+            .collect();
+        let prompt = translation_prompt(remaining);
+        let full_token_count = tokenizer
+            .encode(prompt.as_str(), false)
+            .map_err(|_| "inference_failed".to_string())?
+            .get_ids()
+            .len();
+        let count = if full_token_count <= TRANSLATION_CHUNK_TOKENS {
+            boundaries.len()
+        } else {
+            let mut low = 0;
+            let mut high = boundaries.len();
+            while low < high {
+                let middle = (low + high).div_ceil(2);
+                let end = boundaries[middle - 1].1;
+                let prompt = translation_prompt(&remaining[..end]);
+                let token_count = tokenizer
+                    .encode(prompt.as_str(), false)
+                    .map_err(|_| "inference_failed".to_string())?
+                    .get_ids()
+                    .len();
+                if token_count <= TRANSLATION_CHUNK_TOKENS {
+                    low = middle;
+                } else {
+                    high = middle - 1;
+                }
+            }
+            low
+        };
+        if count == 0 {
+            return Err("too_long".into());
+        }
+        let max_end = boundaries[count - 1].1;
+        if max_end == remaining.len() {
+            chunks.push((remaining.to_string(), String::new()));
+            break;
+        }
+        let soft_start = max_end * 3 / 4;
+        let boundary = boundaries[..count]
+            .iter()
+            .rev()
+            .find(|(_, end, character)| {
+                *end >= soft_start && matches!(*character, '.' | '!' | '?' | '。' | '！' | '？')
+            })
+            .or_else(|| {
+                boundaries[..count]
+                    .iter()
+                    .rev()
+                    .find(|(_, end, character)| *end >= soft_start && character.is_whitespace())
+            });
+        let chunk_end = match boundary {
+            Some((start, _, character)) if character.is_whitespace() => *start,
+            Some((_, end, _)) => *end,
+            None => max_end,
+        };
+        let chunk_end = if chunk_end == 0 { max_end } else { chunk_end };
+        let mut separator_end = chunk_end;
+        while separator_end < remaining.len() {
+            let Some(character) = remaining[separator_end..].chars().next() else {
+                break;
+            };
+            if !character.is_whitespace() {
+                break;
+            }
+            separator_end += character.len_utf8();
+        }
+        chunks.push((
+            remaining[..chunk_end].to_string(),
+            remaining[chunk_end..separator_end].to_string(),
+        ));
+        remaining = &remaining[separator_end..];
+    }
+    Ok(chunks)
+}
+
 #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
 struct NativeModel;
 #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]

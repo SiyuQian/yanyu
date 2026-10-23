@@ -866,7 +866,7 @@
       "permission_denied": "Sta Yanyu toe in Systeeminstellingen → Privacy en beveiliging → Toegankelijkheid en probeer opnieuw.",
       "unsupported_selection": "Deze app geeft de geselecteerde tekst niet door. Probeer een andere app.",
       "no_selection": "Geen tekst geselecteerd. Selecteer tekst in een andere app.",
-      "too_long": "Selecteer maximaal 2.000 tekens.",
+      "too_long": "Selecteer maximaal 10.000 tekens.",
       "missing_model": "Download Qwen3-0.6B handmatig in de algemene instellingen.",
       "unsupported": "Lokale vertaling mislukt. Probeer kortere tekst.",
       "load_failed": "Lokale vertaling mislukt. Probeer kortere tekst.",

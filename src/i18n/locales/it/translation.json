@@ -866,7 +866,7 @@
       "permission_denied": "Consenti Yanyu in Impostazioni di Sistema → Privacy e sicurezza → Accessibilità e riprova.",
       "unsupported_selection": "Questa app non fornisce il testo selezionato. Prova in un’altra app.",
       "no_selection": "Nessun testo selezionato. Seleziona del testo in un’altra app.",
-      "too_long": "Seleziona al massimo 2.000 caratteri.",
+      "too_long": "Seleziona al massimo 10.000 caratteri.",
       "missing_model": "Scarica manualmente Qwen3-0.6B nelle impostazioni generali.",
       "unsupported": "Traduzione locale non riuscita. Riprova con un testo più breve.",
       "load_failed": "Traduzione locale non riuscita. Riprova con un testo più breve.",

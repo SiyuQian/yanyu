@@ -866,7 +866,7 @@
       "permission_denied": "Tillad Yanyu i Systemindstillinger → Anonymitet og sikkerhed → Tilgængelighed, og prøv igen.",
       "unsupported_selection": "Denne app giver ikke adgang til markeret tekst. Prøv en anden app.",
       "no_selection": "Ingen tekst markeret. Markér tekst i en anden app.",
-      "too_long": "Markér højst 2.000 tegn.",
+      "too_long": "Markér højst 10.000 tegn.",
       "missing_model": "Hent Qwen3-0.6B manuelt i de generelle indstillinger.",
       "unsupported": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
       "load_failed": "Lokal oversættelse mislykkedes. Prøv kortere tekst.",
