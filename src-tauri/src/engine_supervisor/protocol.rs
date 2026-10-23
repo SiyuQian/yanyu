@@ -38,6 +38,9 @@ pub enum Request {
     Run {
         options: RunOptions,
     },
+    RunMeeting {
+        options: RunOptions,
+    },
     StreamBegin {
         run: RunOptions,
         stream: StreamOptions,
@@ -73,6 +76,7 @@ pub enum Response {
     },
     Loaded(LoadedInfo),
     Transcript(Transcript),
+    RunFailure(RunFailure),
     Fed {
         update: StreamUpdate,
         /// Present only when the committed or tentative text changed.
@@ -156,6 +160,9 @@ pub struct LoadedInfo {
     /// Whether the model takes `RunOptions::vocabulary` (e.g. Qwen3-ASR).
     #[serde(default)]
     pub supports_vocabulary: bool,
+    pub supports_diarization: bool,
+    pub effective_max_audio_ms: i64,
+    pub effective_n_ctx: i32,
 }
 
 /// Encode one frame. Refuses a section the reader would refuse, so an
@@ -246,6 +253,37 @@ fn check_section_len(len: usize) -> io::Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RunFailureKind {
+    TooLong,
+    Aborted,
+    Truncated,
+    Repetition,
+    Other,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RunFailure {
+    pub kind: RunFailureKind,
+    pub message: String,
+    pub partial: Option<Transcript>,
+}
+impl From<transcribe_cpp::Error> for RunFailure {
+    fn from(error: transcribe_cpp::Error) -> Self {
+        let kind = match &error {
+            transcribe_cpp::Error::InputTooLong(_) => RunFailureKind::TooLong,
+            transcribe_cpp::Error::Aborted { .. } => RunFailureKind::Aborted,
+            transcribe_cpp::Error::OutputTruncated { .. } => RunFailureKind::Truncated,
+            transcribe_cpp::Error::OutputRepetition { .. } => RunFailureKind::Repetition,
+            _ => RunFailureKind::Other,
+        };
+        Self {
+            kind,
+            message: error.to_string(),
+            partial: error.partial().cloned(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -308,6 +346,29 @@ mod tests {
         assert_eq!(
             device_key("vulkan", Some("0000:01:00.0"), "Vulkan0"),
             r#"["vulkan","id","0000:01:00.0"]"#
+        );
+    }
+}
+
+#[cfg(test)]
+mod meeting_tests {
+    use super::*;
+    #[test]
+    fn typed_truncation_keeps_partial_text_over_the_wire() {
+        let response = Response::RunFailure(
+            transcribe_cpp::Error::OutputTruncated {
+                message: "budget".into(),
+                partial: Some(Box::new(Transcript {
+                    text: "partial".into(),
+                    ..Default::default()
+                })),
+            }
+            .into(),
+        );
+        let frame = encode_message(&response, None).unwrap();
+        let (got, _): (Response, _) = read_message(&mut frame.as_slice()).unwrap().unwrap();
+        assert!(
+            matches!(got, Response::RunFailure(RunFailure { kind: RunFailureKind::Truncated, partial: Some(partial), .. }) if partial.text == "partial")
         );
     }
 }

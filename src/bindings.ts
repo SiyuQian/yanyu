@@ -6,6 +6,122 @@
 
 export const commands = {
 /**
+ * Report platform availability and explicitly installed prerequisites without downloading models.
+ */
+async meetingSetup() : Promise<MeetingSetup> {
+    return await TAURI_INVOKE("meeting_setup");
+},
+/**
+ * Return up to 50 lightweight history rows at `offset`, newest first, plus active records.
+ * Full transcripts and notes are available through `meeting_get`; failures preserve local files.
+ */
+async meetingList(offset: number) : Promise<Result<MeetingPage, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_list", { offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Read one complete local record by its validated opaque ID. Missing or invalid IDs return an error.
+ */
+async meetingGet(id: string) : Promise<Result<Meeting, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_get", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Start microphone capture, plus computer audio in online mode.
+ * Requires Apple Silicon macOS 13+, permissions, and no active recording.
+ * Success returns the persisted recording; startup failures retain a failed local record.
+ */
+async meetingStart(mode: MeetingMode) : Promise<Result<Meeting, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_start", { mode }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Pause, resume, or stop the matching active recording, or cancel its processing job.
+ * Stop waits for native finalization; capture failures retain recoverable audio and return an error.
+ * Cancellation requests interruption and retains completed checkpoints; it does not await the job.
+ */
+async meetingControl(id: string, action: MeetingControl) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_control", { id, action }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Start a local background processing job for an idle record; success means queued, not completed.
+ * `summary_only` requires a completed transcript and only Qwen; otherwise installed MOSS is also required.
+ * `labels` are the discussion, decisions, and action-item headings in that order.
+ * Poll the record for progress or failure; recordings and completed transcript checkpoints are retained.
+ */
+async meetingProcess(id: string, summaryOnly: boolean, labels: [string, string, string]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_process", { id, summaryOnly, labels }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Save editable title, transcript text, speaker display names, and notes for an idle record.
+ * Validates IDs and size limits, preserves capture data, and marks notes stale after transcript changes.
+ * Returns the committed record; `durability_warning` reports a post-commit directory-sync failure separately.
+ */
+async meetingEdit(meeting: Meeting) : Promise<Result<Meeting, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_edit", { meeting }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Permanently remove an idle local record and its owned audio files. Busy or invalid records are rejected.
+ */
+async meetingDelete(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_delete", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Return the owned playback WAV path for a valid record. Missing or symlinked audio returns an error.
+ */
+async meetingAudio(id: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_audio", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Ask for a Markdown destination and export the retained notes, transcript, citations, and quality warnings.
+ * Returns false when the save dialog is cancelled; file or record failures return an error.
+ */
+async meetingExport(id: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("meeting_export", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Persist the whole validated profile and explicitly select generated mode when enabled.
  */
 async savePersonalization(profile: PersonalizationProfile) : Promise<Result<null, string>> {
@@ -1258,6 +1374,20 @@ export type KeyboardImplementation = "tauri" | "handy_keys"
 export type LLMPrompt = { id: string; name: string; prompt: string }
 export type LocalPolishingStatus = { phase: string; progress: number; error: string | null; downloaded: boolean; supported: boolean }
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
+export type Meeting = { version: number; id: string; title: string; mode: MeetingMode; created_at: string; status: MeetingStatus; mic_frames: number; system_frames: number; duration_ms: number; completed_ms: number; transcript_complete: boolean; segments: MeetingSegment[]; speakers: Partial<{ [key in string]: string }>; references: SpeakerReference[]; notes: string; notes_stale: boolean; error: string | null; capture_error?: string | null; durability_warning?: string | null }
+export type MeetingControl = "pause" | "resume" | "stop" | "cancel"
+export type MeetingMode = "in_person" | "online"
+/**
+ * A bounded history page plus active records, which remain visible on every page.
+ */
+export type MeetingPage = { items: MeetingSummary[]; active: MeetingSummary[]; has_more: boolean }
+export type MeetingSegment = { id: string; start_ms: number; end_ms: number; text: string; speaker: string | null; uncertain: boolean }
+export type MeetingSetup = { available: boolean; moss_installed: boolean; qwen_installed: boolean }
+export type MeetingStatus = "recording" | "paused" | "recoverable" | "recorded" | "transcribing" | "summarizing" | "complete" | "failed"
+/**
+ * Lightweight history row; full transcript and notes are fetched separately.
+ */
+export type MeetingSummary = { id: string; title: string; created_at: string; status: MeetingStatus; duration_ms: number; completed_ms: number }
 export type ModelInfo = { id: string; name: string; description: string; filename: string; source: ModelSource; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; is_directory: boolean; engine_type: EngineType; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean; supports_streaming: boolean; supports_language_detection: boolean }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 /**
@@ -1364,6 +1494,7 @@ export type ShortcutActivation =
 "hold_or_toggle"
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
 export type SoundTheme = "marimba" | "pop" | "custom"
+export type SpeakerReference = { speaker: string; start_ms: number; end_ms: number }
 /**
  * Phase of the streaming overlay card, emitted to drive its UI state.
  */
@@ -1402,7 +1533,28 @@ export type StreamWorkKind = "transcribing" | "polishing"
  */
 export type Theme = "system" | "light" | "dark"
 export type TranscribeAcceleratorSetting = "auto" | "cpu" | "gpu"
-export type TranslationState = { phase: string; text: string | null; error: string | null; revision: number }
+/**
+ * Transient snapshot sent to the translation webview and returned by its state command.
+ */
+export type TranslationState = {
+/**
+ * Empty before the first request. Then `loading` during capture/inference,
+ * `result` on success, `error` on failure, or `idle` after dismissal.
+ */
+phase: string;
+/**
+ * Completed translation in `result` only. Serialized as null in all other phases.
+ */
+text: string | null;
+/**
+ * Stable localization key in `error` only. Serialized as null otherwise.
+ */
+error: string | null;
+/**
+ * Increments on start, accepted completion, and dismissal, wrapping at u32::MAX.
+ * Stale completions leave it unchanged. Copy requires the current result revision.
+ */
+revision: number }
 /**
  * Ephemeral recognition and processing results for a preview comparison.
  */

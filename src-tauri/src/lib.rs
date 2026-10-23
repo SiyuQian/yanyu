@@ -14,6 +14,7 @@ mod helpers;
 mod input;
 mod llm_client;
 mod managers;
+mod meetings;
 mod memory;
 mod overlay;
 mod paste_tx;
@@ -225,6 +226,17 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     );
     app_handle.manage(polishing_manager.clone());
     polishing_manager.set_enabled(settings::get_settings(app_handle).local_polishing_enabled);
+    let meeting_data =
+        crate::portable::app_data_dir(app_handle).expect("Failed to locate meeting directory");
+    match meetings::MeetingManager::new(
+        meeting_data.join("meetings"),
+        meeting_data.join("local-polishing/qwen3-0.6b"),
+    ) {
+        Ok(manager) => {
+            app_handle.manage(manager);
+        }
+        Err(error) => log::error!("Failed to initialize meeting history: {error}"),
+    }
     app_handle.manage(managers::translation::TranslationManager::default());
     app_handle.manage(tray::TrayState::new());
 
@@ -633,35 +645,19 @@ fn run_headless_transcription(app: &AppHandle, args: &CliArgs) -> i32 {
     0
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run(cli_args: CliArgs) {
-    // Avoid ggml-metal residency-set teardown assertions when a native engine
-    // outlives the Tauri shutdown sequence (#1902). This must happen before
-    // transcribe-cpp initializes its Metal device. Advanced users can restore
-    // upstream residency behavior with HANDY_METAL_RESIDENCY=1.
-    #[cfg(target_os = "macos")]
-    if std::env::var("HANDY_METAL_RESIDENCY").as_deref() == Ok("1") {
-        // ggml treats GGML_METAL_NO_RESIDENCY as presence-based, so remove an
-        // inherited value as well when explicitly opting back in.
-        std::env::remove_var("GGML_METAL_NO_RESIDENCY");
-    } else {
-        std::env::set_var("GGML_METAL_NO_RESIDENCY", "1");
-    }
-
-    // Pin glibc's dynamic mmap threshold before the first large allocation,
-    // so per-dictation transient buffers are returned to the OS on free
-    // instead of accumulating in malloc arenas (#1792). No-op off Linux/glibc.
-    memory::init_allocator();
-
-    // Detect portable mode before anything else
-    portable::init();
-
-    // Parse console logging directives from RUST_LOG, falling back to info-level logging
-    // when the variable is unset
-    let console_filter = build_console_filter();
-
-    let specta_builder = Builder::<tauri::Wry>::new()
+fn command_builder() -> Builder<tauri::Wry> {
+    Builder::<tauri::Wry>::new()
         .commands(collect_commands![
+            commands::meetings::meeting_setup,
+            commands::meetings::meeting_list,
+            commands::meetings::meeting_get,
+            commands::meetings::meeting_start,
+            commands::meetings::meeting_control,
+            commands::meetings::meeting_process,
+            commands::meetings::meeting_edit,
+            commands::meetings::meeting_delete,
+            commands::meetings::meeting_audio,
+            commands::meetings::meeting_export,
             commands::personalization::save_personalization,
             commands::personalization::dismiss_personalization_invitation,
             commands::personalization::delete_personalization,
@@ -803,7 +799,59 @@ pub fn run(cli_args: CliArgs) {
             managers::history::HistoryUpdatePayload,
             managers::transcription::StreamTextEvent,
             managers::transcription::StreamPhaseEvent,
-        ]);
+        ])
+}
+#[cfg(test)]
+mod meeting_binding_tests {
+    #[test]
+    #[ignore = "Explicit generated binding refresh; no app startup or user data access"]
+    fn export_bindings() {
+        super::command_builder()
+            .export(
+                super::Typescript::default().bigint(super::BigIntExportBehavior::Number),
+                "../src/bindings.ts",
+            )
+            .unwrap();
+        let path = "../src/bindings.ts";
+        let generated = std::fs::read_to_string(path).unwrap();
+        let normalized = generated
+            .lines()
+            .map(str::trim_end)
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n";
+        std::fs::write(path, normalized).unwrap();
+    }
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run(cli_args: CliArgs) {
+    // Avoid ggml-metal residency-set teardown assertions when a native engine
+    // outlives the Tauri shutdown sequence (#1902). This must happen before
+    // transcribe-cpp initializes its Metal device. Advanced users can restore
+    // upstream residency behavior with HANDY_METAL_RESIDENCY=1.
+    #[cfg(target_os = "macos")]
+    if std::env::var("HANDY_METAL_RESIDENCY").as_deref() == Ok("1") {
+        // ggml treats GGML_METAL_NO_RESIDENCY as presence-based, so remove an
+        // inherited value as well when explicitly opting back in.
+        std::env::remove_var("GGML_METAL_NO_RESIDENCY");
+    } else {
+        std::env::set_var("GGML_METAL_NO_RESIDENCY", "1");
+    }
+
+    // Pin glibc's dynamic mmap threshold before the first large allocation,
+    // so per-dictation transient buffers are returned to the OS on free
+    // instead of accumulating in malloc arenas (#1792). No-op off Linux/glibc.
+    memory::init_allocator();
+
+    // Detect portable mode before anything else
+    portable::init();
+
+    // Parse console logging directives from RUST_LOG, falling back to info-level logging
+    // when the variable is unset
+    let console_filter = build_console_filter();
+
+    let specta_builder = command_builder();
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     specta_builder
@@ -1133,6 +1181,11 @@ pub fn run(cli_args: CliArgs) {
     // `app` is only used by the macOS arm.
     #[cfg_attr(not(target_os = "macos"), allow(unused_variables))]
     app.run(|app, event| match &event {
+        tauri::RunEvent::Exit => {
+            if let Some(manager) = app.try_state::<Arc<meetings::MeetingManager>>() {
+                manager.shutdown();
+            }
+        }
         #[cfg(target_os = "macos")]
         tauri::RunEvent::Reopen { .. } => {
             // Fired when the already-running bundle is launched again from

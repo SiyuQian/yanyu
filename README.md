@@ -10,6 +10,14 @@ Optional local polishing uses Qwen3-0.6B on Apple Silicon Macs with fixed conser
 
 With local polishing off, enabled personalization automatically processes each dictation through the configured service. It sends the transcript and enabled profile context, not the recording. The optional recording preview uses the same cleanup and requires no separate activation. Service failure, invalid output or a 10-second deadline preserves the original transcript. Both routes check language preservation, identifiers and changes beyond deletion. These checks do not guarantee semantic fidelity.
 
+## Local meeting notes
+
+The Meetings page records in-person meetings from the microphone and online meetings from the microphone plus computer audio on Apple Silicon Macs running macOS 13+. Pause/resume excludes paused time. Audio is committed incrementally to separate local tracks; interrupted sessions recover only committed audio. Recordings, timestamped transcripts, speaker display names and editable notes are kept separately from dictation history until manual deletion. Playback, transcript correction, speaker renaming and Markdown export are available.
+
+Install MOSS-Transcribe-Diarize explicitly from Models and the existing Qwen3-0.6B artifacts from General → Local polishing before processing. Meeting processing does not change the dictation model or require dictation polishing to be enabled. It runs after recording ends, entirely locally, with retry and cancellation. Notes quote validated transcript evidence rather than generated factual prose. Generated notes are drafts requiring source verification: real Qwen fixtures showed omitted tasks and false classifications. Missing or invalid models and incomplete output are errors, with no automatic download or cloud fallback.
+
+Cross-window speaker matching uses acoustic reference reels and marks uncertain attribution. Real MOSS mixed-language speaker quality, native permissions/device behavior, concurrent dictation with output mute, and two-hour voiced inference have not yet been verified. Synthetic storage tests do not establish these properties. See [meeting verification](docs/DEVELOPMENT.md#meeting-notetaker-verification) for opt-in local experiments. Windows, Linux and Intel Mac meeting recording are unavailable; existing dictation remains supported.
+
 ## Project origin
 
 - Upstream project: [cjpais/Handy](https://github.com/cjpais/Handy)

@@ -27,7 +27,7 @@ mod protocol;
 mod supervisor;
 mod worker;
 
-pub use protocol::{DeviceInfo, DeviceSelector, LoadedInfo};
+pub use protocol::{DeviceInfo, DeviceSelector, LoadedInfo, RunFailure, RunFailureKind};
 pub use supervisor::{
     EngineError, EngineSupervisor, Finalized, LoadSpec, StreamHandle, StreamProgress, Unloading,
 };
