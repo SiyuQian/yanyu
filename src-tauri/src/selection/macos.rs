@@ -125,11 +125,11 @@ pub(super) fn capture() -> Result<Selection, SelectionError> {
         return Err(SelectionError::Unsupported);
     }
     let length = unsafe { CFStringGetLength(selected.0) };
-    if length > 4000 {
-        return Err(SelectionError::TooLong);
-    }
     if length < 0 {
         return Err(SelectionError::Unsupported);
+    }
+    if length as usize > super::MAX_SELECTION_CHARACTERS * 2 {
+        return Err(SelectionError::TooLong);
     }
     let mut buffer = vec![0u8; length as usize * 4 + 1];
     if !unsafe {

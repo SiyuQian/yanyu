@@ -866,7 +866,7 @@
       "permission_denied": "Tillåt Yanyu i Systeminställningar → Integritet och säkerhet → Hjälpmedel och försök igen.",
       "unsupported_selection": "Appen tillhandahåller inte markerad text. Prova en annan app.",
       "no_selection": "Ingen text markerad. Markera text i en annan app.",
-      "too_long": "Markera högst 2 000 tecken.",
+      "too_long": "Markera högst 10 000 tecken.",
       "missing_model": "Hämta Qwen3-0.6B manuellt i de allmänna inställningarna.",
       "unsupported": "Lokal översättning misslyckades. Prova kortare text.",
       "load_failed": "Lokal översättning misslyckades. Prova kortare text.",

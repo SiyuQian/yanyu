@@ -866,7 +866,7 @@
       "permission_denied": "Povolte Yanyu v Nastavení systému → Soukromí a zabezpečení → Zpřístupnění a zkuste to znovu.",
       "unsupported_selection": "Tato aplikace neposkytuje vybraný text. Zkuste jinou aplikaci.",
       "no_selection": "Není vybrán žádný text. Vyberte text v jiné aplikaci.",
-      "too_long": "Vyberte nejvýše 2 000 znaků.",
+      "too_long": "Vyberte nejvýše 10 000 znaků.",
       "missing_model": "Stáhněte Qwen3-0.6B ručně v obecném nastavení.",
       "unsupported": "Místní překlad selhal. Zkuste kratší text.",
       "load_failed": "Místní překlad selhal. Zkuste kratší text.",

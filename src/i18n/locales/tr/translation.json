@@ -866,7 +866,7 @@
       "permission_denied": "Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik bölümünde Yanyu’ya izin verip yeniden deneyin.",
       "unsupported_selection": "Bu uygulama seçili metni sağlamıyor. Başka bir uygulama deneyin.",
       "no_selection": "Seçili metin bulunamadı. Başka bir uygulamada metin seçin.",
-      "too_long": "En fazla 2.000 karakter seçin.",
+      "too_long": "En fazla 10.000 karakter seçin.",
       "missing_model": "Genel ayarlardan Qwen3-0.6B modelini elle indirin.",
       "unsupported": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
       "load_failed": "Yerel çeviri başarısız. Daha kısa metin deneyin.",

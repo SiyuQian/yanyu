@@ -866,7 +866,7 @@
       "permission_denied": "Izinkan Yanyu di Pengaturan Sistem → Privasi & Keamanan → Aksesibilitas, lalu coba lagi.",
       "unsupported_selection": "Aplikasi ini tidak menyediakan teks yang dipilih. Coba aplikasi lain.",
       "no_selection": "Tidak ada teks yang dipilih. Pilih teks di aplikasi lain.",
-      "too_long": "Pilih maksimal 2.000 karakter.",
+      "too_long": "Pilih maksimal 10.000 karakter.",
       "missing_model": "Unduh Qwen3-0.6B secara manual di pengaturan umum.",
       "unsupported": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",
       "load_failed": "Terjemahan lokal gagal. Coba teks yang lebih pendek.",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
+import { Check, Copy, Languages, LoaderCircle, X } from "lucide-react";
 import { commands, type TranslationState } from "@/bindings";
 
 export default function TranslationPopover() {
@@ -71,56 +72,94 @@ export default function TranslationPopover() {
   };
   return (
     <section
-      className="h-screen flex flex-col gap-3 border border-mid-gray/30 rounded-xl bg-background p-4 text-text"
+      className="flex h-screen flex-col overflow-hidden rounded-2xl border border-mid-gray/25 bg-background text-text shadow-2xl"
       aria-label={t("translation.title")}
     >
-      <header className="flex items-center justify-between gap-3">
-        <h1 className="font-semibold text-base">{t("translation.title")}</h1>
+      <header className="flex shrink-0 items-center gap-3 border-b border-mid-gray/15 px-5 py-4">
+        <div
+          data-tauri-drag-region
+          className="flex min-w-0 flex-1 cursor-grab items-center gap-3 active:cursor-grabbing"
+        >
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-logo-primary/20 text-logo-stroke">
+            <Languages size={19} aria-hidden="true" />
+          </span>
+          <h1 className="truncate font-semibold text-base">
+            {t("translation.title")}
+          </h1>
+        </div>
         <button
           type="button"
-          className="rounded px-2 py-1 hover:bg-mid-gray/20"
+          aria-label={t("translation.close")}
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-text/65 transition hover:bg-mid-gray/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
           onClick={() => void commands.dismissTranslation()}
         >
-          {t("translation.close")}
+          <X size={18} aria-hidden="true" />
         </button>
       </header>
-      <div className="flex-1 min-h-0 overflow-y-auto select-text">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4 select-text">
         {state.phase === "loading" && (
-          <p role="status">{t("translation.loading")}</p>
+          <div
+            className="flex flex-1 items-center justify-center gap-3 text-sm text-text/65"
+            role="status"
+          >
+            <LoaderCircle
+              className="animate-spin text-background-ui"
+              size={18}
+              aria-hidden="true"
+            />
+            <p>{t("translation.loading")}</p>
+          </div>
         )}
         {state.phase === "result" && (
-          <p className="whitespace-pre-wrap break-words" lang="zh-CN">
-            {state.text}
-          </p>
+          <div className="min-h-full rounded-xl border border-mid-gray/15 bg-mid-gray/5 p-4">
+            <p
+              className="whitespace-pre-wrap break-words text-[15px] leading-7"
+              lang="zh-CN"
+            >
+              {state.text}
+            </p>
+          </div>
         )}
         {state.phase === "error" && (
-          <p role="alert">
+          <div
+            className="rounded-xl border border-error/20 bg-error/5 p-4 text-sm leading-6"
+            role="alert"
+          >
             {t(`translation.errors.${state.error}`, {
               defaultValue: t("translation.errors.unavailable"),
             })}
-          </p>
+          </div>
         )}
         {state.error === "missing_model" && (
           <button
             type="button"
-            className="mt-3 underline"
+            className="mt-3 self-start rounded-lg px-3 py-2 text-sm font-medium text-background-ui underline-offset-4 hover:bg-background-ui/10 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
             onClick={() => void commands.openTranslationModelSettings()}
           >
             {t("translation.openSettings")}
           </button>
         )}
         {actionError && (
-          <p role="alert">{t("translation.errors.copy_failed")}</p>
+          <p className="mt-3 text-sm text-error" role="alert">
+            {t("translation.errors.copy_failed")}
+          </p>
         )}
       </div>
-      <button
-        type="button"
-        disabled={state.phase !== "result" || !state.text}
-        onClick={() => void copy()}
-        className="rounded-lg bg-logo-primary/15 px-3 py-2 disabled:opacity-50"
-      >
-        {t(copied ? "translation.copied" : "translation.copy")}
-      </button>
+      <footer className="shrink-0 border-t border-mid-gray/15 px-5 py-4">
+        <button
+          type="button"
+          disabled={state.phase !== "result" || !state.text}
+          onClick={() => void copy()}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-background-ui px-4 py-3 font-semibold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {copied ? (
+            <Check size={18} aria-hidden="true" />
+          ) : (
+            <Copy size={17} aria-hidden="true" />
+          )}
+          {t(copied ? "translation.copied" : "translation.copy")}
+        </button>
+      </footer>
     </section>
   );
 }

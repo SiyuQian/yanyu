@@ -866,7 +866,7 @@
       "permission_denied": "Zezwól Yanyu w Ustawieniach systemowych → Prywatność i ochrona → Dostępność i spróbuj ponownie.",
       "unsupported_selection": "Ta aplikacja nie udostępnia zaznaczonego tekstu. Spróbuj w innej aplikacji.",
       "no_selection": "Brak zaznaczonego tekstu. Zaznacz tekst w innej aplikacji.",
-      "too_long": "Zaznacz maksymalnie 2000 znaków.",
+      "too_long": "Zaznacz maksymalnie 10000 znaków.",
       "missing_model": "Pobierz Qwen3-0.6B ręcznie w ustawieniach ogólnych.",
       "unsupported": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",
       "load_failed": "Tłumaczenie lokalne nie powiodło się. Spróbuj krótszego tekstu.",

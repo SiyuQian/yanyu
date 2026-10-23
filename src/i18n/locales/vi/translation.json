@@ -866,7 +866,7 @@
       "permission_denied": "Cho phép Yanyu trong Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng, rồi thử lại.",
       "unsupported_selection": "Ứng dụng này không cung cấp văn bản đã chọn. Hãy thử ứng dụng khác.",
       "no_selection": "Không có văn bản được chọn. Hãy chọn văn bản trong ứng dụng khác.",
-      "too_long": "Chọn tối đa 2.000 ký tự.",
+      "too_long": "Chọn tối đa 10.000 ký tự.",
       "missing_model": "Tải Qwen3-0.6B thủ công trong cài đặt chung.",
       "unsupported": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",
       "load_failed": "Dịch cục bộ thất bại. Hãy thử văn bản ngắn hơn.",

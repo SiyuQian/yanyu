@@ -866,7 +866,7 @@
       "permission_denied": "Permeteu Yanyu a Configuració del sistema → Privadesa i seguretat → Accessibilitat i torneu-ho a provar.",
       "unsupported_selection": "Aquesta aplicació no proporciona el text seleccionat. Proveu una altra aplicació.",
       "no_selection": "No hi ha text seleccionat. Seleccioneu text en una altra aplicació.",
-      "too_long": "Seleccioneu fins a 2.000 caràcters.",
+      "too_long": "Seleccioneu fins a 10.000 caràcters.",
       "missing_model": "Baixeu Qwen3-0.6B manualment a la configuració general.",
       "unsupported": "La traducció local ha fallat. Proveu un text més curt.",
       "load_failed": "La traducció local ha fallat. Proveu un text més curt.",
