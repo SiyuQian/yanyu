@@ -92,8 +92,11 @@ function App() {
 
   useEffect(() => {
     const navigate = (event: Event) => {
-      if (event instanceof CustomEvent && event.detail === "postprocessing") {
-        setCurrentSection("postprocessing");
+      if (
+        event instanceof CustomEvent &&
+        ["postprocessing", "models", "general"].includes(event.detail)
+      ) {
+        setCurrentSection(event.detail as SidebarSection);
       }
     };
     window.addEventListener("yanyu-settings-section", navigate);

@@ -495,14 +495,14 @@ fn validate_file(path: &Path, a: &Artifact, cancel: &AtomicBool) -> anyhow::Resu
 }
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-struct NativeModel {
+pub(crate) struct NativeModel {
     weights: candle_transformers::models::quantized_qwen3::ModelWeights,
     tokenizer: tokenizers::Tokenizer,
     device: candle_core::Device,
 }
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl NativeModel {
-    fn load(directory: &Path, cancel: &AtomicBool) -> anyhow::Result<Self> {
+    pub(crate) fn load(directory: &Path, cancel: &AtomicBool) -> anyhow::Result<Self> {
         for a in &ARTIFACTS {
             validate_file(&directory.join(a.name), a, cancel)?;
         }
@@ -602,6 +602,23 @@ impl NativeModel {
         deadline: Instant,
         cancel: &AtomicBool,
     ) -> anyhow::Result<Option<String>> {
+        self.generate_prompt(prompt, 4096, max_tokens, deadline, cancel)
+    }
+    pub(crate) fn token_count(&self, text: &str) -> anyhow::Result<usize> {
+        Ok(self
+            .tokenizer
+            .encode(text, false)
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?
+            .len())
+    }
+    pub(crate) fn generate_prompt(
+        &mut self,
+        prompt: &str,
+        input_limit: usize,
+        output_limit: usize,
+        deadline: Instant,
+        cancel: &AtomicBool,
+    ) -> anyhow::Result<Option<String>> {
         check_stop(cancel, Some(deadline))?;
         let mut input = self
             .tokenizer
@@ -610,14 +627,14 @@ impl NativeModel {
             .get_ids()
             .to_vec();
         anyhow::ensure!(
-            input.len() <= 4096,
+            input.len() <= input_limit,
             "Prompt and transcript exceed local context budget"
         );
         self.clear();
         let mut offset = 0;
         let mut output = Vec::new();
         let mut sampler = candle_transformers::generation::LogitsProcessor::new(0, None, None);
-        for _ in 0..max_tokens {
+        for _ in 0..output_limit {
             check_stop(cancel, Some(deadline))?;
             let tensor = candle_core::Tensor::new(input.as_slice(), &self.device)?.unsqueeze(0)?;
             let logits = self.weights.forward(&tensor, offset)?.squeeze(0)?;
@@ -733,11 +750,24 @@ fn translation_chunks(
 }
 
 #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
-struct NativeModel;
+pub(crate) struct NativeModel;
 #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
 impl NativeModel {
-    fn load(_: &Path, _: &AtomicBool) -> anyhow::Result<Self> {
+    pub(crate) fn load(_: &Path, _: &AtomicBool) -> anyhow::Result<Self> {
         anyhow::bail!("Local polishing requires an Apple Silicon Mac")
+    }
+    pub(crate) fn token_count(&self, _: &str) -> anyhow::Result<usize> {
+        anyhow::bail!("unsupported")
+    }
+    pub(crate) fn generate_prompt(
+        &mut self,
+        _: &str,
+        _: usize,
+        _: usize,
+        _: Instant,
+        _: &AtomicBool,
+    ) -> anyhow::Result<Option<String>> {
+        anyhow::bail!("unsupported")
     }
     fn clear(&mut self) {}
     fn translate(&mut self, _: &str, _: Instant, _: &AtomicBool) -> Result<String, String> {

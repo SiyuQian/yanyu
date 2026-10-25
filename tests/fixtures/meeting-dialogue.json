@@ -1,0 +1,78 @@
+{
+  "description": "Authored synthetic dialogue. No personal or recorded meeting data. Use identical installed voice per canonical speaker in all windows.",
+  "voices": {
+    "A": "Eddy (Chinese (China mainland))",
+    "B": "Flo (Chinese (China mainland))",
+    "C": "Reed (Chinese (China mainland))"
+  },
+  "windows": [
+    {
+      "id": 1,
+      "turns": [
+        {
+          "speaker": "A",
+          "text": "我们今天讨论 release plan。有人建议周五上线，但我们还没有决定。"
+        },
+        {
+          "speaker": "B",
+          "text": "We decided to release on Monday, not Friday. Alice will prepare the checklist by Thursday."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "turns": [
+        {
+          "speaker": "B",
+          "text": "决定保持不变，Monday release。还需要检查备份流程，这个任务暂时没有负责人，也没有截止日期。"
+        },
+        {
+          "speaker": "C",
+          "text": "I suggest adding a dashboard next month, but this is only a proposal. We made no decision about a dashboard."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "turns": [
+        {
+          "speaker": "A",
+          "text": "确认一下，周一发布。Alice 周四前准备 checklist。备份检查暂时没有 owner。"
+        },
+        {
+          "speaker": "C",
+          "text": "The dashboard proposal is deferred. It is not an approved action."
+        },
+        {
+          "speaker": "B",
+          "text": "Yes. The release decision and the two actions are the only confirmed outcomes."
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "identities": {
+      "window1": ["A", "B"],
+      "window2": ["B", "C"],
+      "window3": ["A", "C", "B"]
+    },
+    "decision": "Release on Monday, not Friday.",
+    "actions": [
+      {
+        "text": "Prepare the checklist",
+        "owner": "Alice",
+        "deadline": "Thursday"
+      },
+      {
+        "text": "Check the backup process",
+        "owner": null,
+        "deadline": null
+      }
+    ],
+    "not_decisions": ["Friday release", "Add a dashboard"],
+    "not_actions": ["Add a dashboard"],
+    "timestamp_tolerance_ms": 500,
+    "reference_text_in_body": false
+  },
+  "notes": "Add separate Chinese-only and English-only variants with equivalent known outcomes. Native say output must be confirmed installed and locally generated. Do not download a missing voice implicitly. Two-hour extension repeats numbered blocks and preserves block IDs in expected manifest."
+}

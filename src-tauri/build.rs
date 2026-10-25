@@ -1,5 +1,7 @@
 fn main() {
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    build_meeting_capture_bridge();
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     build_apple_intelligence_bridge();
 
     generate_tray_translations();
@@ -577,4 +579,51 @@ fn is_command_line_tools_only() -> bool {
         .and_then(|out| String::from_utf8(out.stdout).ok())
         .map(|path| path.trim().ends_with("CommandLineTools"))
         .unwrap_or(false)
+}
+
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+fn build_meeting_capture_bridge() {
+    use std::{env, path::PathBuf, process::Command};
+    println!("cargo:rerun-if-changed=swift/meeting_capture.swift");
+    println!("cargo:rerun-if-env-changed=SWIFTC");
+    println!("cargo:rerun-if-env-changed=SDKROOT");
+    let sdk = env::var("SDKROOT").unwrap_or_else(|_| {
+        String::from_utf8(
+            Command::new("xcrun")
+                .args(["--sdk", "macosx", "--show-sdk-path"])
+                .output()
+                .expect("locate SDK")
+                .stdout,
+        )
+        .expect("SDK path")
+        .trim()
+        .into()
+    });
+    let object = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR")).join("meeting_capture.o");
+    let swift = env::var("SWIFTC").unwrap_or_else(|_| "swiftc".into());
+    let status = Command::new(swift)
+        .args([
+            "-parse-as-library",
+            "-target",
+            "arm64-apple-macosx11.0",
+            "-sdk",
+            &sdk,
+            "-O",
+            "-c",
+            "swift/meeting_capture.swift",
+            "-o",
+        ])
+        .arg(&object)
+        .status()
+        .expect("compile meeting capture");
+    assert!(status.success(), "meeting capture Swift compilation failed");
+    println!("cargo:rustc-link-arg={}", object.display());
+    for framework in [
+        "ScreenCaptureKit",
+        "AVFoundation",
+        "CoreMedia",
+        "AudioToolbox",
+    ] {
+        println!("cargo:rustc-link-arg=-Wl,-weak_framework,{framework}");
+    }
 }

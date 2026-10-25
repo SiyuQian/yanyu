@@ -82,7 +82,7 @@ pub fn run() -> i32 {
     let mut session: Option<(Session, LoadedInfo)> = None;
 
     while let Ok(Incoming { request, pcm }) = requests.recv() {
-        let finished_run = matches!(request, Request::Run { .. });
+        let finished_run = matches!(request, Request::Run { .. } | Request::RunMeeting { .. });
         let response = match request {
             Request::Hello { list_devices } => match &init_error {
                 Some(message) => Response::Error(message.clone()),
@@ -120,6 +120,13 @@ pub fn run() -> i32 {
                         Err(e) => Response::Error(e.to_string()),
                     }
                 }
+                None => not_loaded(),
+            },
+            Request::RunMeeting { options } => match session.as_mut() {
+                Some((session, _)) => match session.run(&pcm, &options) {
+                    Ok(transcript) => Response::Transcript(transcript),
+                    Err(error) => Response::RunFailure(error.into()),
+                },
                 None => not_loaded(),
             },
             Request::StreamBegin { run, stream } => match session.as_mut() {
@@ -312,6 +319,12 @@ fn load(
         capabilities: model.capabilities(),
         supports_initial_prompt: model.supports(Feature::InitialPrompt),
         supports_vocabulary: model.supports(Feature::Vocabulary),
+        supports_diarization: model.supports(Feature::Diarization),
+        effective_max_audio_ms: session
+            .limits()
+            .map_err(|e| e.to_string())?
+            .effective_max_audio_ms,
+        effective_n_ctx: session.limits().map_err(|e| e.to_string())?.effective_n_ctx,
     };
     Ok((session, info))
 }

@@ -220,3 +220,38 @@ See the [Troubleshooting](../README.upstream.md#troubleshooting) section in READ
 - **Full contributor workflow:** [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 **Commits:** Use conventional commit prefixes (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`). Focus the message on _why_, not _what_.
+
+## Meeting NoteTaker verification
+
+Meeting capture requires Apple Silicon and macOS 13+. The application deployment target stays unchanged. Allow Microphone and Screen & System Audio Recording in System Settings → Privacy & Security; online mode must never be treated as successful microphone-only capture. Review recovered recordings before processing because unwritten audio cannot be restored. Raw float32 tracks use about 461 MB per source over two hours, plus about 230 MB for playback and temporary/window files. Disk exhaustion stops capture and retains committed material.
+
+Explicitly install MOSS-Transcribe-Diarize using the existing Models page. Qwen3-0.6B uses the existing General → Local polishing download; enabling polishing is optional. Never substitute another model or download missing artifacts implicitly. The feature does not use dictation's remote text-processing route.
+
+Focused storage, speaker matching and note validation tests:
+
+```bash
+cargo test --manifest-path src-tauri/Cargo.toml --lib meetings
+xcrun swiftc -parse-as-library -target arm64-apple-macosx11.0 src-tauri/swift/meeting_capture.swift src-tauri/swift/meeting_capture_harness.swift -o /tmp/yanyu-meeting-capture-harness
+/tmp/yanyu-meeting-capture-harness
+cargo test --manifest-path src-tauri/Cargo.toml --lib meetings::experiments::two_hour_storage_recovery -- --ignored --nocapture
+```
+
+The native harness uses authored synthetic PCM and requests no microphone/screen access. The two-hour sparse-storage test exercises streamed recovery and beginning/middle/end samples, not voiced transcription quality. Never describe either as a successful live-device meeting.
+
+Generate nonpersonal mixed-language speech with locally installed voices, retaining its timing/identity manifest. Missing voices fail rather than downloading:
+
+```bash
+python3 scripts/meeting-fixture.py --output /tmp/yanyu-meeting-fixture
+# Optional voiced duration target, with uniquely numbered blocks:
+python3 scripts/meeting-fixture.py --output /tmp/yanyu-meeting-two-hours --two-hours
+```
+
+Opt-in real-model experiments require explicit paths and never inspect user settings or recordings:
+
+```bash
+MEETING_QWEN_DIRECTORY='/path/to/local-polishing/qwen3-0.6b' MEETING_EVIDENCE_DIRECTORY=/tmp/yanyu-notes-evidence cargo test --manifest-path src-tauri/Cargo.toml --lib meetings::experiments::real_qwen_notes_fixture -- --ignored --nocapture
+cargo build --manifest-path src-tauri/Cargo.toml
+HANDY_TRANSCRIBE_WORKER_EXE="$PWD/src-tauri/target/debug/yanyu" MEETING_MOSS_MODEL=/path/to/installed/MOSS.gguf MEETING_FIXTURE_DIRECTORY=/tmp/yanyu-meeting-fixture MEETING_EVIDENCE_DIRECTORY=/tmp/yanyu-speaker-evidence cargo test --manifest-path src-tauri/Cargo.toml --lib meetings::experiments::real_moss_reference_reels -- --ignored --nocapture
+```
+
+Inspect actual source retention, rejected proposals, owner/deadline fidelity and citations in both languages. Speaker fixture windows change A/B order, introduce C and bring A back. Correct identity and timestamps within 500 ms are required; source-reference text must not enter body output. Add overlap and changed-device cases before accepting speaker quality. Live native start/pause/resume/stop, denied/regranted permissions, source failure, crash/mid-pause recovery and concurrent dictation with output mute require explicit hardware tests. A two-hour voiced native-capture/inference performance result remains unverified until executed and measured.

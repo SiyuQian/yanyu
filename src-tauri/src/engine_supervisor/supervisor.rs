@@ -141,6 +141,7 @@ pub enum EngineError {
     /// No model, a transcribe.cpp error, or a worker failure that could not
     /// be recovered.
     Failed(String),
+    Meeting(Box<super::protocol::RunFailure>),
 }
 
 impl fmt::Display for EngineError {
@@ -148,6 +149,7 @@ impl fmt::Display for EngineError {
         match self {
             EngineError::Cancelled => f.write_str("transcription was cancelled"),
             EngineError::Failed(message) => f.write_str(message),
+            EngineError::Meeting(failure) => f.write_str(&failure.message),
         }
     }
 }
@@ -178,6 +180,7 @@ enum Command {
     Load(LoadSpec, Reply<Result<LoadedInfo, EngineError>>),
     Unload(Reply<()>),
     Transcribe {
+        meeting: bool,
         pcm: Vec<f32>,
         run: RunOptions,
         epoch: u64,
@@ -403,6 +406,24 @@ impl EngineSupervisor {
     pub fn transcribe(&self, pcm: Vec<f32>, run: RunOptions) -> Result<Transcript, EngineError> {
         let epoch = self.shared.epoch();
         self.ask(|reply| Command::Transcribe {
+            meeting: false,
+            pcm,
+            run,
+            epoch,
+            reply,
+        })
+        .unwrap_or_else(|| Err(engine_stopped()))
+    }
+
+    /// Meeting-only run preserving typed failures and incomplete output.
+    pub fn transcribe_meeting(
+        &self,
+        pcm: Vec<f32>,
+        run: RunOptions,
+    ) -> Result<Transcript, EngineError> {
+        let epoch = self.shared.epoch();
+        self.ask(|reply| Command::Transcribe {
+            meeting: true,
             pcm,
             run,
             epoch,
@@ -631,12 +652,13 @@ impl Owner {
                     let _ = reply.send(());
                 }
                 Command::Transcribe {
+                    meeting,
                     pcm,
                     run,
                     epoch,
                     reply,
                 } => {
-                    let _ = reply.send(self.transcribe(&pcm, &run, epoch));
+                    let _ = reply.send(self.transcribe(&pcm, &run, epoch, meeting));
                 }
                 Command::StreamBegin {
                     active,
@@ -862,11 +884,18 @@ impl Owner {
         pcm: &[f32],
         run: &RunOptions,
         epoch: u64,
+        meeting: bool,
     ) -> Result<Transcript, EngineError> {
         // A stream left open would make the worker refuse the run.
         self.end_stream();
-        let request = Request::Run {
-            options: run.clone(),
+        let request = if meeting {
+            Request::RunMeeting {
+                options: run.clone(),
+            }
+        } else {
+            Request::Run {
+                options: run.clone(),
+            }
         };
         let mut retried = false;
         loop {
@@ -879,6 +908,9 @@ impl Owner {
             let deadline = self.deadlines().run(pcm.len());
             match self.call_work(&request, Some(pcm), deadline, epoch) {
                 Ok(Response::Transcript(transcript)) => return Ok(transcript),
+                Ok(Response::RunFailure(failure)) => {
+                    return Err(EngineError::Meeting(Box::new(failure)))
+                }
                 Ok(other) => return Err(unexpected(&other).into()),
                 Err(failure) if failure.worker_lost() => {
                     let on_gpu = self.worker_lost("transcription", &failure);
@@ -1418,7 +1450,7 @@ fn request_name(request: &Request) -> &'static str {
     match request {
         Request::Hello { .. } => "hello",
         Request::Load { .. } => "model load",
-        Request::Run { .. } => "transcription",
+        Request::Run { .. } | Request::RunMeeting { .. } => "transcription",
         Request::StreamBegin { .. } => "stream begin",
         Request::Feed => "stream feed",
         Request::Finalize { .. } => "stream finalize",
