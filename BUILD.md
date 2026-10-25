@@ -116,6 +116,50 @@ bun run tauri build
 
 This compiles a release binary and generates platform-specific bundles (deb, rpm, AppImage on Linux; dmg on macOS; msi on Windows).
 
+### Faster Local Builds
+
+Use the development server for UI changes. Rust development builds keep limited
+debug information to reduce compiler output and linker work.
+
+For an optimized build to install and try locally:
+
+```bash
+bun run build:fast
+```
+
+This command disables LTO, enables incremental compilation, and uses 16 codegen
+units. It keeps the normal release optimization level for inference code.
+Artifacts use a separate cache at `src-tauri/target/fast`. The first build fills
+that cache. Later builds reuse it.
+
+On macOS, the command creates only
+`src-tauri/target/fast/release/bundle/macos/Yanyu.app`. Other platforms use their
+normal bundle formats. Tauri arguments pass through to the build command:
+
+```bash
+bun run build:fast --no-bundle
+bun run build:fast --bundles app,dmg
+```
+
+Use `bun run tauri build` for distribution. Its full LTO and single codegen unit
+remain enabled. Compare transcription and polishing performance with that build
+before distributing a change. Fast builds do not change application settings.
+
+If a global `CFLAGS=-std=c++17` is set, unset `CFLAGS` before either build command.
+C++ compiler options belong in `CXXFLAGS`.
+
+### CI Build Stages
+
+Linux CI compiles once with `tauri build --no-bundle`. It then locates and exposes
+the native speech libraries before `tauri bundle` creates the installers.
+The `tauri-action` adapter only bundles the existing binary, so release asset
+discovery and uploads continue through the action.
+
+Linux x64 CI caches Vulkan SDK packages from the existing LunarG apt repository.
+ARM64 CI caches the SDK installation through its installation action. System
+packages and Vulkan runtime libraries still install through apt. Release builds
+retain the existing policy of skipping the Rust artifact cache.
+
 ## macOS Local Install (after each rebuild or release)
 
 Run these steps each time you build a new version and want it in `/Applications`.

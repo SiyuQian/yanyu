@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:fast": "bun scripts/build-fast.ts",
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint src",
@@ -15,6 +16,7 @@
     "format:frontend": "prettier --write .",
     "format:backend": "cd src-tauri && cargo fmt",
     "test:keyboard": "bun src/lib/utils/keyboard.test.ts",
+    "test:build": "bun test scripts/build.test.ts",
     "test:playwright": "playwright test",
     "test:playwright:ui": "playwright test --ui",
     "check:translations": "bun scripts/check-translations.ts",

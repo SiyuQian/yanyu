@@ -175,36 +175,39 @@ jobs:
         if: contains(inputs.platform, 'windows') && inputs.sign-binaries && steps.cache-tsc.outputs.cache-hit != 'true'
         run: cargo install --locked --force trusted-signing-cli@${{ env.TSC_VERSION }}
 
-      - name: Prepare Vulkan SDK for Ubuntu 24.04
-        if: contains(inputs.platform, 'ubuntu-24.04') && !contains(inputs.platform, 'arm')
-        run: |
-          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
-          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.3.290-noble.list https://packages.lunarg.com/vulkan/1.3.290/lunarg-vulkan-1.3.290-noble.list
-          sudo apt update
-          sudo apt install vulkan-sdk -y
-          sudo apt-get install -y mesa-vulkan-drivers
+      # LunarG no longer serves the 1.3.290.0 SDK archive. Keep the existing
+      # apt repository and cache its packages instead of changing SDK versions.
+      - name: Cache Vulkan SDK packages (Linux x64)
+        if: contains(inputs.platform, 'ubuntu') && !contains(inputs.platform, 'arm')
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/yanyu-vulkan-apt/*.deb
+          key: vulkan-apt-${{ inputs.platform }}-1.3.290-v1
 
-      - name: Prepare Vulkan SDK for Ubuntu ARM64
+      - name: Prepare Vulkan SDK (Linux x64)
+        if: contains(inputs.platform, 'ubuntu') && !contains(inputs.platform, 'arm')
+        shell: bash
+        run: |
+          CODENAME="${{ contains(inputs.platform, '22.04') && 'jammy' || 'noble' }}"
+          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
+          sudo wget -qO "/etc/apt/sources.list.d/lunarg-vulkan-1.3.290-${CODENAME}.list" \
+            "https://packages.lunarg.com/vulkan/1.3.290/lunarg-vulkan-1.3.290-${CODENAME}.list"
+          sudo apt-get update
+          mkdir -p "$HOME/.cache/yanyu-vulkan-apt/partial"
+          sudo apt-get -o Dir::Cache::archives="$HOME/.cache/yanyu-vulkan-apt" install -y vulkan-sdk
+
+      - name: Prepare cached Vulkan SDK (Linux ARM64)
         if: contains(inputs.platform, 'ubuntu') && contains(inputs.platform, 'arm')
         uses: jakoch/install-vulkan-sdk-action@v1
         with:
           vulkan_version: 1.4.335.0
           cache: true
 
-      - name: Install Vulkan runtime libraries (Ubuntu ARM64)
-        if: contains(inputs.platform, 'ubuntu') && contains(inputs.platform, 'arm')
+      - name: Install Vulkan runtime libraries (Linux)
+        if: contains(inputs.platform, 'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y libvulkan-dev mesa-vulkan-drivers
-
-      - name: Prepare Vulkan SDK for Ubuntu 22.04
-        if: contains(inputs.platform, 'ubuntu-22.04') && !contains(inputs.platform, 'arm')
-        run: |
-          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
-          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.3.290-jammy.list https://packages.lunarg.com/vulkan/1.3.290/lunarg-vulkan-1.3.290-jammy.list
-          sudo apt update
-          sudo apt install vulkan-sdk -y
-          sudo apt-get install -y mesa-vulkan-drivers
 
       - name: install frontend dependencies
         if: ${{ !(contains(inputs.platform, 'windows') && contains(inputs.target, 'aarch64')) }}
@@ -461,26 +464,26 @@ jobs:
       # transcribe-cpp ships as a shared libtranscribe + loadable ggml backend
       # modules on Linux (the `dynamic-backends` posture). They are produced by
       # transcribe-cpp-sys's CMake install during the cargo build, but nothing
-      # ships them. Pre-build the app so that install dir exists, then expose it
+      # ships them. Build the app once so that install dir exists, then expose it
       # via LD_LIBRARY_PATH so the AppImage's linuxdeploy can resolve
-      # libtranscribe.so (a NEEDED of `yanyu`) while bundling. tauri-action
-      # reuses this compile incrementally. build.rs stages the runtime and
+      # libtranscribe.so (a NEEDED of `yanyu`) while bundling. tauri-action only
+      # bundles this binary through tauri-bundle.sh. build.rs stages the runtime and
       # dlopen'd modules into transcribe-libs/, which tauri.conf.json includes.
-      - name: Pre-build and locate transcribe-cpp backend libs (Linux)
+      - name: Build Linux binary once
+        id: linux-build
+        if: contains(inputs.platform, 'ubuntu')
+        shell: bash
+        run: bash scripts/ci/build-linux.sh ${{ inputs.build-args }}
+
+      - name: Locate transcribe-cpp backend libs (Linux)
         if: contains(inputs.platform, 'ubuntu')
         shell: bash
         run: |
           set -euo pipefail
-          PROFILE="${{ steps.build-profile.outputs.profile }}"
-          # Frontend must exist for the app crate to compile (generate_context!).
-          bun run build
-          (
-            cd src-tauri
-            if [ "$PROFILE" = "release" ]; then cargo build --release; else cargo build; fi
-          )
+          BUILD_DIR="${{ steps.linux-build.outputs.directory }}"
           # The install manifest sits next to libtranscribe in <crate-out>/lib.
           # Pick the newest match in case a stale build dir lingers in the cache.
-          LIBDIR="$(find "src-tauri/target/$PROFILE/build" \
+          LIBDIR="$(find "$BUILD_DIR/build" \
             -type f -name transcribe-link.json -path '*transcribe-cpp-sys*/out/lib/*' \
             -printf '%T@ %h\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)"
           if [ -z "${LIBDIR:-}" ] || [ ! -d "$LIBDIR" ]; then
@@ -544,6 +547,7 @@ jobs:
           # X-AppImage-Version for desktop integration tools such as Gear Lever.
           LINUXDEPLOY_OUTPUT_VERSION: ${{ contains(inputs.platform, 'ubuntu') && steps.get-version.outputs.version || '' }}
         with:
+          tauriScript: ${{ runner.os == 'Linux' && 'bash scripts/ci/tauri-bundle.sh' || '' }}
           releaseId: ${{ inputs.release-id }}
           assetNamePattern: ${{ steps.patch-release-name.outputs.platform }}
           args: ${{ inputs.build-args }}
@@ -556,8 +560,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PROFILE="${{ steps.build-profile.outputs.profile }}"
-          APPIMAGE_PATH="$(find "src-tauri/target/${PROFILE}/bundle/appimage" -name '*.AppImage' -print -quit 2>/dev/null || true)"
+          APPIMAGE_PATH="$(find "${{ steps.linux-build.outputs.directory }}/bundle/appimage" -name '*.AppImage' -print -quit 2>/dev/null || true)"
           if [ -z "$APPIMAGE_PATH" ]; then
             echo "No AppImage produced by this Linux build; skipping metadata verification"
             exit 0
@@ -628,8 +631,7 @@ jobs:
             sudo apt-get install -y xvfb
           fi
 
-          PROFILE="${{ steps.build-profile.outputs.profile }}"
-          BUNDLE_DIR="src-tauri/target/${PROFILE}/bundle"
+          BUNDLE_DIR="${{ steps.linux-build.outputs.directory }}/bundle"
 
           require_pattern() {
             local listing="$1"
@@ -789,9 +791,9 @@ jobs:
         with:
           name: ${{ inputs.asset-prefix }}-${{ inputs.platform }}-${{ inputs.target }}
           path: |
-            src-tauri/target/${{ steps.build-profile.outputs.profile }}/bundle/deb/*.deb
-            src-tauri/target/${{ steps.build-profile.outputs.profile }}/bundle/appimage/*.AppImage
-            src-tauri/target/${{ steps.build-profile.outputs.profile }}/bundle/rpm/*.rpm
+            ${{ steps.linux-build.outputs.directory }}/bundle/deb/*.deb
+            ${{ steps.linux-build.outputs.directory }}/bundle/appimage/*.AppImage
+            ${{ steps.linux-build.outputs.directory }}/bundle/rpm/*.rpm
           retention-days: 30
 
       # Run on Windows releases too; upload-artifacts only controls retention.

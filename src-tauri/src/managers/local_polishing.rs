@@ -645,7 +645,7 @@ fn translation_chunks(
     tokenizer: &tokenizers::Tokenizer,
     text: &str,
 ) -> Result<Vec<(String, String)>, String> {
-    let mut chunks = Vec::new();
+    let mut chunks: Vec<(String, String)> = Vec::new();
     let mut remaining = text;
     while !remaining.is_empty() {
         if remaining.trim().is_empty() {
