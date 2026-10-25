@@ -109,100 +109,317 @@
   stroke-width: 1;
 }
 
-/* Keep settings surfaces independent of the recording overlay's palette. */
+/* The desktop workspace has its own surfaces, independent of the overlay. */
 .settings-shell {
-  --color-background: #f7f9f8;
-  --settings-card: #ffffff;
-  --settings-sidebar: #f0f4f2;
-  --settings-accent: #0f766e;
-  background: var(--color-background);
+  --color-background: var(--workspace-canvas);
+  --color-text: var(--workspace-ink);
+  --settings-border: color-mix(in srgb, var(--color-text) 10%, transparent);
+  background: var(--workspace-canvas);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  .settings-shell {
-    --color-background: #181b1b;
-    --settings-card: #202525;
-    --settings-sidebar: #151919;
-    --settings-accent: #62d4c7;
-  }
+.settings-sidebar {
+  width: 224px;
+  padding: 36px 16px 24px;
+  background: var(--workspace-sidebar);
+  border-color: var(--settings-border);
+  overflow-y: auto;
 }
 
-:root[data-theme="light"] .settings-shell {
-  --color-background: #f7f9f8;
-  --settings-card: #ffffff;
-  --settings-sidebar: #f0f4f2;
-  --settings-accent: #0f766e;
+.sidebar-brand {
+  justify-content: flex-start;
+  padding: 0 12px 38px;
+  gap: 12px;
 }
 
-:root[data-theme="dark"] .settings-shell {
-  --color-background: #181b1b;
-  --settings-card: #202525;
-  --settings-sidebar: #151919;
-  --settings-accent: #62d4c7;
+.sidebar-brand img {
+  width: 42px;
+  height: 42px;
 }
 
-.settings-sidebar,
-.settings-footer {
-  background: var(--settings-sidebar);
+.sidebar-group-label,
+.workspace-eyebrow {
+  color: var(--workspace-muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sidebar-group-label {
+  padding: 0 12px 10px;
+}
+
+.sidebar-item {
+  min-height: 44px;
+  position: relative;
+}
+
+.sidebar-item,
+.sidebar-brand .text-xs {
+  color: var(--workspace-muted);
 }
 
 .settings-sidebar [aria-current="page"] {
-  color: var(--settings-accent);
-  background: color-mix(in srgb, var(--settings-accent) 14%, transparent);
+  color: var(--workspace-accent);
+  background: var(--workspace-accent-soft);
+}
+
+.sidebar-active-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+.workspace-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 35px 44px 28px;
+  border-bottom: 1px solid var(--settings-border);
+  background: var(--workspace-header);
+}
+
+.workspace-heading {
+  min-width: 0;
+  max-width: 720px;
+}
+
+.workspace-header h1 {
+  margin-top: 5px;
+  font-size: 32px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+.workspace-description {
+  margin-top: 8px;
+  color: var(--workspace-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.workspace-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 200px;
+  flex-shrink: 0;
+}
+
+.workspace-wave {
+  width: 108px;
+  height: 64px;
+  color: var(--workspace-accent);
+  opacity: 0.6;
+}
+
+.workspace-model {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 1px solid var(--settings-border);
+  border-radius: 20px;
+  background: var(--workspace-card);
+  color: var(--workspace-muted);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.workspace-model svg {
+  flex-shrink: 0;
+}
+
+.workspace-scroll {
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.workspace-content {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: 28px 36px 48px 44px;
+}
+
+.workspace-content > :last-child {
+  max-width: none;
 }
 
 .settings-card {
-  background: var(--settings-card);
+  background: var(--workspace-card);
+  border-color: var(--settings-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text) 2%, transparent);
 }
 
-.settings-card h2 > span {
-  color: var(--settings-accent);
+.settings-card-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--workspace-accent);
+  background: var(--workspace-accent-soft);
+}
+
+.settings-card h2 {
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.settings-group > div:first-child > h2 {
+  color: var(--workspace-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+}
+
+.settings-shell .setting-row {
+  min-height: 60px;
+  gap: 20px;
+  padding-block: 14px;
 }
 
 .dictation-settings .setting-row {
-  min-height: 52px;
-  gap: 12px;
-  padding: 10px 0;
+  padding-inline: 0;
 }
 
-.dictation-settings .setting-row > .relative {
+.settings-shell .setting-row > :first-child {
+  min-width: 0;
+}
+
+.settings-shell .setting-row > .relative {
   flex-shrink: 0;
   max-width: 100%;
 }
 
-.dictation-settings .setting-row p {
+.settings-shell .setting-row p {
   margin-top: 4px;
   font-size: 12px;
-  line-height: 18px;
-  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  line-height: 1.7;
+  color: var(--workspace-muted);
 }
 
-.dictation-settings .setting-control {
-  min-height: 34px;
-  border-radius: 7px;
-  border-color: color-mix(in srgb, var(--color-text) 18%, transparent);
+.settings-shell .setting-control {
+  min-height: 36px;
+  border-radius: 9px;
+  border-color: color-mix(in srgb, var(--color-text) 14%, transparent);
   background: color-mix(in srgb, var(--color-text) 3%, transparent);
   font-weight: 500;
 }
 
-.dictation-settings .setting-control:hover:not(:disabled) {
-  border-color: var(--settings-accent);
+.settings-shell .setting-control:hover:not(:disabled) {
+  border-color: var(--workspace-accent);
 }
 
-.dictation-settings .reset-button {
-  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+.settings-shell .reset-button {
+  color: color-mix(in srgb, var(--color-text) 45%, transparent);
 }
 
-.dictation-settings input[type="range"]:disabled {
+.settings-shell input[type="range"]:disabled {
   filter: grayscale(1);
 }
 
-@media (max-width: 760px) {
-  .dictation-settings .setting-row {
-    flex-wrap: wrap;
+.settings-shell :is(button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--workspace-accent);
+  outline-offset: 3px;
+}
+
+.settings-footer {
+  background: var(--workspace-card);
+  border-color: var(--settings-border);
+  flex-shrink: 0;
+  padding: 4px 8px;
+}
+
+@media (max-width: 1000px) {
+  .settings-sidebar {
+    width: 190px;
+    padding-inline: 12px;
   }
 
-  .dictation-settings .setting-row > .relative {
+  .workspace-header {
+    padding: 28px;
+  }
+
+  .workspace-content {
+    padding: 24px 20px 40px 28px;
+  }
+
+  .workspace-identity {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .settings-sidebar {
+    width: 158px;
+    padding: 24px 8px 16px;
+  }
+
+  .sidebar-brand {
+    padding: 0 8px 28px;
+    gap: 8px;
+  }
+
+  .sidebar-brand img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .sidebar-brand .text-2xl {
+    font-size: 20px;
+  }
+
+  .sidebar-item {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .sidebar-active-dot {
+    display: none;
+  }
+
+  .workspace-header {
+    padding: 20px 24px;
+  }
+
+  .workspace-header h1 {
+    font-size: 26px;
+  }
+
+  .workspace-content {
+    padding: 20px 12px 32px 20px;
+  }
+
+  .settings-shell .setting-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .settings-shell .setting-row > .relative {
     margin-inline-start: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-shell *,
+  .settings-shell *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }
