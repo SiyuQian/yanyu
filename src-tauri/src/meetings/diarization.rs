@@ -26,11 +26,12 @@ pub fn reconcile(
                 && row.t1_ms <= prefix + i64::from(end - start)),
             "invalid_segment_timestamps"
         );
+        // The final 250 ms of each reference prefix is silence; tolerate timestamp jitter there.
         anyhow::ensure!(
             !bank
                 .segments
                 .iter()
-                .any(|row| row.t0_ms < prefix && row.t1_ms > prefix),
+                .any(|row| row.t0_ms < prefix - 200 && row.t1_ms > prefix),
             "reference_boundary_overlap"
         );
         let mut mapping = BTreeMap::new();
@@ -78,7 +79,7 @@ pub fn reconcile(
             .filter(|r| r.t1_ms > i64::from(bank.prefix_ms))
             .cloned()
             .map(|mut row| {
-                row.t0_ms -= i64::from(bank.prefix_ms);
+                row.t0_ms = row.t0_ms.max(prefix) - prefix;
                 row.t1_ms -= i64::from(bank.prefix_ms);
                 row
             })
@@ -272,6 +273,31 @@ mod tests {
             ],
         };
         assert!(reconcile(&mut meeting, &[bank], 45000, 46000).is_err());
+    }
+    #[test]
+    fn boundary_jitter_within_silence_keeps_body_at_its_actual_start() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::new(dir.path().into()).unwrap();
+        let mut meeting = store.create(MeetingMode::InPerson).unwrap();
+        meeting.speakers.insert("speaker_1".into(), "A".into());
+        let bank = BankResult {
+            anchors: vec![SpeakerReference {
+                speaker: "speaker_1".into(),
+                start_ms: 0,
+                end_ms: 2000,
+            }],
+            prefix_ms: 2250,
+            segments: vec![
+                row(0, 2000, 1, "reference"),
+                row(2210, 4000, 1, "body speech"),
+            ],
+        };
+        let output = reconcile(&mut meeting, &[bank], 45000, 47000).unwrap();
+        assert_eq!(output.len(), 1);
+        assert_eq!(output[0].text, "body speech");
+        assert_eq!(output[0].start_ms, 45000);
+        assert_eq!(output[0].speaker.as_deref(), Some("speaker_1"));
+        assert!(!output[0].uncertain);
     }
     #[test]
     fn overlapping_first_window_voices_never_become_canonical() {

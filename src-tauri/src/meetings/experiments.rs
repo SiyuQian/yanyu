@@ -158,16 +158,26 @@ fn real_moss_reference_reels() {
     for window in manifest["windows"].as_array().unwrap() {
         let start = window["start_ms"].as_u64().unwrap() as u32;
         let end = window["end_ms"].as_u64().unwrap() as u32;
-        let rows = manager
-            .transcribe_body(
-                &mut meeting,
-                start,
-                end,
-                info.effective_max_audio_ms,
-                &engine,
-                &AtomicBool::new(false),
-            )
-            .unwrap();
+        let rows = manager.transcribe_body(
+            &mut meeting,
+            start,
+            end,
+            info.effective_max_audio_ms,
+            &engine,
+            &AtomicBool::new(false),
+        );
+        if rows.is_err() {
+            fs::create_dir_all(&evidence).unwrap();
+            let diagnostic = owned.join("transcription-diagnostic.json");
+            if diagnostic.exists() {
+                fs::copy(
+                    diagnostic,
+                    evidence.join(format!("moss-diagnostic-{start}.json")),
+                )
+                .unwrap();
+            }
+        }
+        let rows = rows.unwrap();
         for turn in window["turns"].as_array().unwrap() {
             let expected = turn["speaker"].as_str().unwrap();
             let at = turn["start_ms"].as_u64().unwrap() as u32;
