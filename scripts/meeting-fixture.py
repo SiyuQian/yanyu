@@ -39,8 +39,12 @@ def create_fixture(output: pathlib.Path, duration: int = 0) -> None:
                             manifest["windows"].append(result)
                             (output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
                             return
-                        result["turns"].append({**turn, "text": text, "start_ms": cursor // 16, "end_ms": (cursor + count) // 16})
-                        writer.writeframes(reader.readframes(count))
+                        audio = reader.readframes(count)
+                        samples = memoryview(audio).cast("h")
+                        # Keep say's trailing zero frames in the WAV, but not in the speech timing manifest.
+                        speech_frames = next((i + 1 for i in range(len(samples) - 1, -1, -1) if samples[i]), 0)
+                        result["turns"].append({**turn, "text": text, "start_ms": cursor // 16, "end_ms": (cursor + speech_frames) // 16})
+                        writer.writeframes(audio)
                         cursor += count
                     silence = min(8000, duration * 16000 - cursor) if duration else 8000
                     writer.writeframes(b"\0\0" * silence)

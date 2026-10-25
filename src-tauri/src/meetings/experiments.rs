@@ -202,6 +202,14 @@ fn real_moss_reference_reels() {
         }
         meeting.segments.extend(rows);
     }
+    if identity
+        .values()
+        .collect::<std::collections::BTreeSet<_>>()
+        .len()
+        != identity.len()
+    {
+        failures.push("distinct fixture voices share a canonical speaker".into());
+    }
     engine.unload().wait();
     fs::create_dir_all(&evidence).unwrap();
     fs::write(
