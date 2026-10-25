@@ -10,4 +10,8 @@
 
 ## Product direction
 
-The [README](../README.md) plans UI/UX improvements but states the interface redesign is not implemented. This inventory records current conventions and does not establish a future design system.
+The desktop workspace uses soft neutral surfaces, teal accents, and rounded cards. Light and dark themes share the workspace tokens in `theme.css`. The recording overlay keeps its separate palette.
+
+The main window opens centered at 1120 × 780 and can shrink to 680 × 570. Grouped navigation separates daily work from application settings. Each page has a persistent heading above its scrollable content. At narrow widths, navigation and spacing become compact and setting rows wrap.
+
+New workspace copy has English, Simplified Chinese, and Traditional Chinese versions. Other locales use English copy until translated.

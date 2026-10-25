@@ -940,7 +940,7 @@
       "permission_denied": "Дозвольте Yanyu в Системних параметрах → Приватність і безпека → Доступність і повторіть спробу.",
       "unsupported_selection": "Ця програма не надає виділений текст. Спробуйте іншу програму.",
       "no_selection": "Немає виділеного тексту. Виділіть текст в іншій програмі.",
-      "too_long": "Виділіть не більше 2000 символів.",
+      "too_long": "Виділіть не більше 10000 символів.",
       "missing_model": "Завантажте Qwen3-0.6B вручну в загальних налаштуваннях.",
       "unsupported": "Локальний переклад не вдався. Спробуйте коротший текст.",
       "load_failed": "Локальний переклад не вдався. Спробуйте коротший текст.",
@@ -950,6 +950,18 @@
       "cancelled": "Локальний переклад не вдався. Спробуйте коротший текст.",
       "unavailable": "Локальний переклад не вдався. Спробуйте коротший текст.",
       "copy_failed": "Не вдалося скопіювати переклад. Повторіть спробу."
+    }
+  },
+  "workspace": {
+    "primary": "Workspace",
+    "secondary": "Application",
+    "descriptions": {
+      "history": "Revisit your words, refine transcripts, and build your vocabulary.",
+      "dictionary": "Give names, terms, and everyday words a familiar place.",
+      "postprocessing": "Choose the service that helps shape your spoken words.",
+      "advanced": "Make Yanyu work the way you do.",
+      "debug": "Inspect diagnostics and fine-tune application behavior.",
+      "about": "A little more about Yanyu and the people behind it."
     }
   }
 }

@@ -9,6 +9,7 @@ import { toast, Toaster } from "sonner";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { platform } from "@tauri-apps/plugin-os";
+import { AudioLines, Cpu } from "lucide-react";
 import {
   checkAccessibilityPermission,
   checkMicrophonePermission,
@@ -29,6 +30,7 @@ import { WhatsNewGate } from "./components/whats-new";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
 import { commands } from "@/bindings";
+import { useModelStore } from "@/stores/modelStore";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
 
 type OnboardingStep = "accessibility" | "model" | "done";
@@ -62,6 +64,9 @@ function App() {
   const [currentSection, setCurrentSection] =
     useState<SidebarSection>("general");
   const { settings, updateSetting } = useSettings();
+  const currentModel = useModelStore((state) =>
+    state.models.find((model) => model.id === state.currentModel),
+  );
   const direction = getLanguageDirection(i18n.language);
   const refreshAudioDevices = useSettingsStore(
     (state) => state.refreshAudioDevices,
@@ -392,9 +397,41 @@ function App() {
             onSectionChange={setCurrentSection}
           />
           {/* Scrollable content area */}
-          <main className="min-w-0 flex-1 flex flex-col overflow-hidden">
-            <div ref={settingsScrollRef} className="flex-1 overflow-y-auto">
-              <div className="flex flex-col items-center p-5 sm:p-7 gap-4">
+          <main
+            className="min-w-0 flex-1 flex flex-col overflow-hidden"
+            aria-labelledby="page-title"
+          >
+            <header className="workspace-header">
+              <div className="workspace-heading">
+                <p className="workspace-eyebrow">{t("workspace.primary")}</p>
+                <h1 id="page-title">
+                  {t(SECTIONS_CONFIG[currentSection].labelKey)}
+                </h1>
+                <p className="workspace-description">
+                  {t(SECTIONS_CONFIG[currentSection].descriptionKey)}
+                </p>
+              </div>
+              {currentSection === "general" && (
+                <div className="workspace-identity">
+                  <AudioLines
+                    className="workspace-wave"
+                    aria-hidden="true"
+                    strokeWidth={1.25}
+                  />
+                  {currentModel && (
+                    <div className="workspace-model">
+                      <Cpu size={14} aria-hidden="true" />
+                      <span className="truncate">{currentModel.name}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </header>
+            <div
+              ref={settingsScrollRef}
+              className="workspace-scroll flex-1 overflow-y-auto"
+            >
+              <div className="workspace-content flex flex-col items-center gap-4">
                 <AccessibilityPermissions />
                 <SecureInputWarning />
                 {renderSettingsContent(currentSection, setOnboardingPreview)}

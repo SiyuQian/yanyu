@@ -308,7 +308,7 @@ export const HistorySettings: React.FC = () => {
             label={t("settings.history.openFolder")}
           />
         </div>
-        <div className="bg-background border border-mid-gray/20 rounded-lg overflow-visible">
+        <div className="settings-card border border-mid-gray/20 rounded-xl overflow-visible">
           {content}
         </div>
       </div>

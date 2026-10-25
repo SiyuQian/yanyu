@@ -23,6 +23,9 @@ CMAKE_POLICY_VERSION_MINIMUM=3.5 bun run tauri dev
 # Build for production
 bun run tauri build
 
+# Build for local testing (separate incremental cache; macOS app bundle only)
+bun run build:fast
+
 # Frontend only development
 bun run dev        # Start Vite dev server
 bun run build      # Build frontend (TypeScript + Vite)
@@ -38,6 +41,7 @@ bun run format            # Prettier + cargo fmt
 bun run format:check      # Check formatting without changes
 bun run format:frontend   # Prettier only
 bun run format:backend    # cargo fmt only
+bun run test:build        # Fast-build isolation and CI bundling adapters
 ```
 
 **Model Setup (Required for Development):**

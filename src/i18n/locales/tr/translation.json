@@ -940,7 +940,7 @@
       "permission_denied": "Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik bölümünde Yanyu’ya izin verip yeniden deneyin.",
       "unsupported_selection": "Bu uygulama seçili metni sağlamıyor. Başka bir uygulama deneyin.",
       "no_selection": "Seçili metin bulunamadı. Başka bir uygulamada metin seçin.",
-      "too_long": "En fazla 2.000 karakter seçin.",
+      "too_long": "En fazla 10.000 karakter seçin.",
       "missing_model": "Genel ayarlardan Qwen3-0.6B modelini elle indirin.",
       "unsupported": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
       "load_failed": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
@@ -950,6 +950,18 @@
       "cancelled": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
       "unavailable": "Yerel çeviri başarısız. Daha kısa metin deneyin.",
       "copy_failed": "Çeviri kopyalanamadı. Yeniden deneyin."
+    }
+  },
+  "workspace": {
+    "primary": "Workspace",
+    "secondary": "Application",
+    "descriptions": {
+      "history": "Revisit your words, refine transcripts, and build your vocabulary.",
+      "dictionary": "Give names, terms, and everyday words a familiar place.",
+      "postprocessing": "Choose the service that helps shape your spoken words.",
+      "advanced": "Make Yanyu work the way you do.",
+      "debug": "Inspect diagnostics and fine-tune application behavior.",
+      "about": "A little more about Yanyu and the people behind it."
     }
   }
 }

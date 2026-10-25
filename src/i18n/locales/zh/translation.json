@@ -940,7 +940,7 @@
       "permission_denied": "请在系统设置 → 隐私与安全性 → 辅助功能中允许 Yanyu，然后重新选中文字并重试。",
       "unsupported_selection": "此应用未通过辅助功能提供选中文字。请在其他应用中选中文字并重试。",
       "no_selection": "未找到选中文字。请在其他应用中选中文字并重试。",
-      "too_long": "请最多选择 2,000 个字符后重试。",
+      "too_long": "请最多选择 10,000 个字符后重试。",
       "missing_model": "请在常规设置中下载 Qwen3-0.6B 以使用本地翻译。只有点击下载后才会开始下载。",
       "unsupported": "划词翻译需要 Apple Silicon Mac。",
       "load_failed": "无法加载本地模型。请在常规设置中检查模型下载并重试。",
@@ -950,6 +950,18 @@
       "cancelled": "翻译已取消。请重新选中文字并重试。",
       "unavailable": "翻译不可用。请在其他应用中选中文字并重试。",
       "copy_failed": "无法复制译文。请重试。"
+    }
+  },
+  "workspace": {
+    "primary": "工作空间",
+    "secondary": "应用",
+    "descriptions": {
+      "history": "回顾每一次表达，修正转写，积累你的专属词汇。",
+      "dictionary": "让人名、术语和常用词，都被准确听见。",
+      "postprocessing": "配置文字处理服务，让口述更贴近你的表达习惯。",
+      "advanced": "调整应用偏好，让言语融入你的工作方式。",
+      "debug": "查看诊断信息，调整应用运行选项。",
+      "about": "了解言语，以及项目背后的开源贡献。"
     }
   }
 }

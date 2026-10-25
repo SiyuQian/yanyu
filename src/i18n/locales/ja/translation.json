@@ -940,7 +940,7 @@
       "permission_denied": "システム設定 → プライバシーとセキュリティ → アクセシビリティで Yanyu を許可して再試行してください。",
       "unsupported_selection": "このアプリでは選択テキストを取得できません。別のアプリで試してください。",
       "no_selection": "選択テキストがありません。別のアプリでテキストを選択してください。",
-      "too_long": "2,000 文字以内を選択してください。",
+      "too_long": "10,000 文字以内を選択してください。",
       "missing_model": "一般設定で Qwen3-0.6B を手動でダウンロードしてください。",
       "unsupported": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
       "load_failed": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
@@ -950,6 +950,18 @@
       "cancelled": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
       "unavailable": "ローカル翻訳に失敗しました。短いテキストで再試行してください。",
       "copy_failed": "訳文をコピーできませんでした。再試行してください。"
+    }
+  },
+  "workspace": {
+    "primary": "Workspace",
+    "secondary": "Application",
+    "descriptions": {
+      "history": "Revisit your words, refine transcripts, and build your vocabulary.",
+      "dictionary": "Give names, terms, and everyday words a familiar place.",
+      "postprocessing": "Choose the service that helps shape your spoken words.",
+      "advanced": "Make Yanyu work the way you do.",
+      "debug": "Inspect diagnostics and fine-tune application behavior.",
+      "about": "A little more about Yanyu and the people behind it."
     }
   }
 }

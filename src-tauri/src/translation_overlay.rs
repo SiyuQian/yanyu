@@ -2,6 +2,9 @@
 use crate::{managers::translation::TranslationManager, selection::SelectionBounds};
 use tauri::{AppHandle, LogicalPosition, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
+const WINDOW_WIDTH: f64 = 520.;
+const WINDOW_HEIGHT: f64 = 400.;
+
 /// Show near the selected text when AX exposes geometry, otherwise center on the primary monitor.
 pub fn show(app: &AppHandle, bounds: Option<SelectionBounds>) -> tauri::Result<()> {
     let handle = app.clone();
@@ -22,7 +25,7 @@ fn show_on_main(app: &AppHandle, bounds: Option<SelectionBounds>) -> tauri::Resu
             WebviewUrl::App("src/translation/index.html".into()),
         )
         .title("Yanyu")
-        .inner_size(420., 280.)
+        .inner_size(WINDOW_WIDTH, WINDOW_HEIGHT)
         .resizable(false)
         .decorations(false)
         .always_on_top(true)
@@ -60,18 +63,18 @@ fn show_on_main(app: &AppHandle, bounds: Option<SelectionBounds>) -> tauri::Resu
             )
         } else {
             (
-                position.x + (size.width - 420.) / 2.,
-                position.y + (size.height - 280.) / 2.,
+                position.x + (size.width - WINDOW_WIDTH) / 2.,
+                position.y + (size.height - WINDOW_HEIGHT) / 2.,
             )
         };
         window.set_position(LogicalPosition::new(
             x.clamp(
                 position.x + 8.,
-                (position.x + size.width - 428.).max(position.x + 8.),
+                (position.x + size.width - WINDOW_WIDTH - 8.).max(position.x + 8.),
             ),
             y.clamp(
                 position.y + 32.,
-                (position.y + size.height - 288.).max(position.y + 32.),
+                (position.y + size.height - WINDOW_HEIGHT - 8.).max(position.y + 32.),
             ),
         ))?;
     } else {

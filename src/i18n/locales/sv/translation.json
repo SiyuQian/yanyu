@@ -940,7 +940,7 @@
       "permission_denied": "Tillåt Yanyu i Systeminställningar → Integritet och säkerhet → Hjälpmedel och försök igen.",
       "unsupported_selection": "Appen tillhandahåller inte markerad text. Prova en annan app.",
       "no_selection": "Ingen text markerad. Markera text i en annan app.",
-      "too_long": "Markera högst 2 000 tecken.",
+      "too_long": "Markera högst 10 000 tecken.",
       "missing_model": "Hämta Qwen3-0.6B manuellt i de allmänna inställningarna.",
       "unsupported": "Lokal översättning misslyckades. Prova kortare text.",
       "load_failed": "Lokal översättning misslyckades. Prova kortare text.",
@@ -950,6 +950,18 @@
       "cancelled": "Lokal översättning misslyckades. Prova kortare text.",
       "unavailable": "Lokal översättning misslyckades. Prova kortare text.",
       "copy_failed": "Kunde inte kopiera översättningen. Försök igen."
+    }
+  },
+  "workspace": {
+    "primary": "Workspace",
+    "secondary": "Application",
+    "descriptions": {
+      "history": "Revisit your words, refine transcripts, and build your vocabulary.",
+      "dictionary": "Give names, terms, and everyday words a familiar place.",
+      "postprocessing": "Choose the service that helps shape your spoken words.",
+      "advanced": "Make Yanyu work the way you do.",
+      "debug": "Inspect diagnostics and fine-tune application behavior.",
+      "about": "A little more about Yanyu and the people behind it."
     }
   }
 }

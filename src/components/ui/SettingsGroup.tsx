@@ -22,9 +22,11 @@ export const SettingsGroup: React.FC<SettingsGroupProps> = ({
       <section className="settings-card rounded-xl border border-mid-gray/20 px-4 py-2 sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-2 py-3">
           <h2 className="flex items-center gap-3 text-base font-semibold">
-            <span className="text-background-ui" aria-hidden="true">
-              {icon}
-            </span>
+            {icon && (
+              <span className="settings-card-icon" aria-hidden="true">
+                {icon}
+              </span>
+            )}
             {title}
           </h2>
           {accessory}
@@ -37,7 +39,7 @@ export const SettingsGroup: React.FC<SettingsGroupProps> = ({
     );
   }
   return (
-    <div className="space-y-2">
+    <section className="settings-group space-y-3">
       {title && (
         <div className="px-4">
           <h2 className="text-xs font-medium text-mid-gray uppercase tracking-wide">
@@ -48,9 +50,9 @@ export const SettingsGroup: React.FC<SettingsGroupProps> = ({
           )}
         </div>
       )}
-      <div className="bg-background border border-mid-gray/20 rounded-lg overflow-visible">
+      <div className="settings-card border border-mid-gray/20 rounded-xl overflow-visible">
         <div className="divide-y divide-mid-gray/20">{children}</div>
       </div>
-    </div>
+    </section>
   );
 };

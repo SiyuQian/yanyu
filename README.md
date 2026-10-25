@@ -2,9 +2,9 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-Yanyu is a personal speech input project based on [Handy](https://github.com/cjpais/Handy). We plan to improve the UI/UX and later add tools to organize, manually correct, and export personal speech samples for model training.
+Yanyu is a personal speech input project based on [Handy](https://github.com/cjpais/Handy). We plan to add tools to organize, manually correct, and export personal speech samples for model training.
 
-The application already uses Yanyu branding and an independent identifier. The interface redesign, training-data export, and model-training workflow are not yet implemented.
+The application uses Yanyu branding and an independent identifier. Its desktop workspace opens at 1120 × 780 with grouped navigation, persistent page headings, and soft teal surfaces in light and dark themes. Smaller windows remain supported. Training-data export and the model-training workflow are not yet implemented.
 
 Optional local polishing uses Qwen3-0.6B on Apple Silicon Macs with fixed conservative cleanup rules. Enable it in General settings. An enabled personalization profile supplies terminology context only. Disabled or deleted profiles do not influence local polishing. The Prompt editor is removed, but saved legacy prompts remain on disk. Local previews use the same processing as daily dictation and never fall back to an external service. Inputs over 200 characters skip local polishing. Unavailable models, invalid output and the 500 ms deadline preserve the original transcript.
 

@@ -940,7 +940,7 @@
       "permission_denied": "प्रणाली सेटिङ → गोपनीयता र सुरक्षा → पहुँचयोग्यतामा Yanyu लाई अनुमति दिएर फेरि प्रयास गर्नुहोस्।",
       "unsupported_selection": "यो एपले छानिएको पाठ उपलब्ध गराउँदैन। अर्को एपमा प्रयास गर्नुहोस्।",
       "no_selection": "कुनै पाठ छानिएको छैन। अर्को एपमा पाठ छान्नुहोस्।",
-      "too_long": "बढीमा 2,000 अक्षर छान्नुहोस्।",
+      "too_long": "बढीमा 10,000 अक्षर छान्नुहोस्।",
       "missing_model": "सामान्य सेटिङमा Qwen3-0.6B आफैँ डाउनलोड गर्नुहोस्।",
       "unsupported": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
       "load_failed": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
@@ -950,6 +950,18 @@
       "cancelled": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
       "unavailable": "स्थानीय अनुवाद असफल भयो। छोटो पाठ छानेर फेरि प्रयास गर्नुहोस्।",
       "copy_failed": "अनुवाद प्रतिलिपि गर्न सकिएन। फेरि प्रयास गर्नुहोस्।"
+    }
+  },
+  "workspace": {
+    "primary": "Workspace",
+    "secondary": "Application",
+    "descriptions": {
+      "history": "Revisit your words, refine transcripts, and build your vocabulary.",
+      "dictionary": "Give names, terms, and everyday words a familiar place.",
+      "postprocessing": "Choose the service that helps shape your spoken words.",
+      "advanced": "Make Yanyu work the way you do.",
+      "debug": "Inspect diagnostics and fine-tune application behavior.",
+      "about": "A little more about Yanyu and the people behind it."
     }
   }
 }

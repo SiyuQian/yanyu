@@ -940,7 +940,7 @@
       "permission_denied": "יש לאפשר את Yanyu בהגדרות המערכת ← פרטיות ואבטחה ← נגישות ולנסות שוב.",
       "unsupported_selection": "יישום זה אינו מספק את הטקסט שנבחר. נסו ביישום אחר.",
       "no_selection": "לא נמצא טקסט נבחר. בחרו טקסט ביישום אחר.",
-      "too_long": "בחרו עד 2,000 תווים.",
+      "too_long": "בחרו עד 10,000 תווים.",
       "missing_model": "הורידו את Qwen3-0.6B ידנית בהגדרות הכלליות.",
       "unsupported": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
       "load_failed": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
@@ -950,6 +950,18 @@
       "cancelled": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
       "unavailable": "התרגום המקומי נכשל. נסו טקסט קצר יותר.",
       "copy_failed": "לא ניתן להעתיק את התרגום. נסו שוב."
+    }
+  },
+  "workspace": {
+    "primary": "Workspace",
+    "secondary": "Application",
+    "descriptions": {
+      "history": "Revisit your words, refine transcripts, and build your vocabulary.",
+      "dictionary": "Give names, terms, and everyday words a familiar place.",
+      "postprocessing": "Choose the service that helps shape your spoken words.",
+      "advanced": "Make Yanyu work the way you do.",
+      "debug": "Inspect diagnostics and fine-tune application behavior.",
+      "about": "A little more about Yanyu and the people behind it."
     }
   }
 }
