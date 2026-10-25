@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import type { ModelInfo } from "../src/bindings";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -30,12 +31,26 @@ test.beforeEach(async ({ page }) => {
       id: "qwen3",
       name: "Qwen3-ASR 0.6B",
       description: "",
+      filename: "qwen3-asr-Q8_0.gguf",
+      source: {
+        Url: { url: "https://example.invalid/qwen3.gguf", sha256: null },
+      },
+      size_mb: 600,
       is_downloaded: true,
+      is_downloading: false,
+      partial_size: 0,
+      is_directory: false,
+      engine_type: "TranscribeCpp",
+      accuracy_score: 0.8,
+      speed_score: 0.8,
+      is_recommended: false,
+      is_custom: false,
+      supports_streaming: false,
       supports_language_selection: true,
       supports_language_detection: true,
       supports_translation: false,
       supported_languages: ["en", "zh"],
-    };
+    } satisfies ModelInfo;
     Object.assign(window, {
       __TAURI_OS_PLUGIN_INTERNALS__: { os_type: "macos", platform: "macos" },
       __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: () => {} },
@@ -138,6 +153,37 @@ test("sidebar supports keyboard navigation and exposes the active page", async (
   ).toBeVisible();
 });
 
+test("each workspace page retains its title while its content scrolls", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1120, height: 780 });
+  for (const name of [
+    "Dictation",
+    "Dictionary",
+    "Insights",
+    "Style",
+    "Models",
+    "Advanced",
+    "About",
+  ]) {
+    await page.getByRole("button", { name, exact: true }).click();
+    const title = page.getByRole("heading", { name, level: 1, exact: true });
+    await expect(title).toBeVisible();
+    await page
+      .locator("main")
+      .getByRole("heading")
+      .last()
+      .scrollIntoViewIfNeeded();
+    await expect(title).toBeInViewport();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await page.locator(".workspace-scroll").evaluate((el) => el.scrollTo(0, 0));
+    await page.screenshot({
+      path: testInfo.outputPath(`workspace-${name.toLowerCase()}.png`),
+      animations: "disabled",
+    });
+  }
+});
+
 test("dictation keeps controls reachable in a narrow window in both themes", async ({
   page,
 }, testInfo) => {
@@ -182,7 +228,7 @@ test("dictation keeps controls reachable in a narrow window in both themes", asy
   await page
     .getByRole("checkbox", { name: "Audio Feedback", exact: true })
     .press("Space");
-  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.setViewportSize({ width: 1120, height: 780 });
   await page.evaluate(async () => {
     document.documentElement.dataset.theme = "dark";
     const i18n = await import("/src/i18n/index.ts");
@@ -191,13 +237,16 @@ test("dictation keeps controls reachable in a narrow window in both themes", asy
   await expect(
     page.getByRole("heading", { name: "听写", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("heading", { name: "听写", exact: true })
-    .scrollIntoViewIfNeeded();
-  await page.screenshot({
-    path: testInfo.outputPath("dictation-zh-dark.png"),
-    animations: "disabled",
-  });
+  await page.locator(".workspace-scroll").evaluate((el) => el.scrollTo(0, 0));
+  for (const theme of ["dark", "light"]) {
+    await page.evaluate((theme) => {
+      document.documentElement.dataset.theme = theme;
+    }, theme);
+    await page.screenshot({
+      path: testInfo.outputPath(`dictation-zh-${theme}.png`),
+      animations: "disabled",
+    });
+  }
   await page.setViewportSize({ width: 680, height: 570 });
   await page.evaluate(async () => {
     const i18n = await import("/src/i18n/index.ts");

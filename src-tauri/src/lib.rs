@@ -976,8 +976,9 @@ pub fn run(cli_args: CliArgs) {
             let mut win_builder =
                 tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::App("/".into()))
                     .title("言语 · Yanyu")
-                    .inner_size(680.0, 570.0)
+                    .inner_size(1120.0, 780.0)
                     .min_inner_size(680.0, 570.0)
+                    .center()
                     .resizable(true)
                     .maximizable(true)
                     .visible(false);

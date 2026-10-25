@@ -877,5 +877,17 @@
       "unavailable": "Traduzione locale non riuscita. Riprova con un testo più breve.",
       "copy_failed": "Impossibile copiare la traduzione. Riprova."
     }
+  },
+  "workspace": {
+    "primary": "Workspace",
+    "secondary": "Application",
+    "descriptions": {
+      "history": "Revisit your words, refine transcripts, and build your vocabulary.",
+      "dictionary": "Give names, terms, and everyday words a familiar place.",
+      "postprocessing": "Choose the service that helps shape your spoken words.",
+      "advanced": "Make Yanyu work the way you do.",
+      "debug": "Inspect diagnostics and fine-tune application behavior.",
+      "about": "A little more about Yanyu and the people behind it."
+    }
   }
 }

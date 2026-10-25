@@ -9,9 +9,11 @@ import {
   Info,
   Mic,
   Type,
+  type LucideIcon,
 } from "lucide-react";
 import YanyuLogo from "./icons/YanyuLogo";
 import { useSettings } from "../hooks/useSettings";
+import type { AppSettings } from "@/bindings";
 import {
   GeneralSettings,
   AdvancedSettings,
@@ -25,19 +27,12 @@ import {
 
 export type SidebarSection = keyof typeof SECTIONS_CONFIG;
 
-interface IconProps {
-  width?: number | string;
-  height?: number | string;
-  size?: number | string;
-  className?: string;
-  [key: string]: any;
-}
-
 interface SectionConfig {
   labelKey: string;
-  icon: React.ComponentType<IconProps>;
+  descriptionKey: string;
+  icon: LucideIcon;
   component: React.ComponentType;
-  enabled: (settings: any) => boolean;
+  enabled: (settings: AppSettings | null) => boolean;
   // Secondary sections render in a separate group pinned to the bottom.
   secondary?: boolean;
 }
@@ -45,30 +40,35 @@ interface SectionConfig {
 export const SECTIONS_CONFIG = {
   general: {
     labelKey: "sidebar.general",
+    descriptionKey: "settings.general.pageDescription",
     icon: Mic,
     component: GeneralSettings,
     enabled: () => true,
   },
   history: {
     labelKey: "sidebar.history",
+    descriptionKey: "workspace.descriptions.history",
     icon: ChartColumn,
     component: HistorySettings,
     enabled: () => true,
   },
   dictionary: {
     labelKey: "sidebar.dictionary",
+    descriptionKey: "workspace.descriptions.dictionary",
     icon: BookA,
     component: DictionarySettings,
     enabled: () => true,
   },
   postprocessing: {
     labelKey: "sidebar.postProcessing",
+    descriptionKey: "workspace.descriptions.postprocessing",
     icon: Type,
     component: PostProcessingSettings,
     enabled: () => true,
   },
   models: {
     labelKey: "sidebar.models",
+    descriptionKey: "settings.models.description",
     icon: Cpu,
     component: ModelsSettings,
     enabled: () => true,
@@ -76,6 +76,7 @@ export const SECTIONS_CONFIG = {
   },
   advanced: {
     labelKey: "sidebar.advanced",
+    descriptionKey: "workspace.descriptions.advanced",
     icon: Cog,
     component: AdvancedSettings,
     enabled: () => true,
@@ -83,6 +84,7 @@ export const SECTIONS_CONFIG = {
   },
   debug: {
     labelKey: "sidebar.debug",
+    descriptionKey: "workspace.descriptions.debug",
     icon: FlaskConical,
     component: DebugSettings,
     enabled: (settings) => settings?.debug_mode ?? false,
@@ -90,6 +92,7 @@ export const SECTIONS_CONFIG = {
   },
   about: {
     labelKey: "sidebar.about",
+    descriptionKey: "workspace.descriptions.about",
     icon: Info,
     component: AboutSettings,
     enabled: () => true,
@@ -125,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         type="button"
         key={section.id}
         aria-current={isActive ? "page" : undefined}
-        className={`flex gap-3 items-center px-3 py-2.5 w-full rounded-lg text-start cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background-ui ${
+        className={`sidebar-item flex gap-3 items-center px-3 py-2.5 w-full rounded-xl text-start cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background-ui ${
           isActive
             ? "bg-background-ui/15 text-background-ui"
             : "text-text/65 hover:bg-mid-gray/10 hover:text-text"
@@ -139,6 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           {t(section.labelKey)}
         </span>
+        {isActive && <span className="sidebar-active-dot" aria-hidden="true" />}
       </button>
     );
   };
@@ -146,13 +150,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <nav
       aria-label={t("app.name")}
-      className="settings-sidebar flex flex-col w-44 shrink-0 h-full border-e border-mid-gray/15 px-3 pb-4"
+      className="settings-sidebar flex flex-col shrink-0 h-full border-e border-mid-gray/15"
     >
-      <YanyuLogo width={120} className="my-6 self-center" />
-      <div className="flex flex-col w-full gap-1 pt-1">
+      <YanyuLogo className="sidebar-brand" />
+      <div className="sidebar-group flex flex-col w-full gap-1">
+        <p className="sidebar-group-label">{t("workspace.primary")}</p>
         {availableSections.filter((s) => !s.secondary).map(renderItem)}
       </div>
-      <div className="flex flex-col w-full gap-1 mt-auto pt-3 border-t border-mid-gray/15">
+      <div className="sidebar-group flex flex-col w-full gap-1 mt-auto pt-6">
+        <p className="sidebar-group-label">{t("workspace.secondary")}</p>
         {availableSections.filter((s) => s.secondary).map(renderItem)}
       </div>
     </nav>

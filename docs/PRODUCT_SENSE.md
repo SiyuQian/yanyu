@@ -10,7 +10,7 @@ Independent branding is implemented. Handy settings, models and history do not m
 
 ## Intentions
 
-The README proposes UI/UX improvements and personal speech-sample organization, manual correction and export for future training. It explicitly states that interface redesign, training-data export and model-training workflows are not implemented. These intentions have no recorded execution plan or acceptance specification.
+The desktop interface uses a spacious workspace with grouped navigation, persistent page headings, and light and dark themes. The README proposes personal speech-sample organization, manual correction and export for future training. Training-data export and model-training workflows are not implemented. These intentions have no recorded execution plan or acceptance specification.
 
 ## Contributor bar
 
