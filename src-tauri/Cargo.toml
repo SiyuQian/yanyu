@@ -9,6 +9,7 @@ default-run = "yanyu"
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.
+debug = 1 # Keep line information while reducing debug data and linker work.
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

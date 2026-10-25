@@ -55,6 +55,9 @@ jobs:
       - name: Test keyboard utilities
         run: bun run test:keyboard
 
+      - name: Test build scripts
+        run: bun run test:build
+
       - name: Run ESLint
         run: bun run lint
 
