@@ -1,6 +1,6 @@
 # Nix CI — two tiers:
 #
-# 1. Quick checks (bun.nix sync, flake eval) run on ANY source change
+# 1. Quick checks (bun.nix sync, flake eval) run on every PR
 #    so compilation-breaking edits are caught by flake eval.
 # 2. Full nix build (~25 min) only runs when nix packaging files change.
 #
@@ -20,14 +20,10 @@ on:
       - "src/**"
       - ".github/workflows/**"
   pull_request:
-    paths:
-      - "flake.nix"
-      - "flake.lock"
-      - ".nix/**"
-      - "bun.lock"
-      - "src-tauri/**"
-      - "src/**"
-      - ".github/workflows/**"
+
+permissions:
+  contents: read
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -114,9 +110,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
-            --paginate --jq '.[].filename' | \
-            grep -qE '^(flake\.(nix|lock)|\.nix/|bun\.lock|src-tauri/(Cargo\.(toml|lock)|tauri\.conf\.json|build\.rs))'; then
+          files="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/files" --paginate --jq '.[].filename')"
+          if grep -qE '^(flake\.(nix|lock)|\.nix/|bun\.lock|src-tauri/(Cargo\.(toml|lock)|tauri\.conf\.json|build\.rs))' <<< "$files"; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 

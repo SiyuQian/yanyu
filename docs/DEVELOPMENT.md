@@ -53,6 +53,21 @@ curl -o src-tauri/resources/models/silero_vad_v4.onnx https://blob.handy.compute
 
 For detailed platform-specific build setup, see [BUILD.md](../BUILD.md).
 
+### Dependency update PRs
+
+Dependabot checks Bun and Cargo dependencies on Tuesdays, GitHub Actions on
+Wednesdays, and Nix flake inputs monthly. Security update PRs are raised when a
+vulnerable dependency has a fix; they do not wait for those schedules. Review
+major updates and security fixes individually, and merge only after relevant CI
+checks pass.
+
+For a Bun update, `bun.lock` and the generated Nix files must be committed
+together. On the Dependabot branch, run `bun scripts/check-nix-deps.ts` and
+commit `.nix/bun.nix` and `.nix/bun-lock-hash` if they change. The Nix CI check
+rejects an update whose generated files are out of sync. Cargo and Nix flake
+updates also need a passing Nix build because they can change native or
+packaging dependencies.
+
 ## Architecture Overview
 
 Handy is a cross-platform desktop speech-to-text application built with Tauri 2.x (Rust backend + React/TypeScript frontend).
