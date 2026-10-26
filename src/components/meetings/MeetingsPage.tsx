@@ -315,7 +315,7 @@ export function MeetingsPage() {
             }
             disabled={dirty && row.id !== selected}
             aria-pressed={selected === row.id}
-            className={`block w-full text-start rounded-lg border p-3 ${selected === row.id ? "border-logo-primary" : "border-mid-gray/20"}`}
+            className={`block w-full rounded-xl border p-3 text-start ${selected === row.id ? "border-[var(--workspace-accent)] bg-[var(--workspace-accent-soft)]" : "border-mid-gray/20 hover:border-[var(--workspace-accent)] hover:bg-mid-gray/5"}`}
             onClick={() => choose(row.id)}
           >
             <span>

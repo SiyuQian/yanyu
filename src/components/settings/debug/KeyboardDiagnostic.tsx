@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type KeyboardDiagnosticReport } from "@/bindings";
 import { useOsType } from "../../../hooks/useOsType";
+import { Button } from "@/components/ui/Button";
 
 /**
  * Count-only keyboard capture test (macOS).
@@ -81,13 +82,15 @@ export const KeyboardDiagnostic: React.FC = () => {
             {t("settings.debug.keyboardDiagnostic.description")}
           </p>
         </div>
-        <button
+        <Button
           onClick={runDiagnostic}
           disabled={running}
-          className="px-2 py-1 text-sm font-semibold bg-mid-gray/10 border border-mid-gray/80 hover:bg-logo-primary/10 rounded cursor-pointer hover:border-logo-primary disabled:opacity-50 disabled:cursor-default whitespace-nowrap"
+          variant="secondary"
+          size="sm"
+          className="whitespace-nowrap"
         >
           {t("settings.debug.keyboardDiagnostic.run")}
-        </button>
+        </Button>
       </div>
       {running && (
         <p className="text-sm animate-pulse">

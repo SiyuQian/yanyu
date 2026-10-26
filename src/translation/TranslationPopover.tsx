@@ -90,7 +90,7 @@ export default function TranslationPopover() {
         <button
           type="button"
           aria-label={t("translation.close")}
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-text/65 transition hover:bg-mid-gray/10 hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
+          className="icon-action text-text/65"
           onClick={() => void commands.dismissTranslation()}
         >
           <X size={18} aria-hidden="true" />

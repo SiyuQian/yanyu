@@ -369,7 +369,7 @@ function App() {
         <button
           type="button"
           onClick={() => setOnboardingPreview(null)}
-          className="fixed top-4 end-4 z-50 rounded-lg border border-mid-gray/20 bg-background px-4 py-2 text-sm font-medium text-text shadow-lg hover:bg-background-ui/30 cursor-pointer"
+          className="fixed top-4 end-4 z-50 min-h-9 rounded-xl border border-mid-gray/25 bg-background px-4 py-2 text-sm font-semibold text-text shadow-md hover:border-[var(--workspace-accent)] hover:bg-mid-gray/10"
         >
           {t("settings.debug.onboardingPreview.exitButton")}
         </button>

@@ -630,6 +630,7 @@ for (const failure of ["result", "invoke"]) {
     await expect(
       page.getByRole("button", { name: "Add to vocabulary" }),
     ).toBeDisabled();
+    await edit(page).focus();
     await page.evaluate(() =>
       (
         window as unknown as { finishWordUpdate: () => void }

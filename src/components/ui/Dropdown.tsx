@@ -107,10 +107,12 @@ export const Dropdown: React.FC<DropdownProps> = ({
               <button
                 key={option.value}
                 type="button"
-                className={`w-full text-sm text-start hover:bg-logo-primary/10 transition-colors duration-150 ${
+                className={`min-h-8 w-full text-sm text-start hover:bg-mid-gray/10 transition-colors duration-150 ${
                   option.description ? "px-3 py-2" : "px-2 py-1"
                 } ${
-                  selectedValue === option.value ? "bg-logo-primary/20" : ""
+                  selectedValue === option.value
+                    ? "bg-[var(--workspace-accent-soft)] text-[var(--workspace-accent)]"
+                    : ""
                 } ${option.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
                 onClick={() => handleSelect(option.value)}
                 disabled={option.disabled}

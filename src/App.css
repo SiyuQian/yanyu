@@ -45,6 +45,151 @@
   background-color: var(--color-background);
 }
 
+button {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-background-ui);
+  outline-offset: 2px;
+}
+
+.app-button {
+  border-radius: 10px;
+  letter-spacing: -0.01em;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease,
+    filter 150ms ease,
+    transform 150ms ease;
+}
+
+.app-button[data-variant="primary"] {
+  color: white;
+  border-color: color-mix(in srgb, var(--color-background-ui) 84%, black);
+  background: var(--color-background-ui);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 20%),
+    0 2px 4px rgb(0 0 0 / 12%);
+}
+
+.app-button[data-variant="primary"]:hover:not(:disabled),
+.app-button[data-variant="danger"]:hover:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 22%),
+    0 4px 8px rgb(0 0 0 / 16%);
+}
+
+.app-button[data-variant="secondary"] {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--workspace-ink) 17%, transparent);
+  background: var(--workspace-card);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--workspace-ink) 7%, transparent);
+}
+
+.app-button[data-variant="secondary"]:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--workspace-accent) 48%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--workspace-accent-soft) 38%,
+    var(--workspace-card)
+  );
+  box-shadow: 0 2px 5px
+    color-mix(in srgb, var(--workspace-ink) 10%, transparent);
+}
+
+.app-button[data-variant="primary-soft"] {
+  color: var(--workspace-accent);
+  border-color: transparent;
+  background: var(--workspace-accent-soft);
+}
+
+.app-button[data-variant="primary-soft"]:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--workspace-accent) 30%, transparent);
+  filter: brightness(0.96);
+}
+
+.app-button[data-variant="warning"] {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+}
+
+.app-button[data-variant="warning"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-warning) 16%, transparent);
+}
+
+.app-button[data-variant="danger"] {
+  color: white;
+  border-color: #991b1b;
+  background: #b42323;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 18%),
+    0 2px 4px rgb(153 27 27 / 18%);
+}
+
+.app-button[data-variant="danger-ghost"] {
+  color: var(--color-error);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--color-error) 5%, transparent);
+}
+
+.app-button[data-variant="danger-ghost"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+}
+
+.app-button[data-variant="ghost"] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.app-button[data-variant="ghost"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--workspace-accent) 10%, transparent);
+}
+
+.app-button:disabled {
+  box-shadow: none;
+}
+
+.icon-action {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.icon-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--workspace-accent) 13%, transparent);
+  color: var(--workspace-accent);
+}
+
+.icon-action[aria-pressed="true"] {
+  background: var(--workspace-accent-soft);
+  color: var(--workspace-accent);
+}
+
 .container {
   margin: 0;
   padding-top: 10vh;
@@ -275,6 +420,123 @@
   background: var(--workspace-accent-soft);
 }
 
+.dictionary-panel {
+  --dictionary-border: color-mix(
+    in srgb,
+    var(--workspace-ink) 12%,
+    transparent
+  );
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.4fr);
+  min-height: 224px;
+  overflow: hidden;
+  border: 1px solid var(--dictionary-border);
+}
+
+.dictionary-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px;
+  border-inline-end: 1px solid var(--dictionary-border);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--workspace-accent-soft) 88%, var(--workspace-card)),
+    color-mix(in srgb, var(--workspace-accent-soft) 52%, var(--workspace-card))
+  );
+}
+
+.dictionary-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 18px;
+  border: 1px solid color-mix(in srgb, var(--workspace-accent) 18%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--workspace-card) 72%, transparent);
+  color: var(--workspace-accent);
+}
+
+.settings-card .dictionary-intro h2 {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.dictionary-count {
+  min-width: 22px;
+  padding-inline: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--workspace-accent) 12%, transparent);
+  color: var(--workspace-accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+
+.dictionary-description {
+  margin-top: 8px;
+  color: var(--workspace-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.dictionary-editor {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px;
+}
+
+.dictionary-entry {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.settings-shell .dictionary-input,
+.dictionary-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+  padding-inline: 14px;
+  border-radius: 10px;
+  background: var(--workspace-card);
+}
+
+.settings-shell .dictionary-input:focus {
+  border-color: var(--workspace-accent);
+}
+
+.dictionary-add {
+  min-width: 104px;
+  min-height: 44px;
+}
+
+.dictionary-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 18px;
+  border-top: 1px solid var(--dictionary-border);
+}
+
+.dictionary-word {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.dictionary-word span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .settings-card h2 {
   font-size: 14px;
   letter-spacing: -0.01em;
@@ -364,6 +626,26 @@
   }
 }
 
+@media (max-width: 900px) {
+  .dictionary-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .dictionary-intro {
+    padding: 22px;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--dictionary-border);
+  }
+
+  .dictionary-icon {
+    margin-bottom: 12px;
+  }
+
+  .dictionary-editor {
+    padding: 22px;
+  }
+}
+
 @media (max-width: 760px) {
   .settings-sidebar {
     width: 158px;
@@ -416,6 +698,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+
   .settings-shell *,
   .settings-shell *::after {
     animation: none !important;

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { SettingContainer } from "./SettingContainer";
+import { Button } from "./Button";
 
 interface TextDisplayProps {
   label: string;
@@ -61,9 +62,11 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
           </div>
         </div>
         {copyable && value && (
-          <button
+          <Button
             onClick={handleCopy}
-            className="flex items-center justify-center px-2 py-1 w-12 min-h-8 text-xs font-semibold bg-mid-gray/10 hover:bg-logo-primary/10 border border-mid-gray/80 hover:border-logo-primary hover:text-logo-primary rounded-md transition-all duration-150 flex-shrink-0 cursor-pointer"
+            variant="secondary"
+            size="sm"
+            className="w-12 shrink-0 px-2"
             title="Copy to clipboard"
           >
             {showCopied ? (
@@ -85,7 +88,7 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({
             ) : (
               "Copy"
             )}
-          </button>
+          </Button>
         )}
       </div>
     </SettingContainer>

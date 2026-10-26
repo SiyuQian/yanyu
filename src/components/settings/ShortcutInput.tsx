@@ -113,7 +113,7 @@ const TranscribeShortcuts: React.FC<ShortcutInputProps> = (props) => {
                 onClick={() => remove(id)}
                 aria-label={t("settings.general.shortcut.remove")}
                 disabled={!!busy || isUpdating(`binding_${id}`)}
-                className="p-1 rounded-md hover:bg-logo-primary/10 disabled:opacity-50"
+                className="icon-action disabled:opacity-45"
               >
                 <X className="w-4 h-4" />
               </button>

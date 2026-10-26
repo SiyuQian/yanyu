@@ -98,7 +98,7 @@ const SecureInputWarning: React.FC = () => {
         <div className="flex shrink-0 items-center gap-1">
           <button
             onClick={() => openUrl(SECURE_INPUT_HELP_URL)}
-            className="cursor-pointer whitespace-nowrap rounded px-2 py-1.5 text-sm font-medium text-text hover:text-warning focus:outline-none focus:ring-1 focus:ring-warning"
+            className="min-h-9 cursor-pointer whitespace-nowrap rounded-lg px-2 py-1.5 text-sm font-medium text-text hover:bg-warning/10 hover:text-warning focus:outline-none focus:ring-1 focus:ring-warning"
           >
             <span className="flex items-center gap-1 border-b border-current leading-4">
               {t("secureInput.learnMore")}
@@ -108,7 +108,7 @@ const SecureInputWarning: React.FC = () => {
           <button
             onClick={() => setDismissed(true)}
             aria-label={t("secureInput.dismiss")}
-            className="cursor-pointer rounded p-1.5 text-mid-gray hover:bg-warning/15 hover:text-warning focus:outline-none focus:ring-1 focus:ring-warning"
+            className="grid size-9 cursor-pointer place-items-center rounded-lg text-mid-gray hover:bg-warning/15 hover:text-warning focus:outline-none focus:ring-1 focus:ring-warning"
           >
             <X className="h-4 w-4" />
           </button>
