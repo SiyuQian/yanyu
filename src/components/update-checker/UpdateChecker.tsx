@@ -6,6 +6,7 @@ import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { arch, platform } from "@tauri-apps/plugin-os";
 import { ProgressBar } from "../shared";
+import { Button } from "../ui/Button";
 import { useSettings } from "../../hooks/useSettings";
 import { commands } from "../../bindings";
 import {
@@ -217,14 +218,15 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
                 : t("footer.portableUpdateBrowseMessage")}
             </p>
             <div className="flex gap-2 justify-end">
-              <button
-                className="px-3 py-1.5 text-sm rounded border border-mid-gray/20 hover:bg-mid-gray/10 transition-colors"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowPortableUpdateDialog(false)}
               >
                 {t("common.close")}
-              </button>
-              <button
-                className="px-3 py-1.5 text-sm rounded bg-logo-primary text-white hover:bg-logo-primary/80 transition-colors"
+              </Button>
+              <Button
+                size="sm"
                 onClick={() => {
                   openUrl(portableInstallerUrl);
                   setShowPortableUpdateDialog(false);
@@ -233,7 +235,7 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
                 {hasDirectInstaller
                   ? t("footer.portableUpdateButton")
                   : t("footer.portableUpdateBrowseButton")}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -243,9 +245,9 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
           <button
             onClick={getUpdateStatusAction()}
             disabled={isUpdateDisabled}
-            className={`transition-colors disabled:opacity-50 tabular-nums ${
+            className={`rounded-lg px-2 py-1 font-medium tabular-nums hover:bg-mid-gray/10 disabled:opacity-45 ${
               updateAvailable
-                ? "text-logo-primary hover:text-logo-primary/80 font-medium"
+                ? "text-[var(--workspace-accent)]"
                 : "text-text/60 hover:text-text/80"
             }`}
           >

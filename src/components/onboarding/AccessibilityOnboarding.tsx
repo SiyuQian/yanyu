@@ -12,6 +12,7 @@ import { commands } from "@/bindings";
 import { useSettingsStore } from "@/stores/settingsStore";
 import YanyuLogo from "../icons/YanyuLogo";
 import { Keyboard, Mic, Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface AccessibilityOnboardingProps {
   onComplete: () => void;
@@ -362,14 +363,11 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
                     {t("onboarding.permissions.waiting")}
                   </div>
                 ) : (
-                  <button
-                    onClick={handleGrantMicrophone}
-                    className="px-4 py-2 rounded-lg bg-logo-primary hover:bg-logo-primary/90 text-white text-sm font-medium transition-colors"
-                  >
+                  <Button onClick={handleGrantMicrophone}>
                     {isWindows
                       ? t("accessibility.openSettings")
                       : t("onboarding.permissions.grant")}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -401,12 +399,9 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
                     {t("onboarding.permissions.waiting")}
                   </div>
                 ) : (
-                  <button
-                    onClick={handleGrantAccessibility}
-                    className="px-4 py-2 rounded-lg bg-logo-primary hover:bg-logo-primary/90 text-white text-sm font-medium transition-colors"
-                  >
+                  <Button onClick={handleGrantAccessibility}>
                     {t("onboarding.permissions.grant")}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

@@ -153,6 +153,112 @@ test("sidebar supports keyboard navigation and exposes the active page", async (
   ).toBeVisible();
 });
 
+test("model action buttons have a comfortable target and visible keyboard focus", async ({
+  page,
+}, testInfo) => {
+  await page.getByRole("button", { name: "Models", exact: true }).click();
+  const rescan = page.getByRole("button", { name: /rescan/i });
+  const bounds = await rescan.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.width).toBeGreaterThanOrEqual(36);
+  expect(bounds!.height).toBeGreaterThanOrEqual(36);
+  await rescan.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(rescan).toBeFocused();
+  expect(
+    await rescan.evaluate((button) => getComputedStyle(button).outlineWidth),
+  ).not.toBe("0px");
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme = "dark";
+  });
+  await rescan.hover();
+  await page.screenshot({
+    path: testInfo.outputPath("model-actions-dark.png"),
+    animations: "disabled",
+  });
+});
+
+test("dictionary action buttons are visible in both themes", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1120, height: 780 });
+  await page.getByRole("button", { name: "Dictionary", exact: true }).click();
+  expect(
+    (await page.locator(".settings-card").first().boundingBox())!.height,
+  ).toBeGreaterThanOrEqual(190);
+  const input = page.getByPlaceholder("Add a word");
+  await input.fill("Acme");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Remove Acme" })).toBeVisible();
+  await input.fill("Yanyu");
+  const add = page.getByRole("button", { name: "Add", exact: true });
+  await expect(add).toBeEnabled();
+  expect((await add.boundingBox())!.width).toBeGreaterThanOrEqual(80);
+  await expect(add.locator("svg")).toHaveCount(1);
+  await input.evaluate((element) => element.blur());
+  for (const theme of ["light", "dark"]) {
+    await page.evaluate((value) => {
+      document.documentElement.dataset.theme = value;
+    }, theme);
+    await page.waitForTimeout(200);
+    expect(await add.evaluate((button) => getComputedStyle(button).color)).toBe(
+      "rgb(255, 255, 255)",
+    );
+    await page.screenshot({
+      path: testInfo.outputPath(`dictionary-buttons-${theme}.png`),
+    });
+  }
+  await page.setViewportSize({ width: 680, height: 570 });
+  const titleBounds = await page
+    .getByRole("heading", { name: "Custom Words" })
+    .boundingBox();
+  const inputBounds = await input.boundingBox();
+  expect(inputBounds!.y).toBeGreaterThan(titleBounds!.y + titleBounds!.height);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("dictionary-narrow-dark.png"),
+  });
+  await page.evaluate(async () => {
+    const i18n = await import("/src/i18n/index.ts");
+    await i18n.default.changeLanguage("zh");
+  });
+  await expect(page.getByRole("heading", { name: "自定义词汇" })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("dictionary-narrow-zh-dark.png"),
+  });
+  const longWord = "中".repeat(50);
+  await page.locator(".dictionary-input").fill(longWord);
+  await page.getByRole("button", { name: "添加", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: `删除 ${longWord}` }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.evaluate(async () => {
+    const i18n = await import("/src/i18n/index.ts");
+    await i18n.default.changeLanguage("ar");
+  });
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
 test("each workspace page retains its title while its content scrolls", async ({
   page,
 }, testInfo) => {

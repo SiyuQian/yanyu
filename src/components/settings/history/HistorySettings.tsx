@@ -46,10 +46,8 @@ const IconButton: React.FC<{
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`p-1.5 rounded-md flex items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed disabled:text-text/20 ${
-      active
-        ? "text-logo-primary hover:text-logo-primary/80"
-        : "text-text/50 hover:text-logo-primary"
+    className={`icon-action disabled:text-text/20 ${
+      active ? "text-[var(--workspace-accent)]" : "text-text/50"
     }`}
     title={title}
   >
@@ -403,6 +401,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const clearSelectionOutsideVocabularyAction = (
     event: React.FocusEvent<HTMLDivElement>,
   ) => {
+    // A pending write may blur the disabled button; keep the word for retry.
+    if (isUpdating("custom_words")) return;
     if (!event.currentTarget.contains(event.relatedTarget)) {
       setSelectedCorrection("");
     }

@@ -283,7 +283,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       <button
         onClick={togglePlay}
         disabled={isLoading}
-        className="transition-colors cursor-pointer text-text hover:text-logo-primary disabled:opacity-50"
+        className="icon-action text-text disabled:opacity-45"
         aria-label={isPlaying ? "Pause" : "Play"}
       >
         {isPlaying ? (
