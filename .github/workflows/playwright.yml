@@ -2,12 +2,10 @@ name: "Playwright"
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - "src/**"
-      - "package.json"
-      - "bun.lock"
-      - "playwright.config.*"
-      - "tests/**"
+
+permissions:
+  contents: read
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -17,23 +15,39 @@ jobs:
   playwright:
     runs-on: ubuntu-latest
     steps:
+      - name: Check browser test changes
+        id: changes
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/files" --paginate --jq '.[].filename')"
+          if grep -Eq '^(src/|package\.json$|bun\.lock$|playwright\.config\.|tests/)' <<< "$files"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v5
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
 
       - uses: oven-sh/setup-bun@v2
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
         with:
           bun-version: latest
 
       - name: Install dependencies
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
         run: bun install --frozen-lockfile
 
       - name: Install Playwright browsers
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
         run: bunx playwright install chromium
 
       - name: Run Playwright tests
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
         run: bun run test:playwright
 
       - name: Upload test results
-        if: failure()
+        if: failure() && (github.event_name != 'pull_request' || steps.changes.outputs.run == 'true')
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report

@@ -6,8 +6,10 @@ on:
     paths:
       - "src-tauri/**"
   pull_request:
-    paths:
-      - "src-tauri/**"
+
+permissions:
+  contents: read
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -17,9 +19,22 @@ jobs:
   rust-tests:
     runs-on: ubuntu-24.04
     steps:
+      - name: Check Rust changes
+        id: changes
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/files" --paginate --jq '.[].filename')"
+          if grep -q '^src-tauri/' <<< "$files"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v5
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
 
       - name: Install system dependencies
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
         run: |
           sudo apt-get update
           # libvulkan-dev + glslc + spirv-headers let transcribe-cpp-sys build
@@ -29,9 +44,11 @@ jobs:
             libvulkan-dev glslc spirv-headers
 
       - uses: swatinem/rust-cache@v2
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
         with:
           workspaces: "./src-tauri -> target"
 
       - name: Run Rust tests
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
         working-directory: src-tauri
         run: cargo test
