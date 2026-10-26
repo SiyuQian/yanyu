@@ -163,6 +163,9 @@ test("model action buttons have a comfortable target and visible keyboard focus"
   expect(bounds!.width).toBeGreaterThanOrEqual(36);
   expect(bounds!.height).toBeGreaterThanOrEqual(36);
   await rescan.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(rescan).toBeFocused();
   expect(
     await rescan.evaluate((button) => getComputedStyle(button).outlineWidth),
   ).not.toBe("0px");
