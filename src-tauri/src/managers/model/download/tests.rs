@@ -36,7 +36,7 @@ fn test_verify_sha256_skipped_when_none() {
 fn test_verify_sha256_passes_on_correct_hash() {
     // Compute the real hash so the test is self-consistent.
     let (_dir, path) = write_temp_file(b"hello world");
-    let actual = ModelManager::compute_sha256(&path).unwrap();
+    let actual = yanyu_core::sha256_file(&path).unwrap();
     assert!(
         ModelManager::verify_sha256(&path, Some(&actual), "test_model").is_ok(),
         "should pass when hash matches"
@@ -243,6 +243,36 @@ async fn http_wrong_content_range_discards_partial() {
 
     assert!(err.to_string().contains("Content-Range"), "{err}");
     assert!(!partial.exists(), "corrupt-prone partial must be deleted");
+}
+
+#[tokio::test]
+async fn http_resume_rejects_content_range_with_wrong_total() {
+    let full = b"helloworld";
+    let (url, _server) = serve_once(http_response(
+        "206 Partial Content",
+        &[
+            "Content-Range: bytes 5-9/100".to_string(),
+            "Content-Length: 5".to_string(),
+        ],
+        &full[5..],
+    ))
+    .await;
+    let dir = TempDir::new().unwrap();
+    let partial = dir.path().join("m.partial");
+    fs::write(&partial, &full[..5]).unwrap();
+
+    let err = run_download(
+        &url,
+        &partial,
+        Some(10),
+        Some(&sha_hex(full)),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap_err();
+
+    assert!(err.to_string().contains("Content-Range"), "{err}");
+    assert!(!partial.exists(), "invalid range must discard the partial");
 }
 
 #[tokio::test]

@@ -18,298 +18,16 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tar::Archive;
 use tauri::{AppHandle, Emitter, Manager};
+pub use yanyu_core::{canonicalize_supported_languages, effective_language};
+#[cfg(test)]
+use yanyu_core::{default_quant_file, ModelDescriptor, QuantFile};
+pub use yanyu_core::{
+    derive_local_model_capabilities, DiskStatus, EngineType, ModelInfo, ModelSource,
+};
 
 mod download;
 
 use download::{HttpDownloadOutcome, DOWNLOAD_STALL_TIMEOUT};
-
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub enum EngineType {
-    /// Any GGML/GGUF model loaded through transcribe-cpp (Whisper, Parakeet,
-    /// Voxtral, Qwen3-ASR, Nemotron, …). The architecture is auto-detected from
-    /// the file, so this one variant covers the whole transcribe-cpp family.
-    TranscribeCpp,
-    Parakeet,
-    Moonshine,
-    MoonshineStreaming,
-    SenseVoice,
-    GigaAM,
-    Canary,
-    Cohere,
-}
-
-/// Where a model comes from and how Handy obtains it — the routing discriminant
-/// for downloading and on-disk resolution.
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub enum ModelSource {
-    /// Direct HTTP download from a URL (current blob.handy.computer hosting).
-    Url {
-        url: String,
-        /// Expected SHA-256 for integrity verification; `None` skips it.
-        sha256: Option<String>,
-    },
-    /// A file inside a Hugging Face Hub repo, fetched via hf-hub into the shared
-    /// HF cache (so other tools reuse it). The file within the repo is
-    /// [`ModelInfo::filename`].
-    HuggingFace { repo_id: String, revision: String },
-    /// Already present on disk — a user-provided custom model, or one discovered
-    /// in a shared cache. Nothing to download.
-    Local,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct ModelInfo {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub filename: String,
-    pub source: ModelSource,
-    pub size_mb: u64,
-    pub is_downloaded: bool,
-    pub is_downloading: bool,
-    pub partial_size: u64,
-    pub is_directory: bool,
-    pub engine_type: EngineType,
-    pub accuracy_score: f32,        // 0.0 to 1.0, higher is more accurate
-    pub speed_score: f32,           // 0.0 to 1.0, higher is faster
-    pub supports_translation: bool, // Whether the model supports translating to English
-    pub is_recommended: bool,       // Whether this is the recommended model for new users
-    pub supported_languages: Vec<String>, // Languages this model can transcribe
-    pub supports_language_selection: bool, // Whether the user can explicitly pick a language
-    pub is_custom: bool,            // Whether this is a user-provided custom model
-    pub supports_streaming: bool, // Whether this model supports live streaming preview (transcribe-cpp)
-    pub supports_language_detection: bool, // Whether the model can auto-detect language (gates the "Auto" option)
-}
-
-const CHINESE_LANGUAGE_CODE: &str = "zh";
-
-fn recognition_language(language: &str) -> &str {
-    match language {
-        "zh-Hans" | "zh-Hant" => CHINESE_LANGUAGE_CODE,
-        other => other,
-    }
-}
-
-/// A tag's primary language subtag, with any BCP-47 region/script suffix
-/// dropped (`en-US` → `en`, `zh-Hant` → `zh`).
-fn base_language(language: &str) -> &str {
-    language.split(&['-', '_'][..]).next().unwrap_or(language)
-}
-
-/// The stable user intent used to compare language codes across model
-/// families. Norwegian Bokmål (`nb`) maps to Norwegian (`no`), while Nynorsk
-/// (`nn`) remains distinct; Filipino (`fil`) maps to Tagalog (`tl`). This is
-/// only for matching: callers must return/pass the model's original code.
-pub(crate) fn canonical_language_code(language: &str) -> &str {
-    match base_language(language) {
-        "nb" => "no",
-        "fil" => "tl",
-        base => base,
-    }
-}
-
-fn canonicalize_supported_languages(languages: Vec<String>) -> Vec<String> {
-    let mut seen = HashSet::new();
-    let mut canonical = Vec::with_capacity(languages.len());
-
-    for language in languages {
-        let language = recognition_language(&language).to_string();
-        if seen.insert(language.clone()) {
-            canonical.push(language);
-        }
-    }
-
-    canonical
-}
-
-/// One downloadable quantization of a model. Mirrors a `files[]` entry in
-/// `catalog.json`, so it deserializes straight from the catalog.
-#[derive(Debug, Clone, Deserialize)]
-pub struct QuantFile {
-    pub filename: String,
-    pub quant: String,
-    pub size_bytes: u64,
-    /// Content sha256 — the trust anchor for downloads from any source (HF or
-    /// mirror). `None` only for catalogs predating the field.
-    #[serde(default)]
-    pub sha256: Option<String>,
-}
-
-/// Pick the default quant among `files`: the one whose `quant` matches
-/// `default_quant`, else the first file. The single source of the "which file do
-/// we surface" rule — shared by [`ModelDescriptor::default_file`] and the
-/// catalog's id construction so the two can never drift.
-pub(crate) fn default_quant_file<'a>(
-    files: &'a [QuantFile],
-    default_quant: Option<&str>,
-) -> Option<&'a QuantFile> {
-    files
-        .iter()
-        .find(|f| Some(f.quant.as_str()) == default_quant)
-        .or_else(|| files.first())
-}
-
-/// Live, on-disk status — the half of [`ModelInfo`] that isn't part of the
-/// static spec. Kept separate so a descriptor stays purely descriptive and
-/// status can be recomputed without rebuilding it.
-#[derive(Debug, Clone, Default)]
-pub struct DiskStatus {
-    pub is_downloaded: bool,
-    pub is_downloading: bool,
-    pub partial_size: u64,
-}
-
-/// The spec of a bundled catalog model: everything in `catalog.json` normalised
-/// into one shape, rendered into the frontend-facing [`ModelInfo`] via
-/// [`ModelDescriptor::to_model_info`] by combining it with a [`DiskStatus`].
-/// (The catalog is the only producer that routes through this; the legacy table
-/// and on-disk scans build `ModelInfo` directly.)
-#[derive(Debug, Clone)]
-pub struct ModelDescriptor {
-    pub id: String,
-    pub source: ModelSource,
-    pub name: String,
-    pub description: String,
-    pub engine_type: EngineType,
-    pub caps: CapabilityProbe,
-    pub files: Vec<QuantFile>,
-    pub default_quant: Option<String>,
-    pub speed_score: f32,
-    pub accuracy_score: f32,
-    /// Editorial sort priority across the whole catalog (lower = higher). Drives
-    /// list ordering; independent of `recommended`.
-    pub recommended_rank: Option<u32>,
-    /// Whether this is part of the small curated set shown to new users in
-    /// onboarding (and badged "Recommended"). A model can be ranked for ordering
-    /// without being in this set.
-    pub recommended: bool,
-}
-
-impl ModelDescriptor {
-    /// The quant we surface for download/size: the declared default, else the
-    /// first file.
-    fn default_file(&self) -> Option<&QuantFile> {
-        default_quant_file(&self.files, self.default_quant.as_deref())
-    }
-
-    /// Render the frontend-facing [`ModelInfo`] by combining this spec with live
-    /// disk `status`.
-    pub fn to_model_info(&self, status: &DiskStatus) -> ModelInfo {
-        self.render_model_info(self.default_file(), status)
-    }
-
-    /// [`ModelInfo`] for one specific quant `file` of this catalog model — how
-    /// alternate-quant files found on disk surface with full catalog metadata
-    /// instead of as anonymous customs. The default quant keeps the plain
-    /// catalog name; any other quant appends it ("Name (Q4_K_M)") so two
-    /// quants of one model stay tellable apart, and only the default carries
-    /// the Recommended badge. Identity stays `"{repo_id}/{filename}"`, so the
-    /// default quant renders identically to the seeded entry.
-    pub fn to_model_info_for_file(&self, file: &QuantFile, status: &DiskStatus) -> ModelInfo {
-        self.render_model_info(Some(file), status)
-    }
-
-    fn render_model_info(&self, file: Option<&QuantFile>, status: &DiskStatus) -> ModelInfo {
-        let is_default = match (file, self.default_file()) {
-            (Some(f), Some(d)) => f.filename == d.filename,
-            _ => true,
-        };
-        let id = match (&self.source, file) {
-            (ModelSource::HuggingFace { repo_id, .. }, Some(f)) => {
-                format!("{}/{}", repo_id, f.filename)
-            }
-            _ => self.id.clone(),
-        };
-        let name = if is_default {
-            self.name.clone()
-        } else {
-            format!(
-                "{} ({})",
-                self.name,
-                file.map(|f| f.quant.as_str()).unwrap_or("")
-            )
-        };
-        let languages =
-            canonicalize_supported_languages(self.caps.languages.clone().unwrap_or_default());
-        ModelInfo {
-            id,
-            name,
-            description: self.description.clone(),
-            filename: file.map(|f| f.filename.clone()).unwrap_or_default(),
-            source: self.source.clone(),
-            size_mb: file.map(|f| f.size_bytes / (1024 * 1024)).unwrap_or(0),
-            is_downloaded: status.is_downloaded,
-            is_downloading: status.is_downloading,
-            partial_size: status.partial_size,
-            is_directory: false,
-            engine_type: self.engine_type.clone(),
-            accuracy_score: self.accuracy_score,
-            speed_score: self.speed_score,
-            supports_translation: self.caps.supports_translation.unwrap_or(false),
-            is_recommended: self.recommended && is_default,
-            supports_language_selection: languages.len() > 1,
-            supported_languages: languages,
-            // Catalog models are always HF-sourced downloads, never user-dropped
-            // custom files (those bypass the descriptor and set this directly).
-            is_custom: false,
-            supports_streaming: self.caps.supports_streaming.unwrap_or(false),
-            supports_language_detection: self.caps.supports_language_detect.unwrap_or(false),
-        }
-    }
-}
-
-/// Resolve the user's persisted language *intent* (`"auto"` or a language code)
-/// into the language a given model will actually use.
-///
-/// The canonical coercion used on every transcription path: computed at the
-/// point of use and **never written back** to settings, so the user's last
-/// explicit intent survives switching to an incompatible model and back.
-///
-/// Matching is base-aware ([`base_language`]) and returns the model's own
-/// *concrete* code, so a bare intent (`en`) resolves to the exact string the
-/// engine's prompt table expects (`en-US`) for models that advertise full
-/// BCP-47 locales.
-pub fn effective_language(
-    intent: &str,
-    supported_languages: &[String],
-    supports_language_detection: bool,
-) -> String {
-    if supported_languages.is_empty() {
-        return intent.to_string();
-    }
-
-    if intent != "auto" {
-        // Prefer the same base code before considering an equivalence alias. If
-        // a future model advertises both `no` and `nb`, an explicit `nb` intent
-        // must select `nb`, regardless of capability-list order.
-        let exact_base_match = supported_languages
-            .iter()
-            .find(|language| base_language(language) == base_language(intent));
-        let equivalent_match = || {
-            supported_languages.iter().find(|language| {
-                canonical_language_code(language) == canonical_language_code(intent)
-            })
-        };
-
-        if let Some(code) = exact_base_match.or_else(equivalent_match) {
-            return code.clone();
-        }
-    }
-
-    if supports_language_detection {
-        return "auto".to_string();
-    }
-
-    // Model can't auto-detect and the intent isn't usable: fall back to a
-    // concrete language (prefer English) so we never hand the engine "auto".
-    if let Some(en) = supported_languages
-        .iter()
-        .find(|language| base_language(language) == "en")
-    {
-        return en.clone();
-    }
-    recognition_language(&supported_languages[0]).to_string()
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct DownloadProgress {
@@ -378,32 +96,6 @@ fn probed_display_name(probe: &CapabilityProbe) -> Option<String> {
         .map(str::trim)
         .filter(|name| !name.is_empty())
         .map(str::to_string)
-}
-
-/// Capability fields for a locally-discovered on-disk model, derived from its
-/// GGUF header probe. Anything without readable GGUF metadata — a legacy `.bin`
-/// file, or a header that simply omits a key — collapses to "no advertised
-/// capability"; transcribe-cpp still reconciles the real values at load time.
-/// Shared by both local discovery paths (custom models dir + HF cache) so they
-/// surface capabilities identically.
-struct LocalCaps {
-    supports_streaming: bool,
-    supports_translation: bool,
-    supports_language_selection: bool,
-    supports_language_detection: bool,
-    supported_languages: Vec<String>,
-}
-
-fn local_caps(probe: &CapabilityProbe) -> LocalCaps {
-    let languages = canonicalize_supported_languages(probe.languages.clone().unwrap_or_default());
-    LocalCaps {
-        supports_streaming: probe.supports_streaming.unwrap_or(false),
-        supports_translation: probe.supports_translation.unwrap_or(false),
-        // Only offer a language picker when there's more than one to choose.
-        supports_language_selection: languages.len() > 1,
-        supports_language_detection: probe.supports_language_detect.unwrap_or(false),
-        supported_languages: languages,
-    }
 }
 
 /// Bridges hf-hub's async download progress to Handy's `model-download-progress`
@@ -1186,18 +878,10 @@ impl ModelManager {
             let models = self.available_models.lock().unwrap();
             models.values().cloned().collect()
         };
-        // Stable, reasonable order: catalog editorial rank first (lower = higher
-        // priority), then any other recommended model, then by accuracy, speed,
-        // and name. `ModelInfo` doesn't carry rank, so resolve it by id from the
-        // catalog here.
-        list.sort_by(|a, b| {
-            crate::catalog::rank_of(&a.id)
-                .cmp(&crate::catalog::rank_of(&b.id))
-                .then((!a.is_recommended).cmp(&(!b.is_recommended)))
-                .then(b.accuracy_score.total_cmp(&a.accuracy_score))
-                .then(b.speed_score.total_cmp(&a.speed_score))
-                .then_with(|| a.name.cmp(&b.name))
-        });
+        yanyu_core::sort_models_by_catalog_rank_in_place(
+            &mut list,
+            crate::catalog::CATALOG.as_slice(),
+        );
         list
     }
 
@@ -1493,28 +1177,17 @@ impl ModelManager {
     /// Whether `filename` is a catalog-listed quant of `repo_id` other than
     /// the default — the only quant the catalog seeds and offers for download.
     fn is_catalog_alternate_quant(repo_id: &str, filename: &str) -> bool {
-        crate::catalog::file_in_catalog(filename, Some(repo_id)).is_some_and(|(desc, file)| {
-            desc.default_file()
-                .is_some_and(|d| d.filename != file.filename)
-        })
+        yanyu_core::is_catalog_alternate_quant(
+            repo_id,
+            filename,
+            crate::catalog::CATALOG.as_slice(),
+        )
     }
 
     /// Entries discovered exclusively from disk should disappear with their
     /// files. Catalog defaults remain so the UI can offer them for download.
     fn disappears_when_missing(model: &ModelInfo) -> bool {
-        model.is_custom
-            || match &model.source {
-                ModelSource::HuggingFace { repo_id, .. } => {
-                    Self::is_catalog_alternate_quant(repo_id, &model.filename)
-                }
-                _ => false,
-            }
-    }
-
-    fn selected_model_is_available(models: &HashMap<String, ModelInfo>, model_id: &str) -> bool {
-        models
-            .get(model_id)
-            .is_some_and(|model| model.is_downloaded)
+        yanyu_core::model_should_disappear_when_missing(model, crate::catalog::CATALOG.as_slice())
     }
 
     /// Remove a single file from the shared HF cache: the snapshot pointer for
@@ -1543,54 +1216,45 @@ impl ModelManager {
 
     fn auto_select_model_if_needed(&self) -> Result<()> {
         let mut settings = get_settings(&self.app_handle);
+        let onboarding_completed = settings.onboarding_completed;
 
-        // A model cannot remain selected after its files disappear. Catalog
-        // entries stay in the registry so they can be downloaded again, so
-        // checking only whether the id exists is not sufficient.
-        if !settings.selected_model.is_empty() {
-            let is_available = {
-                let models = self.available_models.lock().unwrap();
-                Self::selected_model_is_available(&models, &settings.selected_model)
-            };
+        let available_models = self.get_available_models();
+        let selected_model_id = yanyu_core::resolve_selected_model(
+            &settings.selected_model,
+            onboarding_completed,
+            &available_models,
+        )
+        .unwrap_or_default();
 
-            if !is_available {
+        if settings.selected_model != selected_model_id {
+            if !settings.selected_model.is_empty() {
                 info!(
-                    "Selected model '{}' is not available on disk; clearing selection",
+                    "Selected model '{}' is no longer available; updating selection",
                     settings.selected_model
                 );
-                settings.selected_model = String::new();
-                write_settings(&self.app_handle, settings.clone());
+            }
+
+            if !selected_model_id.is_empty() {
+                if let Some(model) = available_models
+                    .iter()
+                    .find(|model| model.id == selected_model_id)
+                {
+                    info!("Auto-selecting model: {} ({})", model.id, model.name);
+                }
+            }
+
+            settings.selected_model = selected_model_id.clone();
+            write_settings(&self.app_handle, settings);
+
+            if !selected_model_id.is_empty() {
+                info!("Successfully auto-selected model: {}", selected_model_id);
             }
         }
 
-        // If onboarding is still pending, do not auto-select just because a
-        // compatible model exists on disk or in the shared HF cache. The
-        // onboarding model step should present that choice explicitly.
-        if !settings.onboarding_completed {
+        // The onboarding model step presents a choice explicitly; the shared
+        // resolver only clears a selection whose model is no longer installed.
+        if !onboarding_completed {
             debug!("Skipping model auto-selection until onboarding is complete");
-            return Ok(());
-        }
-
-        // If no model is selected, pick the first downloaded one using the same
-        // ranked order the UI receives.
-        if settings.selected_model.is_empty() {
-            if let Some(available_model) = self
-                .get_available_models()
-                .into_iter()
-                .find(|model| model.is_downloaded)
-            {
-                info!(
-                    "Auto-selecting model: {} ({})",
-                    available_model.id, available_model.name
-                );
-
-                // Update settings with the selected model
-                let mut updated_settings = settings;
-                updated_settings.selected_model = available_model.id.clone();
-                write_settings(&self.app_handle, updated_settings);
-
-                info!("Successfully auto-selected model: {}", available_model.id);
-            }
         }
 
         Ok(())
@@ -1603,154 +1267,24 @@ impl ModelManager {
         models_dir: &Path,
         available_models: &mut HashMap<String, ModelInfo>,
     ) -> Result<()> {
-        if !models_dir.exists() {
-            return Ok(());
-        }
-
-        // Collect filenames of predefined transcribe-cpp file-based models to skip
-        let predefined_filenames: HashSet<String> = available_models
-            .values()
-            .filter(|m| matches!(m.engine_type, EngineType::TranscribeCpp) && !m.is_directory)
-            .map(|m| m.filename.clone())
-            .collect();
-
-        // Scan models directory for .bin / .gguf files
-        for entry in fs::read_dir(models_dir)? {
-            let entry = match entry {
-                Ok(e) => e,
-                Err(e) => {
-                    warn!("Failed to read directory entry: {}", e);
-                    continue;
-                }
-            };
-
-            let path = entry.path();
-
-            // Skip directories; the .bin / .gguf extension filter is below.
-            if !path.is_file() {
-                continue;
-            }
-
-            let filename = match path.file_name().and_then(|s| s.to_str()) {
-                Some(name) => name.to_string(),
-                None => continue,
-            };
-
-            // Skip hidden files
-            if filename.starts_with('.') {
-                continue;
-            }
-
-            // Only process Whisper-family model files: legacy GGML `.bin` or
-            // GGUF `.gguf` (both load through transcribe-cpp). Anything else —
-            // including `.partial` downloads like "model.bin.partial" — is
-            // skipped, since it ends in neither extension. The model ID is the
-            // filename with its extension removed.
-            let (model_id, is_gguf) = if let Some(stem) = filename.strip_suffix(".bin") {
-                (stem.to_string(), false)
-            } else if let Some(stem) = filename.strip_suffix(".gguf") {
-                (stem.to_string(), true)
-            } else {
-                continue;
-            };
-
-            // Skip predefined model files
-            if predefined_filenames.contains(&filename) {
-                continue;
-            }
-
-            // A file matching ANY catalog-listed quant surfaces as that catalog
-            // model — full name/description/scores, quant-suffixed name for
-            // non-defaults — instead of as an anonymous custom entry. (Default
-            // quants never reach here: they're in `predefined_filenames`.)
-            if let Some((desc, quant_file)) = crate::catalog::file_in_catalog(&filename, None) {
-                let info = desc.to_model_info_for_file(
-                    quant_file,
-                    &DiskStatus {
-                        is_downloaded: true,
-                        ..Default::default()
-                    },
+        let existing_models = available_models.values().cloned().collect::<Vec<_>>();
+        for model in yanyu_core::discover_local_transcribe_models(
+            models_dir,
+            &existing_models,
+            &crate::catalog::CATALOG,
+        )? {
+            if model.is_custom {
+                info!(
+                    "Discovered custom transcribe-cpp model: {} ({}, {} MB, streaming={})",
+                    model.id, model.filename, model.size_mb, model.supports_streaming
                 );
-                if !available_models.contains_key(&info.id) {
-                    info!(
-                        "Discovered catalog quant in models dir: {} ({})",
-                        info.id, filename
-                    );
-                    available_models.insert(info.id.clone(), info);
-                }
-                continue;
-            }
-
-            // Skip if model ID already exists (shouldn't happen, but be safe)
-            if available_models.contains_key(&model_id) {
-                continue;
-            }
-
-            // Generate display name: replace - and _ with space, capitalize words
-            let fallback_display_name = model_id
-                .replace(['-', '_'], " ")
-                .split_whitespace()
-                .map(|word| {
-                    let mut chars = word.chars();
-                    match chars.next() {
-                        None => String::new(),
-                        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(" ");
-
-            // Get file size in MB
-            let size_mb = match path.metadata() {
-                Ok(meta) => meta.len() / (1024 * 1024),
-                Err(e) => {
-                    warn!("Failed to get metadata for {}: {}", filename, e);
-                    0
-                }
-            };
-
-            // Probe GGUF headers for advertised capabilities so a dropped-in
-            // model surfaces streaming / translation / languages just like a
-            // Handy-downloaded one. Legacy `.bin` files have no GGUF header, so
-            // they stay "unknown" until transcribe-cpp reconciles them at load.
-            let probe = if is_gguf {
-                GgufHeaderProber.probe_file(&path)
             } else {
-                CapabilityProbe::default()
-            };
-            let caps = local_caps(&probe);
-            let display_name = probed_display_name(&probe).unwrap_or(fallback_display_name);
-
-            info!(
-                "Discovered custom transcribe-cpp model: {} ({}, {} MB, streaming={})",
-                model_id, filename, size_mb, caps.supports_streaming
-            );
-
-            available_models.insert(
-                model_id.clone(),
-                ModelInfo {
-                    id: model_id,
-                    name: display_name,
-                    description: "Not officially supported".to_string(),
-                    filename,
-                    source: ModelSource::Local, // already on disk; nothing to download
-                    size_mb,
-                    is_downloaded: true, // Already present on disk
-                    is_downloading: false,
-                    partial_size: 0,
-                    is_directory: false,
-                    engine_type: EngineType::TranscribeCpp,
-                    accuracy_score: 0.0, // Sentinel: UI hides score bars when both are 0
-                    speed_score: 0.0,
-                    supports_translation: caps.supports_translation,
-                    is_recommended: false,
-                    supported_languages: caps.supported_languages,
-                    supports_language_selection: caps.supports_language_selection,
-                    is_custom: true,
-                    supports_streaming: caps.supports_streaming,
-                    supports_language_detection: caps.supports_language_detection,
-                },
-            );
+                info!(
+                    "Discovered catalog quant in models dir: {} ({})",
+                    model.id, model.filename
+                );
+            }
+            available_models.insert(model.id.clone(), model);
         }
 
         Ok(())
@@ -1859,7 +1393,7 @@ impl ModelManager {
                 if probe.verdict != Compatibility::Compatible {
                     continue;
                 }
-                let caps = local_caps(&probe);
+                let caps = derive_local_model_capabilities(probe.clone());
 
                 let size_mb = path
                     .metadata()
@@ -3016,20 +2550,24 @@ mod tests {
         // Catalog defaults stay visible for re-download when their file is gone.
         assert!(!ModelManager::disappears_when_missing(&default_info));
 
-        let mut selection_models = HashMap::new();
-        selection_models.insert(default_info.id.clone(), default_info.clone());
-        assert!(!ModelManager::selected_model_is_available(
-            &selection_models,
-            &default_info.id
-        ));
-        selection_models
-            .get_mut(&default_info.id)
-            .unwrap()
-            .is_downloaded = true;
-        assert!(ModelManager::selected_model_is_available(
-            &selection_models,
-            &default_info.id
-        ));
+        assert_eq!(
+            yanyu_core::resolve_selected_model(
+                &default_info.id,
+                true,
+                std::slice::from_ref(&default_info)
+            ),
+            None
+        );
+        let mut installed_info = default_info.clone();
+        installed_info.is_downloaded = true;
+        assert_eq!(
+            yanyu_core::resolve_selected_model(
+                &default_info.id,
+                true,
+                std::slice::from_ref(&installed_info)
+            ),
+            Some(default_info.id.clone())
+        );
 
         // The default rendered through the per-file path matches to_model_info,
         // so seeded entries and discovered defaults can never diverge.

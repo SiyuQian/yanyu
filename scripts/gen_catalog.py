@@ -10,7 +10,7 @@ Merges three sources into one catalog.json:
   2. a tiny GGUF header range-read    -> display labels only
   3. local CURATION (this file)       -> recommended set, editorial descriptions
 
-Emits catalog.json to be committed and `include_str!`'d into the Rust binary.
+Emits the canonical portable catalog to be committed and embedded by `yanyu-core`.
 Run:  HF_TOKEN=$(hf auth token) uv run gen_catalog.py [out_path]
 """
 import json, os, re, sys, math, struct, datetime
@@ -175,7 +175,7 @@ def gguf_files(repo, siblings):
 
     `QuantFile.size_bytes` is a non-null `u64` in Rust. Failing generation here
     keeps a transient/malformed HF listing from producing a catalog that panics
-    at app startup when deserialized by `include_str!("catalog.json")`.
+    at app startup when the embedded resource is deserialized by `yanyu-core`.
 
     `sha256` is the trust anchor for downloads (HF or mirror alike), so it is
     equally mandatory. Every GGUF is LFS/Xet-tracked; a missing hash means the
@@ -293,7 +293,8 @@ def main():
     text = re.sub(r'\{\s+("filename":.*?"sha256": "[0-9a-f]{64}")\s+\}',
                   lambda m: "{" + re.sub(r",\s+", ", ", m.group(1)) + "}",
                   text, flags=re.S)
-    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "catalog.json")
+    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
+        os.path.dirname(__file__), "..", "crates", "yanyu-core", "resources", "catalog.json")
     open(out, "w").write(text)
     print(f"wrote {out}: {len(models)} models, {os.path.getsize(out)/1024:.1f} KB", file=sys.stderr)
 

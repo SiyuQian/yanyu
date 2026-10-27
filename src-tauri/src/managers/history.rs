@@ -9,6 +9,7 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::AppHandle;
 use tauri_specta::Event;
+pub use yanyu_core::HistoryEntry;
 
 /// Database migrations for transcription history.
 /// Each migration is applied in order. The library tracks which migrations
@@ -52,23 +53,6 @@ pub enum HistoryUpdatePayload {
     Deleted { id: i64 },
     #[serde(rename = "toggled")]
     Toggled { id: i64 },
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Type)]
-pub struct HistoryEntry {
-    pub id: i64,
-    pub file_name: String,
-    pub timestamp: i64,
-    pub saved: bool,
-    pub title: String,
-    pub transcription_text: String,
-    pub post_processed_text: Option<String>,
-    pub post_process_prompt: Option<String>,
-    pub post_process_requested: bool,
-    /// Code for why local polishing kept the original text; `None` when polished or not attempted.
-    pub post_process_skip_reason: Option<String>,
-    /// Exact user correction; recognition and post-processing remain unchanged.
-    pub user_corrected_text: Option<String>,
 }
 
 pub struct HistoryManager {
@@ -507,7 +491,7 @@ impl HistoryManager {
         let conn = self.get_connection()?;
         let limit = limit.map(|l| l.min(100));
 
-        let mut entries: Vec<HistoryEntry> = match (cursor, limit) {
+        let entries: Vec<HistoryEntry> = match (cursor, limit) {
             (Some(cursor_id), Some(lim)) => {
                 let fetch_count = (lim + 1) as i64;
                 let mut stmt = conn.prepare(
@@ -548,12 +532,15 @@ impl HistoryManager {
             }
         };
 
-        let has_more = limit.is_some_and(|lim| entries.len() > lim);
-        if has_more {
-            entries.pop();
-        }
+        let page = yanyu_core::paginate_history_entries(
+            entries,
+            limit.map(|limit| u64::try_from(limit).unwrap_or(u64::MAX)),
+        );
 
-        Ok(PaginatedHistory { entries, has_more })
+        Ok(PaginatedHistory {
+            entries: page.entries,
+            has_more: page.has_more,
+        })
     }
 
     #[cfg(test)]
