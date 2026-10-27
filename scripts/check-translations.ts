@@ -7,6 +7,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Configuration
 const LOCALES_DIR = path.join(__dirname, "..", "src", "i18n", "locales");
 const REFERENCE_LANG = "en";
+// Native iOS currently ships only English and Simplified Chinese. Keys in
+// this namespace remain in the shared English source but are checked only
+// against the Simplified Chinese locale until native support expands.
+const LOCALE_SCOPED_ROOTS: Record<string, string[]> = {
+  iosApp: ["zh"],
+};
 
 type TranslationData = Record<string, unknown>;
 
@@ -122,9 +128,13 @@ function validateTranslations(): void {
     }
 
     // Find missing keys
-    const missing = referenceKeyPaths.filter(
-      (keyPath) => !hasKeyPath(langData, keyPath),
-    );
+    const missing = referenceKeyPaths.filter((keyPath) => {
+      const supportedLanguages = LOCALE_SCOPED_ROOTS[keyPath[0]];
+      if (supportedLanguages && !supportedLanguages.includes(lang)) {
+        return false;
+      }
+      return !hasKeyPath(langData, keyPath);
+    });
 
     // Find extra keys (keys in language but not in reference)
     const langKeyPaths = getAllKeyPaths(langData);

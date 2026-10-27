@@ -1,0 +1,92 @@
+name: iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - "crates/yanyu-core/**"
+      - "scripts/build-ios-core.sh"
+      - "scripts/generate-ios-localizations.mjs"
+      - "scripts/generate-ios-localizations.test.mjs"
+      - "scripts/prepare_fleurs_evaluation.py"
+      - "scripts/test_prepare_fleurs_evaluation.py"
+      - "scripts/prepare_ascend_evaluation.py"
+      - "scripts/test_prepare_ascend_evaluation.py"
+      - "src/i18n/locales/en/translation.json"
+      - "src/i18n/locales/zh/translation.json"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+      - "crates/yanyu-core/**"
+      - "scripts/build-ios-core.sh"
+      - "scripts/generate-ios-localizations.mjs"
+      - "scripts/generate-ios-localizations.test.mjs"
+      - "scripts/prepare_fleurs_evaluation.py"
+      - "scripts/test_prepare_fleurs_evaluation.py"
+      - "scripts/prepare_ascend_evaluation.py"
+      - "scripts/test_prepare_ascend_evaluation.py"
+      - "src/i18n/locales/en/translation.json"
+      - "src/i18n/locales/zh/translation.json"
+      - ".github/workflows/ios.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/yanyu-core
+          key: ${{ runner.os }}-${{ runner.arch }}-ios-core-${{ hashFiles('crates/yanyu-core/Cargo.toml', 'crates/yanyu-core/Cargo.lock', 'scripts/build-ios-core.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-ios-core-
+
+      - name: Ensure CMake is installed
+        run: |
+          if ! command -v cmake >/dev/null 2>&1; then
+            brew install cmake
+          fi
+
+      - name: Check iOS localizations
+        run: node scripts/generate-ios-localizations.mjs --check
+
+      - name: Test iOS localization generator
+        run: node --test scripts/generate-ios-localizations.test.mjs
+
+      - name: Test speech evaluation fixture preparation
+        run: |
+          python3 scripts/test_prepare_fleurs_evaluation.py
+          python3 scripts/test_prepare_ascend_evaluation.py
+
+      - name: Lint Swift formatting
+        run: xcrun swift-format lint --strict ios/Yanyu/*.swift ios/YanyuTests/*.swift ios/YanyuUITests/*.swift
+
+      - name: Run iPhone simulator tests
+        run: xcodebuild test -quiet -project ios/Yanyu.xcodeproj -scheme Yanyu -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO
+
+      - name: Run compact iPhone simulator tests
+        run: xcodebuild test -quiet -project ios/Yanyu.xcodeproj -scheme Yanyu -destination 'platform=iOS Simulator,name=iPhone 16e,OS=26.2' CODE_SIGNING_ALLOWED=NO
+
+      - name: Build unsigned iOS Release app
+        run: |
+          derived_data="$RUNNER_TEMP/YanyuDerivedData"
+          xcodebuild build -quiet -project ios/Yanyu.xcodeproj -scheme Yanyu -destination 'generic/platform=iOS' -configuration Release -derivedDataPath "$derived_data" CODE_SIGNING_ALLOWED=NO
+          plutil -lint "$derived_data/Build/Products/Release-iphoneos/Yanyu.app/PrivacyInfo.xcprivacy"

@@ -29,6 +29,7 @@ dist-ssr
 .claude/
 
 /target/
+crates/yanyu-core/target/
 recording_*
 .crush/
 

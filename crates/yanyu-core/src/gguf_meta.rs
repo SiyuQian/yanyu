@@ -481,7 +481,8 @@ mod tests {
         data.extend_from_slice(&T_ARRAY.to_le_bytes());
         data.extend_from_slice(&T_UINT8.to_le_bytes());
         data.extend_from_slice(&(MAX_STORED_ARRAY_LEN + 1).to_le_bytes());
-        data.extend(std::iter::repeat(0).take((MAX_STORED_ARRAY_LEN + 1) as usize));
+        let oversized_array_bytes = (MAX_STORED_ARRAY_LEN + 1) as usize;
+        data.resize(data.len() + oversized_array_bytes, 0);
 
         push_str(&mut data, "general.architecture");
         data.extend_from_slice(&T_STRING.to_le_bytes());

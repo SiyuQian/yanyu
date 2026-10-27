@@ -1,7 +1,4 @@
-use crate::audio_toolkit::{
-    apply_custom_words, detect_output_language, normalize_transcription_output,
-    remove_filler_words, OutputLanguageEvidence,
-};
+use crate::audio_toolkit::{detect_output_language, OutputLanguageEvidence};
 use crate::chinese_script::{convert_chinese_script, ChineseVariety};
 use crate::engine_supervisor::{
     DeviceInfo, DeviceSelector, EngineError, EngineSupervisor, LoadSpec, LoadedInfo,
@@ -36,6 +33,12 @@ use transcribe_rs::{
         Quantization,
     },
     SpeechModel, TranscribeOptions,
+};
+use yanyu_core::build_transcribe_cpp_run_plan;
+use yanyu_core::{
+    post_process_transcription as post_process_transcription_for_core,
+    resolve_output_language_evidence as resolve_output_language_evidence_for_core,
+    with_model_detected_language, TranscriptPostProcessingOptions,
 };
 
 const STREAM_PERF_LOG_INTERVAL: Duration = Duration::from_secs(5);
@@ -1683,52 +1686,12 @@ fn resolve_output_language_evidence(
     supported_languages: &[String],
     translated_to_english: bool,
 ) -> OutputLanguageEvidence {
-    if translated_to_english {
-        return OutputLanguageEvidence::TranslatedToEnglish;
-    }
-
-    // Stored language intent is only evidence when this specific engine run
-    // actually received the hint. Some multilingual engines (notably Parakeet
-    // V3) always auto-detect and ignore Handy's selection; transcribe-cpp also
-    // drops a requested hint when the loaded model does not advertise it.
-    if let Some(language) = applied_language_hint.filter(|lang| !lang.is_empty() && *lang != "auto")
-    {
-        if settings.selected_language != "auto"
-            && crate::managers::model::canonical_language_code(&settings.selected_language)
-                == crate::managers::model::canonical_language_code(language)
-        {
-            return OutputLanguageEvidence::UserSelected(language.to_string());
-        }
-
-        // The engine may have required a concrete fallback even though the
-        // user's persisted language was auto or unsupported.
-        return OutputLanguageEvidence::ModelConstrained(language.to_string());
-    }
-
-    // A single-language model has a known output language without needing a
-    // selectable language hint.
-    if let [language] = supported_languages {
-        return OutputLanguageEvidence::ModelConstrained(language.clone());
-    }
-
-    OutputLanguageEvidence::Unknown
-}
-
-/// Upgrade [`OutputLanguageEvidence::Unknown`] with the language the model
-/// itself detected during the run (audio-based LID, e.g. Whisper in auto
-/// mode). Stronger evidence resolved before the run is never overridden.
-fn with_model_detected_language(
-    evidence: OutputLanguageEvidence,
-    detected: Option<String>,
-) -> OutputLanguageEvidence {
-    match (evidence, detected) {
-        (OutputLanguageEvidence::Unknown, Some(language))
-            if !language.is_empty() && language != "auto" =>
-        {
-            OutputLanguageEvidence::ModelDetected(language)
-        }
-        (evidence, _) => evidence,
-    }
+    resolve_output_language_evidence_for_core(
+        &settings.selected_language,
+        applied_language_hint,
+        supported_languages,
+        translated_to_english,
+    )
 }
 
 struct TranscribeCppRunPlan {
@@ -1745,25 +1708,20 @@ fn transcribe_cpp_run_plan(
     model_languages: &[String],
     model_supports_translate: bool,
 ) -> TranscribeCppRunPlan {
-    let requested_language = match effective_language {
-        "auto" => None,
-        other => Some(other.to_string()),
-    };
-    // Only pass a language the loaded model actually advertises (per
-    // capabilities().languages); otherwise auto-detect rather than failing with
-    // UNSUPPORTED_LANGUAGE. Language-agnostic models report an empty list, so
-    // they always stay on auto.
-    let language = requested_language.filter(|lang| model_languages.iter().any(|l| l == lang));
-    let (task, target_language) = cpp_translation_task(
+    let plan = build_transcribe_cpp_run_plan(
         translate_to_english,
+        effective_language,
+        model_languages,
         model_supports_translate,
-        language.as_deref(),
     );
 
     TranscribeCppRunPlan {
-        task,
-        language,
-        target_language,
+        task: match plan.task {
+            yanyu_core::TranscriptionTask::Transcribe => Task::Transcribe,
+            yanyu_core::TranscriptionTask::Translate => Task::Translate,
+        },
+        language: plan.language,
+        target_language: plan.target_language,
     }
 }
 
@@ -1810,24 +1768,20 @@ fn post_process_transcription_text(
             _ => raw,
         };
 
-        let corrected = if !settings.custom_words.is_empty() && !custom_words_already_prompted {
-            apply_custom_words(
-                &raw,
-                &settings.custom_words,
-                settings.word_correction_threshold,
-            )
-        } else {
-            raw
-        };
-
-        let without_fillers = remove_filler_words(
-            &corrected,
-            &output_language,
-            &settings.custom_filler_words,
-            settings.filler_word_removal_enabled,
-        );
-
-        normalize_transcription_output(&without_fillers)
+        post_process_transcription_for_core(
+            raw,
+            TranscriptPostProcessingOptions {
+                custom_words: if custom_words_already_prompted {
+                    Vec::new()
+                } else {
+                    settings.custom_words.clone()
+                },
+                correction_threshold: settings.word_correction_threshold,
+                language_code: output_language.language().map(str::to_owned),
+                custom_filler_words: settings.custom_filler_words.clone(),
+                filler_removal_enabled: settings.filler_word_removal_enabled,
+            },
+        )
     })
 }
 
@@ -1907,31 +1861,6 @@ where
             );
             fallback
         }
-    }
-}
-
-/// Decide a transcribe-cpp run's task + translation target from settings.
-///
-/// "Translate to English" only fires where the model advertises translation.
-/// Unlike transcribe-rs (which forces the target to English itself when its
-/// `translate` flag is set), transcribe-cpp requires an explicit
-/// `target_language`: a null target defaults to the *source*, so a non-English
-/// source silently becomes e.g. es→es and Canary rejects the unadvertised pair.
-/// An English source is skipped entirely — en→en is not a real translation, and
-/// it's reachable by default since auto-detect-less models coerce intent to "en".
-///
-/// Returns `(task, target_language)` ready to drop into `RunOptions`.
-fn cpp_translation_task(
-    translate_to_english: bool,
-    model_supports_translate: bool,
-    source_language: Option<&str>,
-) -> (Task, Option<String>) {
-    let translate_to_en =
-        translate_to_english && model_supports_translate && source_language != Some("en");
-    if translate_to_en {
-        (Task::Translate, Some("en".to_string()))
-    } else {
-        (Task::Transcribe, None)
     }
 }
 

@@ -13,6 +13,7 @@ use transcribe_cpp::{
     Backend, Capabilities, DeviceType, RunOptions, StreamOptions, StreamText, StreamUpdate,
     Transcript,
 };
+pub use yanyu_core::TranscriptionFailureKind as RunFailureKind;
 
 /// Refuse frames larger than this: a garbage length must not turn into a
 /// multi-gigabyte allocation. One hour of 16 kHz f32 PCM is ~230 MB.
@@ -253,14 +254,6 @@ fn check_section_len(len: usize) -> io::Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum RunFailureKind {
-    TooLong,
-    Aborted,
-    Truncated,
-    Repetition,
-    Other,
-}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunFailure {
     pub kind: RunFailureKind,
@@ -269,17 +262,11 @@ pub struct RunFailure {
 }
 impl From<transcribe_cpp::Error> for RunFailure {
     fn from(error: transcribe_cpp::Error) -> Self {
-        let kind = match &error {
-            transcribe_cpp::Error::InputTooLong(_) => RunFailureKind::TooLong,
-            transcribe_cpp::Error::Aborted { .. } => RunFailureKind::Aborted,
-            transcribe_cpp::Error::OutputTruncated { .. } => RunFailureKind::Truncated,
-            transcribe_cpp::Error::OutputRepetition { .. } => RunFailureKind::Repetition,
-            _ => RunFailureKind::Other,
-        };
+        let failure = yanyu_core::classify_transcription_error(&error);
         Self {
-            kind,
-            message: error.to_string(),
-            partial: error.partial().cloned(),
+            kind: failure.kind,
+            message: failure.message,
+            partial: failure.partial,
         }
     }
 }
@@ -287,6 +274,45 @@ impl From<transcribe_cpp::Error> for RunFailure {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn worker_failures_use_shared_core_categories() {
+        let failures = [
+            (
+                transcribe_cpp::Error::InputTooLong("duration".into()),
+                RunFailureKind::TooLong,
+            ),
+            (
+                transcribe_cpp::Error::Aborted {
+                    message: "cancelled".into(),
+                    partial: None,
+                },
+                RunFailureKind::Aborted,
+            ),
+            (
+                transcribe_cpp::Error::OutputTruncated {
+                    message: "budget".into(),
+                    partial: None,
+                },
+                RunFailureKind::Truncated,
+            ),
+            (
+                transcribe_cpp::Error::OutputRepetition {
+                    message: "repeat".into(),
+                    partial: None,
+                },
+                RunFailureKind::Repetition,
+            ),
+            (
+                transcribe_cpp::Error::Backend("backend".into()),
+                RunFailureKind::Other,
+            ),
+        ];
+
+        for (error, expected_kind) in failures {
+            assert_eq!(RunFailure::from(error).kind, expected_kind);
+        }
+    }
 
     #[test]
     fn round_trips_message_with_pcm() {

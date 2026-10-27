@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "src/**"
-      - "src-tauri/src/catalog/catalog.json"
+      - "crates/yanyu-core/resources/catalog.json"
       - "scripts/**"
       - "package.json"
       - "bun.lock"

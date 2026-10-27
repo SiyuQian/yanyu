@@ -8,10 +8,8 @@ use anyhow::Result;
 use futures_util::StreamExt;
 use hf_hub::api::tokio::CancellationToken;
 use log::{info, warn};
-use sha2::{Digest, Sha256};
 use std::fs;
-use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::Path;
 use std::time::{Duration, Instant};
 use tauri::Emitter;
@@ -27,8 +25,7 @@ pub(super) const DOWNLOAD_STALL_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// Start offset of a `Content-Range: bytes <start>-<end>/<total>` header.
 fn content_range_start(value: &str) -> Option<u64> {
-    let range = value.trim().strip_prefix("bytes")?.trim_start();
-    range.split('-').next()?.trim().parse().ok()
+    yanyu_core::parse_content_range(value.to_string()).map(|range| range.start)
 }
 
 /// How a [`ModelManager::download_http_resumable`] call ended, cancellation
@@ -57,12 +54,12 @@ impl ModelManager {
         let Some(expected) = expected_sha256 else {
             return Ok(());
         };
-        match Self::compute_sha256(path) {
-            Ok(actual) if actual == expected => {
+        match yanyu_core::verify_file_integrity_at(path, None, Some(expected)) {
+            Ok(_) => {
                 info!("SHA256 verified for model {}", model_id);
                 Ok(())
             }
-            Ok(actual) => {
+            Err(yanyu_core::CoreError::FileHashMismatch { expected, actual }) => {
                 warn!(
                     "SHA256 mismatch for model {}: expected {}, got {}",
                     model_id, expected, actual
@@ -73,30 +70,15 @@ impl ModelManager {
                     model_id
                 ))
             }
-            Err(e) => {
+            Err(error) => {
                 let _ = fs::remove_file(path);
                 Err(anyhow::anyhow!(
                     "Failed to verify download for model {}: {}. Please retry.",
                     model_id,
-                    e
+                    error
                 ))
             }
         }
-    }
-
-    /// Computes the SHA256 hex digest of a file, reading in 64KB chunks to handle large models.
-    fn compute_sha256(path: &Path) -> Result<String> {
-        let mut file = File::open(path)?;
-        let mut hasher = Sha256::new();
-        let mut buffer = [0u8; 65536];
-        loop {
-            let n = file.read(&mut buffer)?;
-            if n == 0 {
-                break;
-            }
-            hasher.update(&buffer[..n]);
-        }
-        Ok(format!("{:x}", hasher.finalize()))
     }
 
     /// Emit verification events around a blocking sha256 check of `path`.
@@ -264,17 +246,28 @@ impl ModelManager {
         // On a 206, trust but verify the offset: a reply starting anywhere but
         // exactly our partial's end would silently corrupt the file on append.
         if resume_from > 0 && response.status() == reqwest::StatusCode::PARTIAL_CONTENT {
-            let starts_at = response
+            let content_range = response
                 .headers()
                 .get(reqwest::header::CONTENT_RANGE)
                 .and_then(|v| v.to_str().ok())
-                .and_then(content_range_start);
-            if starts_at != Some(resume_from) {
+                .map(str::to_string);
+            let valid_range = content_range.as_deref().is_some_and(|value| {
+                if let Some(expected_size) = expected_size {
+                    yanyu_core::validate_partial_content_range(
+                        value.to_string(),
+                        resume_from,
+                        expected_size,
+                    )
+                } else {
+                    content_range_start(value) == Some(resume_from)
+                }
+            });
+            if !valid_range {
                 let _ = fs::remove_file(partial_path);
                 return Err(anyhow::anyhow!(
-                    "server returned Content-Range starting at {:?}, expected {}",
-                    starts_at,
-                    resume_from
+                    "server returned an invalid Content-Range for offset {} and size {:?}",
+                    resume_from,
+                    expected_size
                 ));
             }
         }

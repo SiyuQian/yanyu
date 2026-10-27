@@ -180,7 +180,7 @@ def verify_bucket(s3, bucket, jobs):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("catalog", nargs="?", default=os.path.join(
-        os.path.dirname(__file__), "..", "src-tauri", "src", "catalog", "catalog.json"))
+        os.path.dirname(__file__), "..", "crates", "yanyu-core", "resources", "catalog.json"))
     ap.add_argument("--execute", action="store_true", help="perform the plan (default: dry run)")
     ap.add_argument("--verify", action="store_true", help="stream-hash every mirrored object against the catalog")
     ap.add_argument("--only", help="restrict to models whose id contains this substring")
