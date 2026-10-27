@@ -19,11 +19,11 @@ use std::time::{Duration, Instant};
 use tar::Archive;
 use tauri::{AppHandle, Emitter, Manager};
 pub use yanyu_core::{canonicalize_supported_languages, effective_language};
+#[cfg(test)]
+use yanyu_core::{default_quant_file, ModelDescriptor, QuantFile};
 pub use yanyu_core::{
     derive_local_model_capabilities, DiskStatus, EngineType, ModelInfo, ModelSource,
 };
-#[cfg(test)]
-use yanyu_core::{default_quant_file, ModelDescriptor, QuantFile};
 
 mod download;
 

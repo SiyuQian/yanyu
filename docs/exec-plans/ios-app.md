@@ -123,9 +123,9 @@ During Phase 0, evaluate Chinese, English, and mixed speech, names, numbers, neg
 A supplemental host-only baseline used eight category-selected clips per language from the public FLEURS `cmn_hans_cn/dev` and `en_us/dev` sets. The selection covers short/long clips, numbers, negation, punctuation, and names. CER uses the app's case/whitespace-insensitive, punctuation-preserving character metric:
 
 | Qwen3-ASR 0.6B quant | Mandarin CER (8 clips) | English CER (8 clips) | Correct language detection |
-| -------------------- | --------------------: | -------------------: | -------------------------: |
-| Q4_K_M               | 15.8% (50/316)        | 3.8% (22/583)        | 8/8 per language           |
-| Q8_0                 | 17.1% (54/316)        | 3.4% (20/583)        | 8/8 per language           |
+| -------------------- | ---------------------: | --------------------: | -------------------------: |
+| Q4_K_M               |         15.8% (50/316) |         3.8% (22/583) |           8/8 per language |
+| Q8_0                 |         17.1% (54/316) |         3.4% (20/583) |           8/8 per language |
 
 This deliberately small subset is not a representative benchmark or an acceptance threshold. The Q8 quant has slightly lower English CER and higher Mandarin CER here, so these results do not establish a preferred quant. The FLEURS recordings and catalog-pinned model files stay outside Git. [FLEURS dataset card](https://huggingface.co/datasets/google/fleurs).
 
@@ -133,14 +133,14 @@ A pinned public mixed-speech evaluation uses the speaker-independent `test` and 
 
 Mixed error rate (MER) follows the corpus's character/word distinction: NFKC-normalize and case-fold, count each Han character as a token, group non-Han letters and digits into word tokens, and ignore punctuation and whitespace. This host-only result is not a model acceptance threshold:
 
-| Split | Model quant | MER | Outputs with both scripts | Median host RTF |
-| ----- | ----------- | --: | ------------------------: | --------------: |
-| Test (358 clips, 2 speakers) | Q4_K_M | 12.22% (643/5,260) | 278/358 (77.7%) | 0.058 |
-| Test (358 clips, 2 speakers) | Q8_0 | 11.84% (623/5,260) | 290/358 (81.0%) | 0.060 |
-| Validation (191 clips, 3 speakers) | Q4_K_M | 15.31% (460/3,004) | 135/191 (70.7%) | 0.058 |
-| Validation (191 clips, 3 speakers) | Q8_0 | 14.75% (443/3,004) | 133/191 (69.6%) | 0.060 |
-| Combined (549 clips, 5 speakers) | Q4_K_M | 13.35% (1,103/8,264) | 413/549 (75.2%) | — |
-| Combined (549 clips, 5 speakers) | Q8_0 | 12.90% (1,066/8,264) | 423/549 (77.0%) | — |
+| Split                              | Model quant |                  MER | Outputs with both scripts | Median host RTF |
+| ---------------------------------- | ----------- | -------------------: | ------------------------: | --------------: |
+| Test (358 clips, 2 speakers)       | Q4_K_M      |   12.22% (643/5,260) |           278/358 (77.7%) |           0.058 |
+| Test (358 clips, 2 speakers)       | Q8_0        |   11.84% (623/5,260) |           290/358 (81.0%) |           0.060 |
+| Validation (191 clips, 3 speakers) | Q4_K_M      |   15.31% (460/3,004) |           135/191 (70.7%) |           0.058 |
+| Validation (191 clips, 3 speakers) | Q8_0        |   14.75% (443/3,004) |           133/191 (69.6%) |           0.060 |
+| Combined (549 clips, 5 speakers)   | Q4_K_M      | 13.35% (1,103/8,264) |           413/549 (75.2%) |               — |
+| Combined (549 clips, 5 speakers)   | Q8_0        | 12.90% (1,066/8,264) |           423/549 (77.0%) |               — |
 
 Across these five speakers, Q8_0 scored 0.45 percentage points lower on weighted MER and retained both scripts in 10 more clips, while its model file is about 261 MB larger. The corpus remains small and accent-specific; host timing and five speakers cannot select an engine or quantization for iPhone release. [ASCEND license](https://creativecommons.org/licenses/by-sa/4.0/).
 
