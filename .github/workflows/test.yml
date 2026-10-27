@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - "src-tauri/**"
+      - "crates/yanyu-core/**"
+      - "scripts/check-yanyu-core-portability.sh"
+      - ".github/workflows/test.yml"
   pull_request:
 
 permissions:
@@ -26,7 +29,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           files="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/files" --paginate --jq '.[].filename')"
-          if grep -q '^src-tauri/' <<< "$files"; then
+          if grep -qE '^(src-tauri|crates/yanyu-core)/|^scripts/check-yanyu-core-portability\.sh$|^\.github/workflows/test\.yml$' <<< "$files"; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -47,6 +50,16 @@ jobs:
         if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
         with:
           workspaces: "./src-tauri -> target"
+
+      - name: Run portable Rust core tests
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/src-tauri/target
+        run: cargo test --locked --manifest-path crates/yanyu-core/Cargo.toml --features inference
+
+      - name: Check portable core dependency tree
+        if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'
+        run: bash scripts/check-yanyu-core-portability.sh
 
       - name: Run Rust tests
         if: github.event_name != 'pull_request' || steps.changes.outputs.run == 'true'

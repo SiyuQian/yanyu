@@ -35,6 +35,7 @@ use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIcon;
 use tauri::{AppHandle, Manager, Theme};
 use tauri_plugin_clipboard_manager::ClipboardExt;
+use yanyu_core::select_transcript_text_ref;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TrayIconState {
@@ -589,11 +590,11 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
 }
 
 fn last_transcript_text(entry: &HistoryEntry) -> &str {
-    entry
-        .user_corrected_text
-        .as_deref()
-        .or(entry.post_processed_text.as_deref())
-        .unwrap_or(&entry.transcription_text)
+    select_transcript_text_ref(
+        &entry.transcription_text,
+        entry.post_processed_text.as_deref(),
+        entry.user_corrected_text.as_deref(),
+    )
 }
 
 fn write_last_transcript<E>(

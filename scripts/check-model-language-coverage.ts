@@ -1,4 +1,4 @@
-import catalog from "../src-tauri/src/catalog/catalog.json";
+import catalog from "../crates/yanyu-core/resources/catalog.json";
 import {
   MODEL_CAPABILITY_LANGUAGES,
   supportsLanguageCode,

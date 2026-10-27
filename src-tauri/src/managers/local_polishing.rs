@@ -1,7 +1,6 @@
 //! Fixed, optional text model. It never participates in ASR model selection.
 use futures_util::StreamExt;
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use std::{
     collections::HashSet,
     fs::{self, File},
@@ -13,6 +12,7 @@ use std::{
     },
     time::{Duration, Instant},
 };
+use yanyu_core::Sha256Accumulator;
 
 pub const OUTPUT_BUDGET: Duration = Duration::from_millis(500);
 const SUPPORTED: bool = cfg!(all(target_os = "macos", target_arch = "aarch64"));
@@ -403,13 +403,12 @@ impl LocalPolishingManager {
                 .error_for_status()?;
             let mut stream = response.bytes_stream();
             let mut file = File::create(staging.join(a.name))?;
-            let mut hash = Sha256::new();
-            let mut size = 0;
+            let mut hash = Sha256Accumulator::new();
             while let Some(chunk) = cancellable(stream.next(), cancel).await? {
                 let chunk = chunk?;
-                size += chunk.len() as u64;
-                anyhow::ensure!(size <= a.size, "Downloaded artifact exceeds expected size");
                 hash.update(&chunk);
+                let size = hash.byte_count();
+                anyhow::ensure!(size <= a.size, "Downloaded artifact exceeds expected size");
                 file.write_all(&chunk)?;
                 done += chunk.len() as u64;
                 if last_progress.elapsed() >= Duration::from_millis(100) {
@@ -421,7 +420,8 @@ impl LocalPolishingManager {
                     last_progress = Instant::now();
                 }
             }
-            validate_digest(a, size, &format!("{:x}", hash.finalize()))?;
+            let digest = hash.finish();
+            validate_digest(a, digest.byte_count, &digest.sha256)?;
             file.sync_all()?;
         }
         self.install(staging, cancel)
@@ -479,8 +479,7 @@ fn validate_digest(a: &Artifact, size: u64, digest: &str) -> anyhow::Result<()> 
 }
 fn validate_file(path: &Path, a: &Artifact, cancel: &AtomicBool) -> anyhow::Result<()> {
     let mut f = File::open(path)?;
-    let mut hash = Sha256::new();
-    let mut size = 0;
+    let mut hash = Sha256Accumulator::new();
     let mut buffer = [0u8; 65536];
     loop {
         check_stop(cancel, None)?;
@@ -488,10 +487,10 @@ fn validate_file(path: &Path, a: &Artifact, cancel: &AtomicBool) -> anyhow::Resu
         if n == 0 {
             break;
         }
-        size += n as u64;
         hash.update(&buffer[..n]);
     }
-    validate_digest(a, size, &format!("{:x}", hash.finalize()))
+    let digest = hash.finish();
+    validate_digest(a, digest.byte_count, &digest.sha256)
 }
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
