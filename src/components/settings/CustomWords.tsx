@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "@/hooks/useSettings";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
+import { SettingsGroup } from "../ui/SettingsGroup";
 import {
   getCustomWordValidationError,
   normalizeCustomWord,
@@ -58,30 +59,24 @@ export const CustomWords: React.FC = React.memo(() => {
   };
 
   return (
-    <section
-      className="settings-card dictionary-panel"
-      aria-labelledby="dictionary-words-title"
+    <SettingsGroup
+      variant="card"
+      icon={<BookA size={22} strokeWidth={1.8} />}
+      title={t("settings.advanced.customWords.title")}
+      description={t("settings.advanced.customWords.description")}
+      accessory={
+        customWords.length > 0 && (
+          <span
+            className="min-w-[22px] rounded-full bg-(--workspace-accent)/12 px-1.5 text-center text-[11px] font-bold leading-[22px] text-(--workspace-accent)"
+            aria-hidden="true"
+          >
+            {customWords.length}
+          </span>
+        )
+      }
     >
-      <div className="dictionary-intro">
-        <span className="dictionary-icon" aria-hidden="true">
-          <BookA size={22} strokeWidth={1.8} />
-        </span>
-        <div className="flex items-center gap-2">
-          <h2 id="dictionary-words-title" className="text-lg font-semibold">
-            {t("settings.advanced.customWords.title")}
-          </h2>
-          {customWords.length > 0 && (
-            <span className="dictionary-count" aria-hidden="true">
-              {customWords.length}
-            </span>
-          )}
-        </div>
-        <p className="dictionary-description">
-          {t("settings.advanced.customWords.description")}
-        </p>
-      </div>
-      <div className="dictionary-editor">
-        <div className="dictionary-entry">
+      <div className="flex flex-col gap-[18px] py-5">
+        <div className="flex items-stretch gap-2.5">
           <Input
             type="text"
             aria-label={t("settings.advanced.customWords.placeholder")}
@@ -117,7 +112,7 @@ export const CustomWords: React.FC = React.memo(() => {
           </p>
         )}
         {customWords.length > 0 && (
-          <div className="dictionary-words">
+          <div className="flex flex-wrap gap-2 border-t border-(--settings-border) pt-[18px]">
             {customWords.map((word) => (
               <Button
                 key={word}
@@ -125,16 +120,16 @@ export const CustomWords: React.FC = React.memo(() => {
                 disabled={isUpdating("custom_words")}
                 variant="secondary"
                 size="sm"
-                className="dictionary-word"
+                className="max-w-full whitespace-normal"
                 aria-label={t("settings.advanced.customWords.remove", { word })}
               >
-                <span>{word}</span>
+                <span className="min-w-0 wrap-anywhere">{word}</span>
                 <X className="size-3.5 opacity-60" aria-hidden="true" />
               </Button>
             ))}
           </div>
         )}
       </div>
-    </section>
+    </SettingsGroup>
   );
 });
