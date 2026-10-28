@@ -258,10 +258,13 @@
       },
       "pageDescription": "Kısayolları, tanıma dilini ve kayıt tercihlerini yapılandırın.",
       "shortcutsTitle": "Kısayollar",
-      "recognitionTitle": "Tanıma"
+      "shortcutsDescription": "Dikte için tuşları ve kayıt davranışını seçin.",
+      "recognitionTitle": "Tanıma",
+      "recognitionDescription": "Mevcut modelin konuşmanızı nasıl tanıyacağını ayarlayın."
     },
     "sound": {
       "title": "Ses",
+      "description": "Mikrofonu ve kayıt sırasında çalan sesli uyarıları seçin.",
       "microphone": {
         "title": "Mikrofon",
         "description": "Tercih ettiğiniz mikrofon cihazını seçin",

@@ -258,10 +258,13 @@
       },
       "pageDescription": "Skonfiguruj skróty, język rozpoznawania i preferencje nagrywania.",
       "shortcutsTitle": "Skróty",
-      "recognitionTitle": "Rozpoznawanie"
+      "shortcutsDescription": "Wybierz klawisze i sposób nagrywania dla dyktowania.",
+      "recognitionTitle": "Rozpoznawanie",
+      "recognitionDescription": "Ustaw, jak bieżący model rozpoznaje Twoją mowę."
     },
     "sound": {
       "title": "Dźwięk",
+      "description": "Wybierz mikrofon i sygnały dźwiękowe odtwarzane podczas nagrywania.",
       "microphone": {
         "title": "Mikrofon",
         "description": "Wybierz preferowane urządzenie mikrofonowe",

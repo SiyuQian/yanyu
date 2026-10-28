@@ -258,10 +258,13 @@
       },
       "pageDescription": "Thiết lập phím tắt, ngôn ngữ nhận dạng và tùy chọn ghi âm.",
       "shortcutsTitle": "Phím tắt",
-      "recognitionTitle": "Nhận dạng"
+      "shortcutsDescription": "Chọn phím và cách ghi âm cho tính năng đọc chính tả.",
+      "recognitionTitle": "Nhận dạng",
+      "recognitionDescription": "Thiết lập cách mô hình hiện tại nhận dạng giọng nói của bạn."
     },
     "sound": {
       "title": "Âm thanh",
+      "description": "Chọn micrô và âm báo phát trong khi ghi âm.",
       "microphone": {
         "title": "Micrô",
         "description": "Chọn thiết bị micrô ưa thích của bạn",

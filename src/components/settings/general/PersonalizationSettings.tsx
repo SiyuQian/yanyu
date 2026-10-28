@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { UserRound } from "lucide-react";
 import {
   commands,
   type CommonUse,
@@ -186,11 +187,15 @@ export function PersonalizationSettings() {
     profile.enabled &&
     (localPolishing || settings?.processing_mode === "generated");
   return (
-    <SettingsGroup variant="card" title={t("personalization.title")}>
+    <SettingsGroup
+      variant="card"
+      icon={<UserRound size={20} />}
+      title={t("personalization.title")}
+      description={t("personalization.intro")}
+    >
       <div className="space-y-4 py-3">
-        <p className="text-sm text-text/70">{t("personalization.intro")}</p>
         {error && (
-          <p role="alert" className="text-sm text-red-500">
+          <p role="alert" className="text-sm text-error">
             {t("personalization.error")}
           </p>
         )}

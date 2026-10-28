@@ -306,9 +306,7 @@ export const HistorySettings: React.FC = () => {
             label={t("settings.history.openFolder")}
           />
         </div>
-        <div className="settings-card border border-mid-gray/20 rounded-xl overflow-visible">
-          {content}
-        </div>
+        <div className="settings-card border overflow-visible">{content}</div>
       </div>
     </div>
   );
@@ -585,7 +583,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             <p
               id={`${editorId}-error`}
               role="alert"
-              className="text-sm text-red-500"
+              className="text-sm text-error"
             >
               {saveError}
             </p>
@@ -675,12 +673,12 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
               {t("settings.history.addToVocabulary")}
             </Button>
             {selectionValidationError && (
-              <p role="alert" className="text-sm text-red-500">
+              <p role="alert" className="text-sm text-error">
                 {t(`settings.advanced.customWords.${selectionValidationError}`)}
               </p>
             )}
             {vocabularyError && (
-              <p role="alert" className="text-sm text-red-500">
+              <p role="alert" className="text-sm text-error">
                 {vocabularyError === "duplicate"
                   ? t("settings.advanced.customWords.duplicate", {
                       word: normalizeCustomWord(selectedCorrection),

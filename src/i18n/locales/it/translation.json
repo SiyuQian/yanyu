@@ -258,10 +258,13 @@
       },
       "pageDescription": "Configura le scorciatoie, la lingua di riconoscimento e le preferenze di registrazione.",
       "shortcutsTitle": "Scorciatoie",
-      "recognitionTitle": "Riconoscimento"
+      "shortcutsDescription": "Scegli i tasti e la modalità di registrazione per la dettatura.",
+      "recognitionTitle": "Riconoscimento",
+      "recognitionDescription": "Imposta come il modello attuale riconosce la tua voce."
     },
     "sound": {
       "title": "Suono",
+      "description": "Scegli il microfono e i segnali acustici riprodotti durante la registrazione.",
       "microphone": {
         "title": "Microfono",
         "description": "Scegli il microfono preferito",

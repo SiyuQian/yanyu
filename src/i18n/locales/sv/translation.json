@@ -238,7 +238,9 @@
       },
       "pageDescription": "Anpassa kortkommandon, igenkänningsspråk och inspelningsinställningar.",
       "shortcutsTitle": "Kortkommandon",
-      "recognitionTitle": "Igenkänning"
+      "shortcutsDescription": "Välj tangenter och inspelningsläge för diktering.",
+      "recognitionTitle": "Igenkänning",
+      "recognitionDescription": "Ange hur den aktuella modellen känner igen ditt tal."
     },
     "models": {
       "title": "Transkriptionsmodeller",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "Ljud",
+      "description": "Välj mikrofon och de ljudsignaler som spelas upp under inspelning.",
       "microphone": {
         "title": "Mikrofon",
         "description": "Välj din föredragna mikrofonenhet",

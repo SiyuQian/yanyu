@@ -90,7 +90,10 @@ const TranscribeShortcuts: React.FC<ShortcutInputProps> = (props) => {
     >
       <div className="flex flex-wrap items-center justify-end gap-2">
         {["transcribe", ...additionalIds, draftId].map((id) => (
-          <div key={id} className="flex items-center gap-1">
+          <div
+            key={id}
+            className={`group relative ${id === draftId ? "shortcut-draft" : ""}`}
+          >
             <ShortcutInput
               shortcutId={id}
               controlsOnly
@@ -100,26 +103,24 @@ const TranscribeShortcuts: React.FC<ShortcutInputProps> = (props) => {
                 setEditingId(recording ? id : null)
               }
             />
-            {id === "transcribe" && (
-              <ResetButton
-                onClick={() => resetBinding(id)}
-                ariaLabel={t("settings.general.shortcut.reset")}
-                disabled={!!busy || isUpdating(`binding_${id}`)}
-              />
-            )}
-            {additionalIds.includes(id) && (
+            {additionalIds.includes(id) && editingId !== id && (
               <button
                 type="button"
                 onClick={() => remove(id)}
                 aria-label={t("settings.general.shortcut.remove")}
                 disabled={!!busy || isUpdating(`binding_${id}`)}
-                className="icon-action disabled:opacity-45"
+                className="shortcut-remove absolute -top-1.5 -right-1.5 grid place-items-center size-[18px] rounded-full opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 disabled:hidden"
               >
-                <X className="w-4 h-4" />
+                <X className="size-3" strokeWidth={2.5} />
               </button>
             )}
           </div>
         ))}
+        <ResetButton
+          onClick={() => resetBinding("transcribe")}
+          ariaLabel={t("settings.general.shortcut.reset")}
+          disabled={!!busy || isUpdating("binding_transcribe")}
+        />
       </div>
     </SettingContainer>
   );
