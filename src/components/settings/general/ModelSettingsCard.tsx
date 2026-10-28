@@ -28,6 +28,7 @@ export const ModelSettingsCard: React.FC = () => {
       variant="card"
       icon={<Globe2 size={20} />}
       title={t("settings.general.recognitionTitle")}
+      description={t("settings.general.recognitionDescription")}
       accessory={
         <span className="text-xs text-text/60">{currentModelInfo.name}</span>
       }

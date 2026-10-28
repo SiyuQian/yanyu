@@ -238,7 +238,9 @@
       },
       "pageDescription": "Configure os atalhos, o idioma de reconhecimento e as preferências de gravação.",
       "shortcutsTitle": "Atalhos",
-      "recognitionTitle": "Reconhecimento"
+      "shortcutsDescription": "Escolha as teclas e o modo de gravação para o ditado.",
+      "recognitionTitle": "Reconhecimento",
+      "recognitionDescription": "Defina como o modelo atual reconhece a sua voz."
     },
     "models": {
       "title": "Modelos de Transcrição",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "Som",
+      "description": "Escolha o microfone e os sinais sonoros reproduzidos durante a gravação.",
       "microphone": {
         "title": "Microfone",
         "description": "Selecione seu dispositivo de microfone preferido",

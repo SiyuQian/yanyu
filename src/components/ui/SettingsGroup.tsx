@@ -19,22 +19,24 @@ export const SettingsGroup: React.FC<SettingsGroupProps> = ({
 }) => {
   if (variant === "card") {
     return (
-      <section className="settings-card border px-4 py-2 sm:px-5">
-        <div className="flex flex-wrap items-center justify-between gap-2 py-3">
-          <h2 className="flex items-center gap-3 font-semibold leading-6">
-            {icon && (
-              <span className="settings-card-icon" aria-hidden="true">
-                {icon}
-              </span>
-            )}
-            {title}
-          </h2>
-          {accessory}
+      <section className="settings-card dictionary-panel">
+        <div className="dictionary-intro">
+          {icon && (
+            <span className="dictionary-icon" aria-hidden="true">
+              {icon}
+            </span>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            {accessory}
+          </div>
+          {description && (
+            <p className="dictionary-description">{description}</p>
+          )}
         </div>
-        {description && (
-          <p className="mb-2 text-sm text-text/60">{description}</p>
-        )}
-        <div className="divide-y divide-mid-gray/15">{children}</div>
+        <div className="settings-panel-body divide-y divide-mid-gray/15">
+          {children}
+        </div>
       </section>
     );
   }

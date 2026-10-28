@@ -238,7 +238,9 @@
       },
       "pageDescription": "Atur pintasan, bahasa pengenalan, dan preferensi perekaman.",
       "shortcutsTitle": "Pintasan",
-      "recognitionTitle": "Pengenalan"
+      "shortcutsDescription": "Pilih tombol dan cara perekaman untuk dikte.",
+      "recognitionTitle": "Pengenalan",
+      "recognitionDescription": "Atur cara model saat ini mengenali ucapan Anda."
     },
     "models": {
       "title": "Model Transkripsi",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "Suara",
+      "description": "Pilih mikrofon dan isyarat suara yang diputar saat merekam.",
       "microphone": {
         "title": "Mikrofon",
         "description": "Pilih perangkat mikrofon yang Anda inginkan",

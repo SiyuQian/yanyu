@@ -258,10 +258,13 @@
       },
       "pageDescription": "ショートカット、認識言語、録音設定を変更します。",
       "shortcutsTitle": "ショートカット",
-      "recognitionTitle": "音声認識"
+      "shortcutsDescription": "音声入力に使うキーと録音方法を設定します。",
+      "recognitionTitle": "音声認識",
+      "recognitionDescription": "現在のモデルが音声をどう認識するかを設定します。"
     },
     "sound": {
       "title": "サウンド",
+      "description": "マイクと、録音中に再生される効果音を選択します。",
       "microphone": {
         "title": "マイク",
         "description": "使用するマイクデバイスを選択",

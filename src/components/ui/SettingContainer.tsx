@@ -184,9 +184,11 @@ export const SettingContainer: React.FC<SettingContainerProps> = ({
         <h3 className={`text-sm font-medium ${disabled ? "opacity-50" : ""}`}>
           {title}
         </h3>
-        <p className={`text-sm ${disabled ? "opacity-50" : ""}`}>
-          {description}
-        </p>
+        {description && (
+          <p className={`text-sm ${disabled ? "opacity-50" : ""}`}>
+            {description}
+          </p>
+        )}
       </div>
       <div className="relative">{children}</div>
     </div>

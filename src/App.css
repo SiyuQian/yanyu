@@ -420,16 +420,6 @@ button:focus-visible {
   box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text) 2%, transparent);
 }
 
-.settings-card-icon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  color: var(--workspace-accent);
-  background: var(--workspace-accent-soft);
-}
-
 /* Shared control appearance; component utilities own spacing and layout. */
 .setting-control {
   border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
@@ -524,6 +514,14 @@ button:focus-visible {
   padding: 28px;
 }
 
+.settings-panel-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 28px;
+}
+
 .dictionary-entry {
   display: flex;
   align-items: stretch;
@@ -584,6 +582,10 @@ button:focus-visible {
 
 .dictation-settings .setting-row {
   padding-inline: 0;
+}
+
+.dictation-settings .dictionary-panel {
+  min-height: 0;
 }
 
 .settings-shell .setting-row > :first-child {
@@ -680,6 +682,10 @@ button:focus-visible {
 
   .dictionary-editor {
     padding: 22px;
+  }
+
+  .settings-panel-body {
+    padding-inline: 22px;
   }
 }
 

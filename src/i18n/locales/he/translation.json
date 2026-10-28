@@ -238,7 +238,9 @@
       },
       "pageDescription": "הגדירו קיצורי מקשים, שפת זיהוי והעדפות הקלטה.",
       "shortcutsTitle": "קיצורי מקשים",
-      "recognitionTitle": "זיהוי"
+      "shortcutsDescription": "בחרו את המקשים ואת אופן ההקלטה להכתבה.",
+      "recognitionTitle": "זיהוי",
+      "recognitionDescription": "הגדירו כיצד המודל הנוכחי מזהה את הדיבור שלכם."
     },
     "models": {
       "title": "מודלי תמלול",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "שמע",
+      "description": "בחרו את המיקרופון ואת צלילי ההתראה שמושמעים בזמן ההקלטה.",
       "microphone": {
         "title": "מיקרופון",
         "description": "בחר את המיקרופון המועדף עליך",

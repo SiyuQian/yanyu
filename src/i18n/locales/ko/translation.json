@@ -238,10 +238,13 @@
       },
       "pageDescription": "단축키, 인식 언어 및 녹음 환경설정을 구성하세요.",
       "shortcutsTitle": "단축키",
-      "recognitionTitle": "음성 인식"
+      "shortcutsDescription": "받아쓰기에 사용할 키와 녹음 방식을 설정합니다.",
+      "recognitionTitle": "음성 인식",
+      "recognitionDescription": "현재 모델이 음성을 인식하는 방식을 설정합니다."
     },
     "sound": {
       "title": "사운드",
+      "description": "마이크와 녹음 중 재생되는 알림음을 선택합니다.",
       "microphone": {
         "title": "마이크",
         "description": "선호하는 마이크 장치를 선택하세요",
