@@ -2,7 +2,16 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod macos;
 
-/// Maximum number of Unicode scalar values accepted for selection translation.
+/// Explicit local operation requested by a selection shortcut.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "snake_case")]
+pub enum SelectionOperation {
+    #[default]
+    Translate,
+    Polish,
+}
+
+/// Maximum number of Unicode scalar values accepted for selection processing.
 pub const MAX_SELECTION_CHARACTERS: usize = 10_000;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -34,7 +43,7 @@ pub struct Selection {
     pub text: String,
     pub bounds: Option<SelectionBounds>,
 }
-/// Captures the frontmost application's selection before any translation UI is shown.
+/// Captures the frontmost application's selection before any preview UI is shown.
 pub fn capture() -> Result<Selection, SelectionError> {
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     return macos::capture();

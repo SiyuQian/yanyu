@@ -29,7 +29,10 @@ export const GeneralSettings: React.FC = () => {
       >
         <ShortcutInput shortcutId="transcribe" grouped={true} />
         {type() === "macos" && arch() === "aarch64" && (
-          <ShortcutInput shortcutId="translate_selection" grouped={true} />
+          <>
+            <ShortcutInput shortcutId="polish_selection" grouped={true} />
+            <ShortcutInput shortcutId="translate_selection" grouped={true} />
+          </>
         )}
         <ShortcutActivationSetting descriptionMode="inline" grouped={true} />
         {/* Cancel shortcut remains hidden on Linux because of dynamic shortcut instability. */}

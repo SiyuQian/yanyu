@@ -203,6 +203,10 @@
           "translate_selection": {
             "name": "תרגום הבחירה",
             "description": "Qwen3-0.6B משמש לתרגום ולעריכה מקומית. יש להוריד אותו ידנית."
+          },
+          "polish_selection": {
+            "name": "Polish selection",
+            "description": "Preview a locally polished version of selected text without replacing it."
           }
         },
         "errors": {
@@ -935,7 +939,7 @@
     "copied": "הועתק",
     "openSettings": "פתיחת הגדרות המודל",
     "modelTitle": "מודל טקסט מקומי משותף",
-    "modelDescription": "Qwen3-0.6B משמש לתרגום ולעריכה מקומית. יש להוריד אותו ידנית.",
+    "modelDescription": "Qwen3-0.6B is shared by selection translation, selection polishing and optional dictation polishing. Download it explicitly before use.",
     "errors": {
       "permission_denied": "יש לאפשר את Yanyu בהגדרות המערכת ← פרטיות ואבטחה ← נגישות ולנסות שוב.",
       "unsupported_selection": "יישום זה אינו מספק את הטקסט שנבחר. נסו ביישום אחר.",
@@ -962,6 +966,23 @@
       "advanced": "Make Yanyu work the way you do.",
       "debug": "Inspect diagnostics and fine-tune application behavior.",
       "about": "A little more about Yanyu and the people behind it."
+    }
+  },
+  "polish": {
+    "title": "Polish selection",
+    "loading": "Polishing locally…",
+    "copy": "Copy polished text",
+    "reviewHint": "Review before use. Your original text stays unchanged.",
+    "errors": {
+      "missing_model": "Download Qwen3-0.6B in General settings to polish locally. The download starts only when you choose Download.",
+      "unsupported": "Selection polishing requires an Apple Silicon Mac.",
+      "inference_failed": "Local polishing failed. Try a shorter selection.",
+      "incomplete": "The model did not finish polishing. Try a shorter selection.",
+      "timeout": "Local polishing timed out. Try a shorter selection.",
+      "cancelled": "Polishing was cancelled. Select text and try again.",
+      "unavailable": "Polishing is unavailable. Select text in another app and try again.",
+      "copy_failed": "Could not copy the polished text. Try again.",
+      "language_changed": "The model changed the source language. Try a shorter selection."
     }
   }
 }

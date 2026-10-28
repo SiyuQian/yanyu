@@ -206,13 +206,13 @@ async cancelPersonalizationTrial(id: string) : Promise<Result<null, string>> {
 }
 },
 /**
- * Return transient translation state; nothing is stored on disk.
+ * Return transient selection-processing state; nothing is stored on disk.
  */
 async getTranslationState() : Promise<TranslationState> {
     return await TAURI_INVOKE("get_translation_state");
 },
 /**
- * Copy only the current completed translation, after the popover's explicit Copy action.
+ * Copy only the current completed selection result after the popover's explicit Copy action.
  */
 async copyTranslation(revision: number) : Promise<Result<null, string>> {
     try {
@@ -1341,15 +1341,53 @@ export type CustomSounds = { start: boolean; stop: boolean }
 export type Domain = "software" | "product_design" | "business" | "marketing" | "education" | "healthcare" | "law" | "finance" | "engineering" | "media" | "other"
 export type EngineType =
 /**
- * Any GGML/GGUF model loaded through transcribe-cpp (Whisper, Parakeet,
- * Voxtral, Qwen3-ASR, Nemotron, …). The architecture is auto-detected from
- * the file, so this one variant covers the whole transcribe-cpp family.
+ * Any GGML/GGUF model loaded through transcribe-cpp. The architecture is
+ * auto-detected from the model file.
  */
 "TranscribeCpp" | "Parakeet" | "Moonshine" | "MoonshineStreaming" | "SenseVoice" | "GigaAM" | "Canary" | "Cohere"
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
-export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean;
 /**
- * Code for why local polishing kept the original text; `None` when polished or not attempted.
+ * One transcript-history record shared across platform-specific storage layers.
+ */
+export type HistoryEntry = {
+/**
+ * Stable local database identifier.
+ */
+id: number;
+/**
+ * Recording filename associated with the transcript, when the platform stores audio.
+ */
+file_name: string;
+/**
+ * Creation time as a Unix timestamp in seconds.
+ */
+timestamp: number;
+/**
+ * Whether the user marked this entry as saved.
+ */
+saved: boolean;
+/**
+ * Display title shown in history.
+ */
+title: string;
+/**
+ * Original recognized text.
+ */
+transcription_text: string;
+/**
+ * Optional result from local post-processing.
+ */
+post_processed_text: string | null;
+/**
+ * Prompt used for local post-processing, when present.
+ */
+post_process_prompt: string | null;
+/**
+ * Whether local post-processing was requested.
+ */
+post_process_requested: boolean;
+/**
+ * Code explaining why local post-processing kept the original text.
  */
 post_process_skip_reason: string | null;
 /**
@@ -1388,15 +1426,17 @@ export type MeetingStatus = "recording" | "paused" | "recoverable" | "recorded" 
  * Lightweight history row; full transcript and notes are fetched separately.
  */
 export type MeetingSummary = { id: string; title: string; created_at: string; status: MeetingStatus; duration_ms: number; completed_ms: number }
+/**
+ * Runtime model data presented to a Yanyu application.
+ */
 export type ModelInfo = { id: string; name: string; description: string; filename: string; source: ModelSource; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; is_directory: boolean; engine_type: EngineType; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean; supports_streaming: boolean; supports_language_detection: boolean }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 /**
- * Where a model comes from and how Handy obtains it — the routing discriminant
- * for downloading and on-disk resolution.
+ * Where a model comes from and how an app obtains it.
  */
 export type ModelSource =
 /**
- * Direct HTTP download from a URL (current blob.handy.computer hosting).
+ * Direct HTTP download from a model host.
  */
 { Url: { url: string;
 /**
@@ -1404,14 +1444,11 @@ export type ModelSource =
  */
 sha256: string | null } } |
 /**
- * A file inside a Hugging Face Hub repo, fetched via hf-hub into the shared
- * HF cache (so other tools reuse it). The file within the repo is
- * [`ModelInfo::filename`].
+ * A file inside a Hugging Face Hub repo.
  */
 { HuggingFace: { repo_id: string; revision: string } } |
 /**
- * Already present on disk — a user-provided custom model, or one discovered
- * in a shared cache. Nothing to download.
+ * Already present on disk, such as a user-provided custom model.
  */
 "Local"
 export type ModelUnloadTimeout = "never" | "immediately" | "min_2" | "min_5" | "min_10" | "min_15" | "hour_1" | "sec_15"
@@ -1475,6 +1512,10 @@ uncovered_bindings: string[];
  */
 recorder_blocked: boolean }
 /**
+ * Explicit local operation requested by a selection shortcut.
+ */
+export type SelectionOperation = "translate" | "polish"
+/**
  * How the transcribe shortcut's key events drive a recording.
  */
 export type ShortcutActivation =
@@ -1536,14 +1577,14 @@ export type TranscribeAcceleratorSetting = "auto" | "cpu" | "gpu"
 /**
  * Transient snapshot sent to the translation webview and returned by its state command.
  */
-export type TranslationState = {
+export type TranslationState = { operation: SelectionOperation;
 /**
  * Empty before the first request. Then `loading` during capture/inference,
  * `result` on success, `error` on failure, or `idle` after dismissal.
  */
 phase: string;
 /**
- * Completed translation in `result` only. Serialized as null in all other phases.
+ * Completed selection result in `result` only. Null in all other phases.
  */
 text: string | null;
 /**

@@ -223,6 +223,10 @@
           "translate_selection": {
             "name": "划词翻译",
             "description": "将选中文字本地翻译为简体中文。"
+          },
+          "polish_selection": {
+            "name": "润色选中文字",
+            "description": "预览选中文字的本地润色结果，不替换原文。"
           }
         },
         "errors": {
@@ -935,7 +939,7 @@
     "copied": "已复制",
     "openSettings": "打开模型设置",
     "modelTitle": "共享本地文本模型",
-    "modelDescription": "Qwen3-0.6B 用于划词翻译和可选的本地润色。请手动下载模型以使用这些功能。",
+    "modelDescription": "Qwen3-0.6B 由选中文字翻译、选中文字润色和可选的听写润色共享。使用前请手动下载。",
     "errors": {
       "permission_denied": "请在系统设置 → 隐私与安全性 → 辅助功能中允许 Yanyu，然后重新选中文字并重试。",
       "unsupported_selection": "此应用未通过辅助功能提供选中文字。请在其他应用中选中文字并重试。",
@@ -1062,5 +1066,22 @@
     "settingsCancel": "取消",
     "settingsOK": "好",
     "genericError": "发生错误，请重试。"
+  },
+  "polish": {
+    "title": "润色选中文字",
+    "loading": "正在本地润色…",
+    "copy": "复制润色结果",
+    "reviewHint": "请检查后使用，原文保持不变。",
+    "errors": {
+      "missing_model": "请在常规设置中下载 Qwen3-0.6B，以在本地润色。只有点击下载才会开始下载。",
+      "unsupported": "选中文字润色需要 Apple Silicon Mac。",
+      "inference_failed": "本地润色失败，请尝试缩短选中文字。",
+      "incomplete": "模型未能完成润色，请尝试缩短选中文字。",
+      "timeout": "本地润色超时，请尝试缩短选中文字。",
+      "cancelled": "润色已取消，请重新选中文字后重试。",
+      "unavailable": "润色暂不可用，请在其他应用中选中文字后重试。",
+      "copy_failed": "无法复制润色结果，请重试。",
+      "language_changed": "模型改变了原文语言，请尝试缩短选中文字。"
+    }
   }
 }

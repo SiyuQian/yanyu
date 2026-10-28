@@ -406,8 +406,10 @@ mod imp {
     }
 
     fn plan_fallback_binding(id: &str, binding: &ShortcutBinding) -> ShadowPlan {
-        // A conflicting upgrade default leaves translation intentionally unassigned.
-        if id == "translate_selection" && binding.current_binding.is_empty() {
+        // A conflicting upgrade default leaves selection shortcuts intentionally unassigned.
+        if matches!(id, "translate_selection" | "polish_selection")
+            && binding.current_binding.is_empty()
+        {
             return ShadowPlan::Immune;
         }
 
@@ -628,25 +630,26 @@ mod imp {
         use super::*;
 
         #[test]
-        fn unassigned_translation_does_not_trigger_secure_input_warning() {
-            let mut binding =
-                settings::get_default_settings().bindings["translate_selection"].clone();
-            binding.current_binding.clear();
-            let mut fallback = FallbackState::default();
-            match plan_fallback_binding(&binding.id, &binding) {
-                ShadowPlan::Immune => {}
-                ShadowPlan::Uncovered => fallback.uncovered.push(binding.id.clone()),
-                ShadowPlan::Shadow { .. } => {
-                    panic!("unassigned translation must not need a shadow")
+        fn unassigned_selection_does_not_trigger_secure_input_warning() {
+            for id in ["translate_selection", "polish_selection"] {
+                let mut binding = settings::get_default_settings().bindings[id].clone();
+                binding.current_binding.clear();
+                let mut fallback = FallbackState::default();
+                match plan_fallback_binding(&binding.id, &binding) {
+                    ShadowPlan::Immune => {}
+                    ShadowPlan::Uncovered => fallback.uncovered.push(binding.id.clone()),
+                    ShadowPlan::Shadow { .. } => {
+                        panic!("unassigned translation must not need a shadow")
+                    }
                 }
-            }
-            assert!(fallback.uncovered.is_empty());
+                assert!(fallback.uncovered.is_empty());
 
-            let state = SecureInputState::new();
-            state.sustained.store(true, Ordering::SeqCst);
-            *state.fallback.lock().unwrap() = fallback;
-            assert!(!state.warning_active());
-            assert!(binding.current_binding.is_empty());
+                let state = SecureInputState::new();
+                state.sustained.store(true, Ordering::SeqCst);
+                *state.fallback.lock().unwrap() = fallback;
+                assert!(!state.warning_active());
+                assert!(binding.current_binding.is_empty());
+            }
         }
 
         #[test]
