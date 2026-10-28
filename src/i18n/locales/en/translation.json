@@ -238,7 +238,9 @@
       },
       "pageDescription": "Configure shortcuts, recognition language, and recording preferences.",
       "shortcutsTitle": "Shortcuts",
-      "recognitionTitle": "Recognition"
+      "shortcutsDescription": "Choose the keys and recording behavior for dictation.",
+      "recognitionTitle": "Recognition",
+      "recognitionDescription": "Set how the current model recognizes your speech."
     },
     "models": {
       "title": "Transcription Models",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "Sound",
+      "description": "Choose the microphone and the audio cues played while recording.",
       "microphone": {
         "title": "Microphone",
         "description": "Select your preferred microphone device",

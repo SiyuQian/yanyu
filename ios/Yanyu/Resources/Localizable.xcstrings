@@ -9121,6 +9121,22 @@
         }
       }
     },
+    "settings.general.recognitionDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set how the current model recognizes your speech."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置当前模型如何识别你的语音。"
+          }
+        }
+      }
+    },
     "settings.general.recognitionTitle": {
       "localizations": {
         "en": {
@@ -9581,6 +9597,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "触发方式"
+          }
+        }
+      }
+    },
+    "settings.general.shortcutsDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the keys and recording behavior for dictation."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置听写使用的按键和录音方式。"
           }
         }
       }
@@ -11325,6 +11357,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "输入通道"
+          }
+        }
+      }
+    },
+    "settings.sound.description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the microphone and the audio cues played while recording."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择麦克风，以及录音时播放的提示音。"
           }
         }
       }

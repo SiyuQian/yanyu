@@ -238,7 +238,9 @@
       },
       "pageDescription": "Indstil genveje, genkendelsessprog og optageindstillinger.",
       "shortcutsTitle": "Genveje",
-      "recognitionTitle": "Genkendelse"
+      "shortcutsDescription": "Vælg tasterne og optagemåden til diktering.",
+      "recognitionTitle": "Genkendelse",
+      "recognitionDescription": "Angiv, hvordan den aktuelle model genkender din tale."
     },
     "models": {
       "title": "Transskriptionsmodeller",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "Lyd",
+      "description": "Vælg mikrofonen og de lydsignaler, der afspilles under optagelse.",
       "microphone": {
         "title": "Mikrofon",
         "description": "Vælg din foretrukne mikrofonenhed",

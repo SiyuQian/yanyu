@@ -21,11 +21,12 @@ export const GeneralSettings: React.FC = () => {
   const { audioFeedbackEnabled } = useSettings();
   const isLinux = type() === "linux";
   return (
-    <div className="dictation-settings max-w-3xl w-full mx-auto space-y-5">
+    <div className="dictation-settings max-w-4xl w-full mx-auto space-y-5">
       <SettingsGroup
         variant="card"
         icon={<Keyboard size={20} />}
         title={t("settings.general.shortcutsTitle")}
+        description={t("settings.general.shortcutsDescription")}
       >
         <ShortcutInput shortcutId="transcribe" grouped={true} />
         {type() === "macos" && arch() === "aarch64" && (
@@ -45,6 +46,7 @@ export const GeneralSettings: React.FC = () => {
         variant="card"
         icon={<Volume2 size={20} />}
         title={t("settings.sound.title")}
+        description={t("settings.sound.description")}
       >
         <MicrophoneSelector descriptionMode="tooltip" grouped={true} />
         <ChannelSelector descriptionMode="tooltip" grouped={true} />

@@ -258,10 +258,13 @@
       },
       "pageDescription": "Configura los atajos, el idioma de reconocimiento y las preferencias de grabación.",
       "shortcutsTitle": "Atajos",
-      "recognitionTitle": "Reconocimiento"
+      "shortcutsDescription": "Elige las teclas y el modo de grabación para el dictado.",
+      "recognitionTitle": "Reconocimiento",
+      "recognitionDescription": "Configura cómo el modelo actual reconoce tu voz."
     },
     "sound": {
       "title": "Sonido",
+      "description": "Elige el micrófono y los avisos sonoros que se reproducen durante la grabación.",
       "microphone": {
         "title": "Micrófono",
         "description": "Selecciona tu dispositivo de micrófono preferido",

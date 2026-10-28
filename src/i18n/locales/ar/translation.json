@@ -235,10 +235,13 @@
       },
       "pageDescription": "اضبط الاختصارات ولغة التعرف وتفضيلات التسجيل.",
       "shortcutsTitle": "الاختصارات",
-      "recognitionTitle": "التعرف"
+      "shortcutsDescription": "اختر المفاتيح وطريقة التسجيل المستخدمة في الإملاء.",
+      "recognitionTitle": "التعرف",
+      "recognitionDescription": "اضبط كيفية تعرّف النموذج الحالي على كلامك."
     },
     "sound": {
       "title": "الصوت",
+      "description": "اختر الميكروفون والتنبيهات الصوتية التي تُشغَّل أثناء التسجيل.",
       "microphone": {
         "title": "الميكروفون",
         "description": "اختر جهاز الميكروفون المفضل لديك",

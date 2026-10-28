@@ -68,6 +68,7 @@ export function LocalPolishingSettings() {
         variant="card"
         icon={<Sparkles size={20} />}
         title={t("settings.localPolishing.title")}
+        description={t("settings.localPolishing.description")}
       >
         <div className="py-3">
           <ToggleSwitch
@@ -78,7 +79,7 @@ export function LocalPolishingSettings() {
             disabled={!status?.supported}
             isUpdating={isUpdating("local_polishing_enabled")}
             label={t("settings.localPolishing.label")}
-            description={t("settings.localPolishing.description")}
+            description=""
             descriptionMode="inline"
             grouped
           />
@@ -88,11 +89,9 @@ export function LocalPolishingSettings() {
         variant="card"
         icon={<Sparkles size={20} />}
         title={t("translation.modelTitle")}
+        description={t("translation.modelDescription")}
       >
         <div id="translation-model-resources" className="py-3 space-y-3">
-          <p className="text-sm text-text/70">
-            {t("translation.modelDescription")}
-          </p>
           <p className="text-sm text-text/70" role="status" aria-live="polite">
             {t(`settings.localPolishing.states.${status?.phase ?? "loading"}`)}
           </p>
