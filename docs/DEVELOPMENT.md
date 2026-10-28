@@ -53,6 +53,21 @@ curl -o src-tauri/resources/models/silero_vad_v4.onnx https://blob.handy.compute
 
 For detailed platform-specific build setup, see [BUILD.md](../BUILD.md).
 
+### Selection polishing verification
+
+`polish_selection` defaults to `option+shift+p` on Apple Silicon Macs. It shares the translation popover and Qwen model worker with `translate_selection`, but uses separate editing rules and preserves the model's output writing system. Reading the selection uses Accessibility only. Preview, errors and dismissal do not access the clipboard; the explicit Copy action writes only the current completed result. Selection drafts are transient and never enter dictation history.
+
+```bash
+bunx playwright test tests/translation.spec.ts
+cargo test --manifest-path src-tauri/Cargo.toml --lib selection
+cargo test --manifest-path src-tauri/Cargo.toml --lib managers::translation::tests
+# Opt-in real-model fixtures; never use private messages as fixtures.
+LOCAL_POLISHING_SMOKE_DIR=/path/to/local-polishing/qwen3-0.6b \
+  cargo test --manifest-path src-tauri/Cargo.toml --lib selection_polish_real_model -- --ignored --nocapture
+```
+
+These tests cover the shared state, fixed prompt/data boundary, shortcut migration, output parsing and preview/copy behavior. The opt-in test checks synthetic English, Simplified Chinese and Traditional Chinese messages. The language guard measures Han-character overlap; it can reject valid Chinese edits and cannot detect translation between languages using the same alphabet. These checks do not establish semantic fidelity or Accessibility compatibility with every application. Manually check first-use permissions, selection capture, the global shortcut, preview placement and cancellation in target apps before release.
+
 ### Native iOS app
 
 The SwiftUI app lives in `ios/`. It requires macOS, Xcode, and XcodeGen. From the repository root:
