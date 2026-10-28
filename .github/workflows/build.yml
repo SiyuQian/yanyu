@@ -166,7 +166,7 @@ jobs:
       - name: Cache trusted-signing-cli
         if: contains(inputs.platform, 'windows') && inputs.sign-binaries
         id: cache-tsc
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/bin/trusted-signing-cli*
           key: trusted-signing-cli-${{ env.TSC_VERSION }}-${{ runner.os }}-${{ runner.arch }}
@@ -179,7 +179,7 @@ jobs:
       # apt repository and cache its packages instead of changing SDK versions.
       - name: Cache Vulkan SDK packages (Linux x64)
         if: contains(inputs.platform, 'ubuntu') && !contains(inputs.platform, 'arm')
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/yanyu-vulkan-apt/*.deb
           key: vulkan-apt-${{ inputs.platform }}-1.3.290-v1
