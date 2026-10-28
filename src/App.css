@@ -587,6 +587,27 @@ button:focus-visible {
   border-color: var(--workspace-accent);
 }
 
+.settings-shell .shortcut-draft .setting-control {
+  border-style: dashed;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.settings-shell .shortcut-draft .setting-control:hover:not(:disabled) {
+  color: var(--workspace-accent);
+}
+
+.settings-shell .shortcut-remove {
+  border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+  background: var(--color-background);
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+
+.settings-shell .shortcut-remove:hover {
+  border-color: var(--workspace-accent);
+  color: var(--workspace-accent);
+}
+
 .settings-shell .reset-button {
   color: color-mix(in srgb, var(--color-text) 45%, transparent);
 }
