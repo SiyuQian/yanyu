@@ -238,7 +238,9 @@
       },
       "pageDescription": "Configura les dreceres, la llengua de reconeixement i les preferències de gravació.",
       "shortcutsTitle": "Dreceres",
-      "recognitionTitle": "Reconeixement"
+      "shortcutsDescription": "Tria les tecles i el mode d’enregistrament per al dictat.",
+      "recognitionTitle": "Reconeixement",
+      "recognitionDescription": "Configura com el model actual reconeix la teva veu."
     },
     "models": {
       "title": "Models de transcripció",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "So",
+      "description": "Tria el micròfon i els avisos sonors que es reprodueixen durant l’enregistrament.",
       "microphone": {
         "title": "Micròfon",
         "description": "Selecciona el micròfon preferit",

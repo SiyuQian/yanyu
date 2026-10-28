@@ -258,10 +258,13 @@
       },
       "pageDescription": "设置快捷键、识别语言与录音偏好。",
       "shortcutsTitle": "快捷键",
-      "recognitionTitle": "识别"
+      "shortcutsDescription": "设置听写使用的按键和录音方式。",
+      "recognitionTitle": "识别",
+      "recognitionDescription": "设置当前模型如何识别你的语音。"
     },
     "sound": {
       "title": "声音",
+      "description": "选择麦克风，以及录音时播放的提示音。",
       "microphone": {
         "title": "麦克风",
         "description": "选择您偏好的麦克风设备",

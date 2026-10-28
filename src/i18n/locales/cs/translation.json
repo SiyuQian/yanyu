@@ -258,10 +258,13 @@
       },
       "pageDescription": "Nastavte klávesové zkratky, jazyk rozpoznávání a předvolby nahrávání.",
       "shortcutsTitle": "Klávesové zkratky",
-      "recognitionTitle": "Rozpoznávání"
+      "shortcutsDescription": "Vyberte klávesy a způsob nahrávání pro diktování.",
+      "recognitionTitle": "Rozpoznávání",
+      "recognitionDescription": "Nastavte, jak aktuální model rozpoznává vaši řeč."
     },
     "sound": {
       "title": "Zvuk",
+      "description": "Vyberte mikrofon a zvukové signály přehrávané během nahrávání.",
       "microphone": {
         "title": "Mikrofon",
         "description": "Vyberte preferované zařízení mikrofonu",

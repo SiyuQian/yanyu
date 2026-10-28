@@ -258,10 +258,13 @@
       },
       "pageDescription": "Tastenkürzel, Erkennungssprache und Aufnahmeoptionen konfigurieren.",
       "shortcutsTitle": "Tastenkürzel",
-      "recognitionTitle": "Erkennung"
+      "shortcutsDescription": "Wähle die Tasten und das Aufnahmeverhalten für das Diktieren.",
+      "recognitionTitle": "Erkennung",
+      "recognitionDescription": "Lege fest, wie das aktuelle Modell deine Sprache erkennt."
     },
     "sound": {
       "title": "Ton",
+      "description": "Wähle das Mikrofon und die Tonsignale, die während der Aufnahme abgespielt werden.",
       "microphone": {
         "title": "Mikrofon",
         "description": "Bevorzugtes Mikrofon auswählen",

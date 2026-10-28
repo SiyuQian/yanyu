@@ -420,16 +420,6 @@ button:focus-visible {
   box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text) 2%, transparent);
 }
 
-.settings-card-icon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  color: var(--workspace-accent);
-  background: var(--workspace-accent-soft);
-}
-
 /* Shared control appearance; component utilities own spacing and layout. */
 .setting-control {
   border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
@@ -452,84 +442,7 @@ button:focus-visible {
   cursor: not-allowed;
 }
 
-.dictionary-panel {
-  --dictionary-border: color-mix(
-    in srgb,
-    var(--workspace-ink) 12%,
-    transparent
-  );
-  display: grid;
-  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.4fr);
-  min-height: 224px;
-  overflow: hidden;
-  border: 1px solid var(--dictionary-border);
-}
-
-.dictionary-intro {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 28px;
-  border-inline-end: 1px solid var(--dictionary-border);
-  background: linear-gradient(
-    145deg,
-    color-mix(in srgb, var(--workspace-accent-soft) 88%, var(--workspace-card)),
-    color-mix(in srgb, var(--workspace-accent-soft) 52%, var(--workspace-card))
-  );
-}
-
-.dictionary-icon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 18px;
-  border: 1px solid color-mix(in srgb, var(--workspace-accent) 18%, transparent);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--workspace-card) 72%, transparent);
-  color: var(--workspace-accent);
-}
-
-.settings-card .dictionary-intro h2 {
-  font-size: 17px;
-  letter-spacing: -0.02em;
-}
-
-.dictionary-count {
-  min-width: 22px;
-  padding-inline: 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--workspace-accent) 12%, transparent);
-  color: var(--workspace-accent);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 22px;
-  text-align: center;
-}
-
-.dictionary-description {
-  margin-top: 8px;
-  color: var(--workspace-muted);
-  font-size: 13px;
-  line-height: 1.65;
-}
-
-.dictionary-editor {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  justify-content: center;
-  gap: 18px;
-  padding: 28px;
-}
-
-.dictionary-entry {
-  display: flex;
-  align-items: stretch;
-  gap: 10px;
-}
-
+/* Unlayered so it can override the unlayered .setting-control and .app-button sizes. */
 .dictionary-input {
   flex: 1;
   min-width: 0;
@@ -544,29 +457,6 @@ button:focus-visible {
 .dictionary-add {
   min-width: 104px;
   min-height: 44px;
-}
-
-.dictionary-words {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 18px;
-  border-top: 1px solid var(--dictionary-border);
-}
-
-.dictionary-word {
-  max-width: 100%;
-  white-space: normal;
-}
-
-.dictionary-word span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.settings-card h2 {
-  font-size: 14px;
-  letter-spacing: -0.01em;
 }
 
 .settings-group > div:first-child > h2 {
@@ -660,26 +550,6 @@ button:focus-visible {
 
   .workspace-identity {
     display: none;
-  }
-}
-
-@media (max-width: 900px) {
-  .dictionary-panel {
-    grid-template-columns: 1fr;
-  }
-
-  .dictionary-intro {
-    padding: 22px;
-    border-inline-end: 0;
-    border-bottom: 1px solid var(--dictionary-border);
-  }
-
-  .dictionary-icon {
-    margin-bottom: 12px;
-  }
-
-  .dictionary-editor {
-    padding: 22px;
   }
 }
 
