@@ -238,7 +238,9 @@
       },
       "pageDescription": "Stel sneltoetsen, herkenningstaal en opnamevoorkeuren in.",
       "shortcutsTitle": "Sneltoetsen",
-      "recognitionTitle": "Herkenning"
+      "shortcutsDescription": "Kies de toetsen en het opnamegedrag voor dicteren.",
+      "recognitionTitle": "Herkenning",
+      "recognitionDescription": "Stel in hoe het huidige model je spraak herkent."
     },
     "models": {
       "title": "Transcriptiemodellen",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "Geluid",
+      "description": "Kies de microfoon en de geluidssignalen die tijdens het opnemen worden afgespeeld.",
       "microphone": {
         "title": "Microfoon",
         "description": "Selecteer de gewenste microfoon",

@@ -258,10 +258,13 @@
       },
       "pageDescription": "Configurez les raccourcis, la langue de reconnaissance et les préférences d’enregistrement.",
       "shortcutsTitle": "Raccourcis",
-      "recognitionTitle": "Reconnaissance"
+      "shortcutsDescription": "Choisissez les touches et le mode d’enregistrement pour la dictée.",
+      "recognitionTitle": "Reconnaissance",
+      "recognitionDescription": "Définissez comment le modèle actuel reconnaît votre voix."
     },
     "sound": {
       "title": "Son",
+      "description": "Choisissez le microphone et les signaux sonores joués pendant l’enregistrement.",
       "microphone": {
         "title": "Microphone",
         "description": "Sélectionnez votre périphérique d'entrée audio",

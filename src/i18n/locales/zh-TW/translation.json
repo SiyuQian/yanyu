@@ -238,7 +238,9 @@
       },
       "pageDescription": "設定快捷鍵、辨識語言與錄音偏好。",
       "shortcutsTitle": "快捷鍵",
-      "recognitionTitle": "辨識"
+      "shortcutsDescription": "設定聽寫使用的按鍵和錄音方式。",
+      "recognitionTitle": "辨識",
+      "recognitionDescription": "設定目前模型如何辨識你的語音。"
     },
     "models": {
       "title": "轉錄模型",
@@ -262,6 +264,7 @@
     },
     "sound": {
       "title": "聲音",
+      "description": "選擇麥克風，以及錄音時播放的提示音。",
       "microphone": {
         "title": "麥克風",
         "description": "選擇您偏好的麥克風裝置",
