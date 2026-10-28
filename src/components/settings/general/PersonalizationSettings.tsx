@@ -190,7 +190,7 @@ export function PersonalizationSettings() {
       <div className="space-y-4 py-3">
         <p className="text-sm text-text/70">{t("personalization.intro")}</p>
         {error && (
-          <p role="alert" className="text-sm text-red-500">
+          <p role="alert" className="text-sm text-error">
             {t("personalization.error")}
           </p>
         )}
