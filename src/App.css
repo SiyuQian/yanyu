@@ -1,6 +1,21 @@
 @import "tailwindcss";
 @import "./styles/theme.css";
 
+/* Match the app override first; only system mode follows the OS. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(
+      :root:not([data-theme="light"]),
+      :root:not([data-theme="light"]) *
+    ) {
+      @slot;
+    }
+  }
+}
+
 /* Register the shared color tokens (src/styles/theme.css) as Tailwind
    utilities */
 @theme inline {
@@ -35,10 +50,12 @@
     transparent 70%
   );
 
-  /* Log console surface — a subtle shade off the app background so the live log
-     viewer reads as a distinct console. In light mode this is a faint gray code
-     block (matching other surfaces); the dark theme overrides it below. */
-  --color-log-surface: color-mix(in srgb, var(--color-background), black 6%);
+  /* The shade follows the same explicit/system theme choice as the palette. */
+  --color-log-surface: color-mix(
+    in srgb,
+    var(--color-background),
+    black var(--log-surface-shade)
+  );
 
   /* Apply colors */
   color: var(--color-text);
@@ -197,13 +214,6 @@ button:focus-visible {
   flex-direction: column;
   justify-content: center;
   text-align: center;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Just a bit darker than the (already dark) background, keeping its warm tint */
-    --color-log-surface: color-mix(in srgb, var(--color-background), black 15%);
-  }
 }
 
 /* Keep onboarding centered when classic scrollbars consume layout space.
@@ -420,6 +430,28 @@ button:focus-visible {
   background: var(--workspace-accent-soft);
 }
 
+/* Shared control appearance; component utilities own spacing and layout. */
+.setting-control {
+  border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--color-text) 3%, transparent);
+  font-weight: 500;
+}
+
+.setting-control:where(input, button) {
+  min-height: 36px;
+}
+
+.setting-control:hover:not(:disabled),
+.setting-control:focus:not(:disabled) {
+  border-color: var(--workspace-accent);
+}
+
+.setting-control:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .dictionary-panel {
   --dictionary-border: color-mix(
     in srgb,
@@ -498,7 +530,6 @@ button:focus-visible {
   gap: 10px;
 }
 
-.settings-shell .dictionary-input,
 .dictionary-input {
   flex: 1;
   min-width: 0;
@@ -508,10 +539,6 @@ button:focus-visible {
   padding-inline: 14px;
   border-radius: 10px;
   background: var(--workspace-card);
-}
-
-.settings-shell .dictionary-input:focus {
-  border-color: var(--workspace-accent);
 }
 
 .dictionary-add {
@@ -575,18 +602,6 @@ button:focus-visible {
   color: var(--workspace-muted);
 }
 
-.settings-shell .setting-control {
-  min-height: 36px;
-  border-radius: 9px;
-  border-color: color-mix(in srgb, var(--color-text) 14%, transparent);
-  background: color-mix(in srgb, var(--color-text) 3%, transparent);
-  font-weight: 500;
-}
-
-.settings-shell .setting-control:hover:not(:disabled) {
-  border-color: var(--workspace-accent);
-}
-
 .settings-shell .shortcut-draft .setting-control {
   border-style: dashed;
   background: transparent;
@@ -616,6 +631,7 @@ button:focus-visible {
   filter: grayscale(1);
 }
 
+.setting-control:focus-visible,
 .settings-shell :is(button, input, textarea, select):focus-visible {
   outline: 2px solid var(--workspace-accent);
   outline-offset: 3px;

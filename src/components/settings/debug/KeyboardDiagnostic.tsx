@@ -98,7 +98,7 @@ export const KeyboardDiagnostic: React.FC = () => {
         </p>
       )}
       {error !== null && (
-        <p className="text-sm text-red-500">
+        <p className="text-sm text-error">
           {t("settings.debug.keyboardDiagnostic.failed", { error })}
         </p>
       )}
