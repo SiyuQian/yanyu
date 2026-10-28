@@ -551,7 +551,9 @@ fn validate_bindings_for_implementation(
 ) -> Result<(), String> {
     let mut candidates = bindings.clone();
     for (id, binding) in &mut candidates {
-        if id == "translate_selection" && binding.current_binding.is_empty() {
+        if matches!(id.as_str(), "translate_selection" | "polish_selection")
+            && binding.current_binding.is_empty()
+        {
             continue;
         }
         if let Err(error) =
@@ -564,7 +566,9 @@ fn validate_bindings_for_implementation(
         }
     }
     for (id, binding) in &candidates {
-        if id == "translate_selection" && binding.current_binding.is_empty() {
+        if matches!(id.as_str(), "translate_selection" | "polish_selection")
+            && binding.current_binding.is_empty()
+        {
             continue;
         }
         validate_binding_change(&candidates, id, &binding.current_binding, implementation)?;
@@ -594,7 +598,9 @@ fn register_all_shortcuts_for_implementation(
         }
 
         let mut binding = stored_binding;
-        if id == "translate_selection" && binding.current_binding.is_empty() {
+        if matches!(id.as_str(), "translate_selection" | "polish_selection")
+            && binding.current_binding.is_empty()
+        {
             continue;
         }
 
@@ -1558,33 +1564,40 @@ mod tests {
 
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     #[test]
-    fn switch_preserves_translation_left_unassigned_after_upgrade() {
-        let mut bindings = crate::settings::get_default_settings().bindings;
-        bindings.get_mut("transcribe").unwrap().current_binding = "alt+shift+t".into();
-        bindings
-            .get_mut("translate_selection")
-            .unwrap()
-            .current_binding
-            .clear();
-        for implementation in [
-            crate::settings::KeyboardImplementation::Tauri,
-            crate::settings::KeyboardImplementation::HandyKeys,
+    fn switch_preserves_selection_shortcuts_left_unassigned_after_upgrade() {
+        for (selection_id, occupied, free) in [
+            ("translate_selection", "alt+shift+t", "option+shift+y"),
+            ("polish_selection", "alt+shift+p", "option+shift+y"),
         ] {
-            assert!(super::validate_bindings_for_implementation(&bindings, implementation).is_ok());
-            assert!(super::validate_binding_change(
-                &bindings,
-                "translate_selection",
-                "option+shift+t",
-                implementation
-            )
-            .is_err());
-            assert!(super::validate_binding_change(
-                &bindings,
-                "translate_selection",
-                "option+shift+y",
-                implementation
-            )
-            .is_ok());
+            let mut bindings = crate::settings::get_default_settings().bindings;
+            bindings.get_mut("transcribe").unwrap().current_binding = occupied.into();
+            bindings
+                .get_mut(selection_id)
+                .unwrap()
+                .current_binding
+                .clear();
+            for implementation in [
+                crate::settings::KeyboardImplementation::Tauri,
+                crate::settings::KeyboardImplementation::HandyKeys,
+            ] {
+                assert!(
+                    super::validate_bindings_for_implementation(&bindings, implementation).is_ok()
+                );
+                assert!(super::validate_binding_change(
+                    &bindings,
+                    selection_id,
+                    occupied,
+                    implementation
+                )
+                .is_err());
+                assert!(super::validate_binding_change(
+                    &bindings,
+                    selection_id,
+                    free,
+                    implementation
+                )
+                .is_ok());
+            }
         }
     }
 
