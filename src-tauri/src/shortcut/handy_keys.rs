@@ -228,7 +228,11 @@ impl HandyKeysState {
 
     /// Register a shortcut binding
     pub fn register(&self, binding: &ShortcutBinding) -> Result<(), String> {
-        if binding.id == "translate_selection" && binding.current_binding.is_empty() {
+        if matches!(
+            binding.id.as_str(),
+            "translate_selection" | "polish_selection"
+        ) && binding.current_binding.is_empty()
+        {
             return Ok(());
         }
         let (tx, rx) = mpsc::channel();
@@ -248,7 +252,11 @@ impl HandyKeysState {
 
     /// Unregister a shortcut binding
     pub fn unregister(&self, binding: &ShortcutBinding) -> Result<(), String> {
-        if binding.id == "translate_selection" && binding.current_binding.is_empty() {
+        if matches!(
+            binding.id.as_str(),
+            "translate_selection" | "polish_selection"
+        ) && binding.current_binding.is_empty()
+        {
             return Ok(());
         }
         let (tx, rx) = mpsc::channel();

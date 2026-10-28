@@ -1026,7 +1026,21 @@ impl ShortcutAction for CancelAction {
 struct TranslateSelectionAction;
 impl ShortcutAction for TranslateSelectionAction {
     fn start(&self, app: &AppHandle, _: &str, _: &str) {
-        crate::managers::translation::TranslationManager::start(app);
+        crate::managers::translation::TranslationManager::start(
+            app,
+            crate::selection::SelectionOperation::Translate,
+        );
+    }
+    fn stop(&self, _: &AppHandle, _: &str, _: &str) {}
+}
+
+struct PolishSelectionAction;
+impl ShortcutAction for PolishSelectionAction {
+    fn start(&self, app: &AppHandle, _: &str, _: &str) {
+        crate::managers::translation::TranslationManager::start(
+            app,
+            crate::selection::SelectionOperation::Polish,
+        );
     }
     fn stop(&self, _: &AppHandle, _: &str, _: &str) {}
 }
@@ -1057,6 +1071,11 @@ impl ShortcutAction for TestAction {
 // Static Action Map
 pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::new(|| {
     let mut map = HashMap::new();
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    map.insert(
+        "polish_selection".into(),
+        Arc::new(PolishSelectionAction) as Arc<dyn ShortcutAction>,
+    );
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     map.insert(
         "translate_selection".into(),

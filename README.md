@@ -10,6 +10,12 @@ Optional local polishing uses Qwen3-0.6B on Apple Silicon Macs with fixed conser
 
 With local polishing off, enabled personalization automatically processes each dictation through the configured service. It sends the transcript and enabled profile context, not the recording. The optional recording preview uses the same cleanup and requires no separate activation. Service failure, invalid output or a 10-second deadline preserves the original transcript. Both routes check language preservation, identifiers and changes beyond deletion. These checks do not guarantee semantic fidelity.
 
+## Selection polishing
+
+On Apple Silicon Macs, select a message in another app and press **Option + Shift + P** to preview a locally polished draft. The shortcut is configurable in General settings. Polish corrects grammar, spelling and punctuation and aims for a natural, considerate tone while preserving the original meaning and language. Review the result before using it: model output can change meaning. **Copy polished text** copies the result only when clicked; the feature never replaces the selection or sends the message. Escape closes the preview and cancels pending work.
+
+Download the shared Qwen3-0.6B model explicitly in General → Shared local text model. Selection polishing works independently of the dictation polishing switch, accepts up to 10,000 characters and never sends selected text to an external service or saves it to history. Applications that do not expose selected text through macOS Accessibility are unsupported. Missing models and incomplete or timed-out output show an error while leaving the original text and clipboard unchanged.
+
 ## Local meeting notes
 
 The Meetings page records in-person meetings from the microphone and online meetings from the microphone plus computer audio on Apple Silicon Macs running macOS 13+. Pause/resume excludes paused time. Audio is committed incrementally to separate local tracks; interrupted sessions recover only committed audio. Recordings, timestamped transcripts, speaker display names and editable notes are kept separately from dictation history until manual deletion. Playback, transcript correction, speaker renaming and Markdown export are available.

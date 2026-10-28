@@ -19,9 +19,9 @@ export const SettingsGroup: React.FC<SettingsGroupProps> = ({
 }) => {
   if (variant === "card") {
     return (
-      <section className="settings-card rounded-xl border border-mid-gray/20 px-4 py-2 sm:px-5">
+      <section className="settings-card border px-4 py-2 sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-2 py-3">
-          <h2 className="flex items-center gap-3 text-base font-semibold">
+          <h2 className="flex items-center gap-3 font-semibold leading-6">
             {icon && (
               <span className="settings-card-icon" aria-hidden="true">
                 {icon}
@@ -42,15 +42,13 @@ export const SettingsGroup: React.FC<SettingsGroupProps> = ({
     <section className="settings-group space-y-3">
       {title && (
         <div className="px-4">
-          <h2 className="text-xs font-medium text-mid-gray uppercase tracking-wide">
-            {title}
-          </h2>
+          <h2 className="uppercase leading-4">{title}</h2>
           {description && (
             <p className="text-xs text-mid-gray mt-1">{description}</p>
           )}
         </div>
       )}
-      <div className="settings-card border border-mid-gray/20 rounded-xl overflow-visible">
+      <div className="settings-card border overflow-visible">
         <div className="divide-y divide-mid-gray/20">{children}</div>
       </div>
     </section>

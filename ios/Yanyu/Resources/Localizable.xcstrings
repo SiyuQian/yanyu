@@ -5649,6 +5649,214 @@
         }
       }
     },
+    "polish.copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy polished text"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制润色结果"
+          }
+        }
+      }
+    },
+    "polish.errors.cancelled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polishing was cancelled. Select text and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "润色已取消，请重新选中文字后重试。"
+          }
+        }
+      }
+    },
+    "polish.errors.copy_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not copy the polished text. Try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法复制润色结果，请重试。"
+          }
+        }
+      }
+    },
+    "polish.errors.incomplete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model did not finish polishing. Try a shorter selection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型未能完成润色，请尝试缩短选中文字。"
+          }
+        }
+      }
+    },
+    "polish.errors.inference_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local polishing failed. Try a shorter selection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地润色失败，请尝试缩短选中文字。"
+          }
+        }
+      }
+    },
+    "polish.errors.language_changed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model changed the source language. Try a shorter selection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型改变了原文语言，请尝试缩短选中文字。"
+          }
+        }
+      }
+    },
+    "polish.errors.missing_model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Qwen3-0.6B in General settings to polish locally. The download starts only when you choose Download."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在常规设置中下载 Qwen3-0.6B，以在本地润色。只有点击下载才会开始下载。"
+          }
+        }
+      }
+    },
+    "polish.errors.timeout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local polishing timed out. Try a shorter selection."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地润色超时，请尝试缩短选中文字。"
+          }
+        }
+      }
+    },
+    "polish.errors.unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polishing is unavailable. Select text in another app and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "润色暂不可用，请在其他应用中选中文字后重试。"
+          }
+        }
+      }
+    },
+    "polish.errors.unsupported": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selection polishing requires an Apple Silicon Mac."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选中文字润色需要 Apple Silicon Mac。"
+          }
+        }
+      }
+    },
+    "polish.loading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polishing locally…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在本地润色…"
+          }
+        }
+      }
+    },
+    "polish.reviewHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review before use. Your original text stays unchanged."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请检查后使用，原文保持不变。"
+          }
+        }
+      }
+    },
+    "polish.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polish selection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "润色选中文字"
+          }
+        }
+      }
+    },
     "secureInput.blockedNoCulprit_one": {
       "localizations": {
         "en": {
@@ -8977,6 +9185,38 @@
         }
       }
     },
+    "settings.general.shortcut.bindings.polish_selection.description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview a locally polished version of selected text without replacing it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览选中文字的本地润色结果，不替换原文。"
+          }
+        }
+      }
+    },
+    "settings.general.shortcut.bindings.polish_selection.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polish selection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "润色选中文字"
+          }
+        }
+      }
+    },
     "settings.general.shortcut.bindings.transcribe.description": {
       "localizations": {
         "en": {
@@ -11766,13 +12006,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Qwen3-0.6B is shared by selection translation and optional Local polishing. Download it explicitly to use either feature."
+            "value": "Qwen3-0.6B is shared by selection translation, selection polishing and optional dictation polishing. Download it explicitly before use."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Qwen3-0.6B 用于划词翻译和可选的本地润色。请手动下载模型以使用这些功能。"
+            "value": "Qwen3-0.6B 由选中文字翻译、选中文字润色和可选的听写润色共享。使用前请手动下载。"
           }
         }
       }
