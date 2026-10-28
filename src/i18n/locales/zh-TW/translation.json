@@ -203,6 +203,10 @@
           "translate_selection": {
             "name": "選取文字翻譯",
             "description": "Qwen3-0.6B 用於選取文字翻譯和選用的本機潤飾。請手動下載模型。"
+          },
+          "polish_selection": {
+            "name": "潤飾選取文字",
+            "description": "預覽選取文字的本機潤飾結果，不取代原文。"
           }
         },
         "errors": {
@@ -935,7 +939,7 @@
     "copied": "已複製",
     "openSettings": "開啟模型設定",
     "modelTitle": "共用本機文字模型",
-    "modelDescription": "Qwen3-0.6B 用於選取文字翻譯和選用的本機潤飾。請手動下載模型。",
+    "modelDescription": "Qwen3-0.6B 由選取文字翻譯、選取文字潤飾和選用的聽寫潤飾共用。使用前請手動下載。",
     "errors": {
       "permission_denied": "請在系統設定 → 隱私權與安全性 → 輔助使用中允許 Yanyu，再選取文字並重試。",
       "unsupported_selection": "此應用程式未透過輔助使用提供選取文字。請在其他應用程式中重試。",
@@ -962,6 +966,23 @@
       "advanced": "調整應用程式偏好，讓言語融入你的工作方式。",
       "debug": "檢視診斷資訊，調整應用程式執行選項。",
       "about": "認識言語，以及專案背後的開源貢獻。"
+    }
+  },
+  "polish": {
+    "title": "潤飾選取文字",
+    "loading": "正在本機潤飾…",
+    "copy": "複製潤飾結果",
+    "reviewHint": "請檢查後使用，原文保持不變。",
+    "errors": {
+      "missing_model": "請在一般設定中下載 Qwen3-0.6B，以在本機潤飾。只有點選下載才會開始下載。",
+      "unsupported": "選取文字潤飾需要 Apple Silicon Mac。",
+      "inference_failed": "本機潤飾失敗，請嘗試縮短選取文字。",
+      "incomplete": "模型未能完成潤飾，請嘗試縮短選取文字。",
+      "timeout": "本機潤飾逾時，請嘗試縮短選取文字。",
+      "cancelled": "潤飾已取消，請重新選取文字後再試。",
+      "unavailable": "潤飾暫時無法使用，請在其他應用程式中選取文字後再試。",
+      "copy_failed": "無法複製潤飾結果，請再試一次。",
+      "language_changed": "模型變更了原文語言，請嘗試縮短選取文字。"
     }
   }
 }

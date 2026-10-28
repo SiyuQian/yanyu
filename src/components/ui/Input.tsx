@@ -11,11 +11,7 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const baseClasses =
-    "setting-control text-sm font-normal bg-mid-gray/5 border border-mid-gray/20 rounded-lg text-start transition-colors duration-150";
-
-  const interactiveClasses = disabled
-    ? "opacity-60 cursor-not-allowed bg-mid-gray/10 border-mid-gray/40"
-    : "hover:bg-logo-primary/10 hover:border-logo-primary focus:outline-none focus:bg-logo-primary/20 focus:border-logo-primary";
+    "setting-control text-sm text-start transition-colors duration-150";
 
   const variantClasses = {
     default: "px-3 py-2",
@@ -24,7 +20,7 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <input
-      className={`${baseClasses} ${variantClasses[variant]} ${interactiveClasses} ${className}`}
+      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
       disabled={disabled}
       {...props}
     />

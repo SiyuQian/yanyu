@@ -1,4 +1,4 @@
-//! Interactive translation popover; creation happens only after source selection capture.
+//! Shared translation/polishing popover; created only after source selection capture.
 use crate::{managers::translation::TranslationManager, selection::SelectionBounds};
 use tauri::{AppHandle, LogicalPosition, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 

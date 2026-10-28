@@ -926,6 +926,19 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
 
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    bindings.insert(
+        "polish_selection".into(),
+        ShortcutBinding {
+            id: "polish_selection".into(),
+            name: "Polish selection".into(),
+            description:
+                "Preview a locally polished version of selected text without replacing it.".into(),
+            default_binding: "option+shift+p".into(),
+            current_binding: "option+shift+p".into(),
+        },
+    );
+
     AppSettings {
         settings_schema_version: default_settings_schema_version(),
         bindings,
@@ -1086,7 +1099,7 @@ fn merge_missing_bindings(settings: &mut AppSettings) -> bool {
             continue;
         }
         // An upgrade must preserve user assignments, including modifier aliases.
-        if key == "translate_selection"
+        if matches!(key.as_str(), "translate_selection" | "polish_selection")
             && crate::shortcut::validate_binding_change(
                 &settings.bindings,
                 &key,
@@ -1301,6 +1314,59 @@ pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeri
 
 #[cfg(test)]
 mod tests {
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    #[test]
+    fn selection_polish_upgrade_preserves_conflicting_user_shortcuts() {
+        for implementation in [
+            KeyboardImplementation::Tauri,
+            KeyboardImplementation::HandyKeys,
+        ] {
+            for existing in ["option+shift+p", "alt+shift+p", "shift+alt+p"] {
+                let mut settings = get_default_settings();
+                settings.keyboard_implementation = implementation;
+                settings.bindings.remove("polish_selection");
+                settings
+                    .bindings
+                    .get_mut("transcribe")
+                    .unwrap()
+                    .current_binding = existing.into();
+                assert!(merge_missing_bindings(&mut settings));
+                assert_eq!(settings.bindings["transcribe"].current_binding, existing);
+                assert_eq!(settings.bindings["polish_selection"].current_binding, "");
+                assert!(!merge_missing_bindings(&mut settings));
+            }
+        }
+    }
+
+    #[test]
+    fn selection_polish_default_is_available_only_on_supported_devices() {
+        let mut settings = get_default_settings();
+        if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+            assert_eq!(
+                settings.bindings["polish_selection"].current_binding,
+                "option+shift+p"
+            );
+            settings
+                .bindings
+                .get_mut("polish_selection")
+                .unwrap()
+                .current_binding = "ctrl+shift+y".into();
+            assert!(!merge_missing_bindings(&mut settings));
+            assert_eq!(
+                settings.bindings["polish_selection"].current_binding,
+                "ctrl+shift+y"
+            );
+            settings.bindings.remove("polish_selection");
+            assert!(merge_missing_bindings(&mut settings));
+            assert_eq!(
+                settings.bindings["polish_selection"].current_binding,
+                "option+shift+p"
+            );
+        } else {
+            assert!(!settings.bindings.contains_key("polish_selection"));
+        }
+    }
+
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     #[test]
     fn translation_upgrade_preserves_existing_normalized_shortcuts() {

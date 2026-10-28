@@ -3,7 +3,7 @@
 :root {
   /* Palette source of truth. Each themed color is defined once as a
      light/dark pair; the active tokens below and the `data-theme` overrides
-     in App.css reference these, so a hex value lives in exactly one place. */
+     below reference these, so a hex value lives in exactly one place. */
   --light-color-text: #0f0f0f;
   --light-color-background: #fbfbfb;
   --light-color-logo-primary: #99e6dc;
@@ -14,9 +14,7 @@
   --dark-color-logo-primary: #62d4c7;
   --dark-color-logo-stroke: #c4f5ee;
 
-  /* Semantic status colors. First used by SecureInputWarning; intended to
-     replace the ad-hoc yellow-500/red-500 usages (e.g. ui/Alert.tsx) over
-     time so status styling is themeable from one place. */
+  /* Shared warning and error colors for status indicators and notices. */
   --light-color-warning: #d97706;
   --light-color-error: #dc2626;
   --dark-color-warning: #fbbf24;
@@ -53,6 +51,7 @@
   --color-logo-stroke: var(--light-color-logo-stroke);
   --color-warning: var(--light-color-warning);
   --color-error: var(--light-color-error);
+  --log-surface-shade: 6%;
   --workspace-canvas: var(--light-workspace-canvas);
   --workspace-card: var(--light-workspace-card);
   --workspace-sidebar: var(--light-workspace-sidebar);
@@ -71,6 +70,7 @@
     --color-logo-stroke: var(--dark-color-logo-stroke);
     --color-warning: var(--dark-color-warning);
     --color-error: var(--dark-color-error);
+    --log-surface-shade: 15%;
     --workspace-canvas: var(--dark-workspace-canvas);
     --workspace-card: var(--dark-workspace-card);
     --workspace-sidebar: var(--dark-workspace-sidebar);
@@ -99,6 +99,7 @@
   --color-logo-stroke: var(--light-color-logo-stroke);
   --color-warning: var(--light-color-warning);
   --color-error: var(--light-color-error);
+  --log-surface-shade: 6%;
   --workspace-canvas: var(--light-workspace-canvas);
   --workspace-card: var(--light-workspace-card);
   --workspace-sidebar: var(--light-workspace-sidebar);
@@ -116,6 +117,7 @@
   --color-logo-stroke: var(--dark-color-logo-stroke);
   --color-warning: var(--dark-color-warning);
   --color-error: var(--dark-color-error);
+  --log-surface-shade: 15%;
   --workspace-canvas: var(--dark-workspace-canvas);
   --workspace-card: var(--dark-workspace-card);
   --workspace-sidebar: var(--dark-workspace-sidebar);

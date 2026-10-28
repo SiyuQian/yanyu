@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
-import { Check, Copy, Languages, LoaderCircle, X } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Languages,
+  LoaderCircle,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { commands, type TranslationState } from "@/bindings";
 
 export default function TranslationPopover() {
   const { t } = useTranslation();
   const [state, setState] = useState<TranslationState>({
+    operation: "translate",
     phase: "loading",
     text: null,
     error: null,
@@ -14,6 +22,8 @@ export default function TranslationPopover() {
   });
   const [actionError, setActionError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const polishing = state.operation === "polish";
+  const namespace = polishing ? "polish" : "translation";
   useEffect(() => {
     let active = true;
     let unlisten: (() => void) | undefined;
@@ -73,7 +83,7 @@ export default function TranslationPopover() {
   return (
     <section
       className="flex h-screen flex-col overflow-hidden rounded-2xl border border-mid-gray/25 bg-background text-text shadow-2xl"
-      aria-label={t("translation.title")}
+      aria-label={t(`${namespace}.title`)}
     >
       <header className="flex shrink-0 items-center gap-3 border-b border-mid-gray/15 px-5 py-4">
         <div
@@ -81,10 +91,14 @@ export default function TranslationPopover() {
           className="flex min-w-0 flex-1 cursor-grab items-center gap-3 active:cursor-grabbing"
         >
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-logo-primary/20 text-logo-stroke">
-            <Languages size={19} aria-hidden="true" />
+            {polishing ? (
+              <Sparkles size={19} aria-hidden="true" />
+            ) : (
+              <Languages size={19} aria-hidden="true" />
+            )}
           </span>
           <h1 className="truncate font-semibold text-base">
-            {t("translation.title")}
+            {t(`${namespace}.title`)}
           </h1>
         </div>
         <button
@@ -107,14 +121,14 @@ export default function TranslationPopover() {
               size={18}
               aria-hidden="true"
             />
-            <p>{t("translation.loading")}</p>
+            <p>{t(`${namespace}.loading`)}</p>
           </div>
         )}
         {state.phase === "result" && (
           <div className="min-h-full rounded-xl border border-mid-gray/15 bg-mid-gray/5 p-4">
             <p
               className="whitespace-pre-wrap break-words text-[15px] leading-7"
-              lang="zh-CN"
+              lang={polishing ? undefined : "zh-CN"}
             >
               {state.text}
             </p>
@@ -125,8 +139,10 @@ export default function TranslationPopover() {
             className="rounded-xl border border-error/20 bg-error/5 p-4 text-sm leading-6"
             role="alert"
           >
-            {t(`translation.errors.${state.error}`, {
-              defaultValue: t("translation.errors.unavailable"),
+            {t(`${namespace}.errors.${state.error}`, {
+              defaultValue: t(`translation.errors.${state.error}`, {
+                defaultValue: t(`${namespace}.errors.unavailable`),
+              }),
             })}
           </div>
         )}
@@ -141,11 +157,14 @@ export default function TranslationPopover() {
         )}
         {actionError && (
           <p className="mt-3 text-sm text-error" role="alert">
-            {t("translation.errors.copy_failed")}
+            {t(`${namespace}.errors.copy_failed`)}
           </p>
         )}
       </div>
       <footer className="shrink-0 border-t border-mid-gray/15 px-5 py-4">
+        {polishing && (
+          <p className="mb-3 text-xs text-text/60">{t("polish.reviewHint")}</p>
+        )}
         <button
           type="button"
           disabled={state.phase !== "result" || !state.text}
@@ -157,7 +176,7 @@ export default function TranslationPopover() {
           ) : (
             <Copy size={17} aria-hidden="true" />
           )}
-          {t(copied ? "translation.copied" : "translation.copy")}
+          {t(copied ? "translation.copied" : `${namespace}.copy`)}
         </button>
       </footer>
     </section>

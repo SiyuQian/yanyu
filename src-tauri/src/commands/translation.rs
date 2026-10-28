@@ -2,14 +2,14 @@ use crate::managers::translation::{TranslationManager, TranslationState};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
-/// Return transient translation state; nothing is stored on disk.
+/// Return transient selection-processing state; nothing is stored on disk.
 #[tauri::command]
 #[specta::specta]
 pub fn get_translation_state(manager: State<'_, TranslationManager>) -> TranslationState {
     manager.state()
 }
 
-/// Copy only the current completed translation, after the popover's explicit Copy action.
+/// Copy only the current completed selection result after the popover's explicit Copy action.
 #[tauri::command]
 #[specta::specta]
 pub fn copy_translation(

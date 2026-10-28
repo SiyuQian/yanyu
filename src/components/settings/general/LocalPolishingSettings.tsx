@@ -105,7 +105,7 @@ export function LocalPolishingSettings() {
             />
           )}
           {(error || status?.error) && (
-            <p className="text-sm text-red-500" role="alert">
+            <p className="text-sm text-error" role="alert">
               {t("settings.localPolishing.error")}
             </p>
           )}
