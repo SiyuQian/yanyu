@@ -12,6 +12,7 @@ import {
 } from "@/bindings";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 const time = (ms: number) =>
   `${Math.floor(ms / 60000)
@@ -246,18 +247,19 @@ export function MeetingsPage() {
         </div>
       )}
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2">
-          {t("meetings.mode")}
-          <select
-            className="rounded border border-mid-gray/30 bg-background p-2"
-            value={mode}
+        <div className="flex items-center gap-2">
+          <span id="meeting-mode-label">{t("meetings.mode")}</span>
+          <Dropdown
+            aria-labelledby="meeting-mode-label"
+            selectedValue={mode}
             disabled={pending || !!active || !setup?.available}
-            onChange={(event) => setMode(event.target.value as MeetingMode)}
-          >
-            <option value="in_person">{t("meetings.inPerson")}</option>
-            <option value="online">{t("meetings.online")}</option>
-          </select>
-        </label>
+            onSelect={(value) => setMode(value as MeetingMode)}
+            options={[
+              { value: "in_person", label: t("meetings.inPerson") },
+              { value: "online", label: t("meetings.online") },
+            ]}
+          />
+        </div>
         <Button
           disabled={pending || !!active || !setup?.available || dirty}
           onClick={() =>
