@@ -314,7 +314,8 @@ test("recording controls survive navigation and failed processing can retry", as
   await expect(
     page.getByRole("heading", { name: "Meeting NoteTaker" }),
   ).toBeVisible();
-  await page.getByLabel("Meeting mode").selectOption("online");
+  await page.getByRole("button", { name: "Meeting mode" }).click();
+  await page.getByRole("button", { name: /^Online/ }).click();
   await page.getByRole("button", { name: "Start recording" }).click();
   await expect(
     page.getByRole("button", { name: "Captured fixture", exact: true }),
