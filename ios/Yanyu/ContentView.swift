@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var isEvaluationAudioImporterPresented = false
     @State private var evaluationReferenceText = ""
   #endif
+  @State private var keyboardDictation = KeyboardDictationController()
   @State private var searchText = ""
   @State private var hasCopiedTranscript = false
 
@@ -46,6 +47,17 @@ struct ContentView: View {
       }
       .navigationTitle("Yanyu")
       .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          if hasCompletedOnboarding {
+            NavigationLink {
+              KeyboardSetupView(controller: keyboardDictation)
+            } label: {
+              Image(systemName: "keyboard")
+            }
+            .accessibilityLabel(Text("iosApp.keyboardTitle"))
+            .accessibilityIdentifier("keyboardSetup")
+          }
+        }
         ToolbarItem(placement: .topBarTrailing) {
           if hasCompletedOnboarding {
             NavigationLink {
@@ -84,8 +96,17 @@ struct ContentView: View {
     }
     .onChange(of: scenePhase) { _, newPhase in
       if newPhase == .background {
-        viewModel.handleAppBackground()
+        let continuesKeyboardSession =
+          keyboardDictation.isActive
+          && (viewModel.state == .recording || viewModel.state == .transcribing)
+        if !continuesKeyboardSession { viewModel.handleAppBackground() }
       }
+    }
+    .onReceive(
+      NotificationCenter.default.publisher(
+        for: UIApplication.protectedDataWillBecomeUnavailableNotification)
+    ) { _ in
+      keyboardDictation.cancel(viewModel: viewModel)
     }
     .task {
       #if DEBUG
@@ -97,6 +118,10 @@ struct ContentView: View {
           viewModel.errorKey = "iosApp.permissionDenied"
         }
       #endif
+      while !Task.isCancelled {
+        keyboardDictation.refresh(viewModel: viewModel, using: modelContext)
+        do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
+      }
     }
     #if DEBUG
       .fileImporter(
@@ -189,6 +214,7 @@ struct ContentView: View {
         }
 
         historySection
+          .disabled(keyboardDictation.isActive)
       }
       .padding()
       .frame(maxWidth: 680)
@@ -491,14 +517,19 @@ struct ContentView: View {
           ProgressView("iosApp.transcribing")
         }
         Button("iosApp.cancel", role: .cancel) {
-          viewModel.cancelTranscription()
+          if keyboardDictation.isActive {
+            keyboardDictation.cancel(viewModel: viewModel)
+          } else {
+            viewModel.cancelTranscription()
+          }
         }
       }
 
       Button {
         if viewModel.state == .recording {
+          keyboardDictation.prepareForTranscription(viewModel: viewModel)
           viewModel.stopAndTranscribe(using: modelContext)
-        } else {
+        } else if !keyboardDictation.isActive {
           hasCopiedTranscript = false
           Task { await viewModel.startRecording() }
         }
@@ -517,6 +548,7 @@ struct ContentView: View {
       .tint(recordingControlTint)
       .disabled(
         !viewModel.isModelLoaded
+          || (keyboardDictation.isActive && viewModel.state != .recording)
           || viewModel.state == .requestingPermission
           || viewModel.state == .transcribing
           || viewModel.hasPendingAudioRecovery

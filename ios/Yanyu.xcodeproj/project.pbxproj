@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		07AD2A19C57015B37B58A88E /* TranscriptRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 820B82B1F8BA4EC245BCEACC /* TranscriptRecordTests.swift */; };
 		0805E95A51789C8E764E459C /* AppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D566E99B9DAF4191AA10B5 /* AppearancePreference.swift */; };
+		091C1B76C56778FFEEA21F76 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F53BFDA1763E980439570CB /* KeyboardViewController.swift */; };
 		0ACD9533D819AD9085D09881 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F5A949E409C04578EB30BE8A /* InfoPlist.strings */; };
 		17BB5BCEC4C79076CC587FA0 /* TemporaryAudioFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0980CAAD1ADFDAFCFCF08F9D /* TemporaryAudioFile.swift */; };
 		1BC3ECA58C75329ADCBABECF /* WhisperKitEvaluationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA812D6F72B3A38A1616534D /* WhisperKitEvaluationEngine.swift */; };
@@ -22,26 +23,34 @@
 		3F641D3277C271101CEDC744 /* DeviceResourceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F287BA9413FFA222F890721 /* DeviceResourceMonitor.swift */; };
 		43599147DB5E8C8A9E4332F3 /* TranscriptionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9512B5EE1E566C95A1020CED /* TranscriptionEngineTests.swift */; };
 		45BCA3B0CA8C5385D03FA2A7 /* DictationStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D0B490079B4C1D9EB5DF104 /* DictationStateMachine.swift */; };
+		4F926567DD6B9B83CA49C94F /* KeyboardDictationControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAE51E9614EBA98DF3A94B13 /* KeyboardDictationControllerTests.swift */; };
 		53266F3823C98EBB4C984BF3 /* AppearancePreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8B03C50805D04771E80C998 /* AppearancePreferenceTests.swift */; };
 		5C37EB5D6C9C1B0AE33F34EA /* ModelLanguageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E6AFEE6752DDDDBF72ACD44 /* ModelLanguageSelection.swift */; };
 		606BF4053CAD8352C6BA92C1 /* DictationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA047534E2FD24501B31151 /* DictationViewModel.swift */; };
+		67838B29B00C3DE94CC90E5D /* KeyboardSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F6483D68A2323F4667800E /* KeyboardSetupView.swift */; };
 		6819E62D6D82F939ABED160E /* yanyu_core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB28931BDBD9E33D167D23B /* yanyu_core.swift */; };
 		685720626CCAD9F5AB06C720 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B976880DB977C322FEF9284 /* SettingsView.swift */; };
+		6A266F9A69E0DD1F7D9640C4 /* KeyboardSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7C9D3550C4E27F16CF0919C /* KeyboardSessionStore.swift */; };
 		6A80F7C502D4AACDB2E97A59 /* ModelPackageInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE847859393E509024BC2D7 /* ModelPackageInstaller.swift */; };
+		6DA5867C0AE865C50AEE6F18 /* YanyuKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F7CC1811582A5132810A43BF /* YanyuKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6E6F46702228F75562FD05F8 /* TranscriptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 994ECABECECB90C95812E36A /* TranscriptStore.swift */; };
+		7274DF5407649A5C2A4EF4F8 /* KeyboardResultConsumer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC7B58B26B01A840540D4E4 /* KeyboardResultConsumer.swift */; };
 		761E3B783206647640B05082 /* TranscriptionCharacterError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434F92113E0C7E2620478894 /* TranscriptionCharacterError.swift */; };
 		76D87E4F661392A5763615F4 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9498B01BF6C06BB7C14AA090 /* WhisperKit */; };
 		77F3C51FB4E361205DEF2956 /* TranscriptRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 449DB5BC0A62700C33991009 /* TranscriptRecord.swift */; };
 		7B37F433E168095B99242BF5 /* ModelPackageStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40EE5FCAFD85544D60C06E85 /* ModelPackageStoreTests.swift */; };
+		803EE1E360ADB76773C65881 /* KeyboardResultConsumerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4C324AFC180FF7D3FC3E93 /* KeyboardResultConsumerTests.swift */; };
 		84AF82DC56E5099D2DCA0C8B /* ModelArtifactIntegrityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DED4743051035C440B9AD5 /* ModelArtifactIntegrityTests.swift */; };
 		8B021A791201DB3EF31881BF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DA6FC6250F1DDEAEF3729A4D /* Localizable.xcstrings */; };
 		9E7DB643385A15AC919C3882 /* InferenceEvaluationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62958F127D6E21AB741EBA6 /* InferenceEvaluationTests.swift */; };
 		9F1672F83D7664574CC55A59 /* ModelPackageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C60F2BB6159310EB20DBA6C /* ModelPackageStore.swift */; };
 		9F3614780BFE2E97F582583D /* AudioCaptureServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031B8C9203A4892F3345B9B2 /* AudioCaptureServiceTests.swift */; };
 		A05A69FD088F355E5E5ADADF /* SettingsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329FEE9EB3150ED93C135C7B /* SettingsUITests.swift */; };
+		AB811E6F226F463E0E021CA8 /* KeyboardSessionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CCF70F1E7AA18F2B8A51FF2 /* KeyboardSessionStoreTests.swift */; };
 		B02984755118D7FFFB898663 /* WhisperKitEvaluationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DE4D7F8AEA11F0482161B59 /* WhisperKitEvaluationTests.swift */; };
 		B4B50902EFF15E610D87E086 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F11729BE00B65397CC956E85 /* Metal.framework */; };
 		B6E0BF5CC59136B6A7EB8D64 /* ModelCatalogDownloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69B3CD579669C4AF26FD18F1 /* ModelCatalogDownloadTests.swift */; };
+		B9019C5358540183506E83FC /* KeyboardResultConsumer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC7B58B26B01A840540D4E4 /* KeyboardResultConsumer.swift */; };
 		C0501D660D4BFE8570F3B37C /* TemporaryAudioFileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BF9D72ED21EE42376FC3C4 /* TemporaryAudioFileTests.swift */; };
 		C679F985C0829E506AC21209 /* ModelPackageInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6767A83DB958631568F19 /* ModelPackageInstallerTests.swift */; };
 		CDF4D166834DCD2B812206E4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DA97A34813D10BB045869A92 /* Accelerate.framework */; };
@@ -51,11 +60,20 @@
 		DAEBEB88D7BC23AD26832718 /* YanyuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27848E55F12FDC11730773E1 /* YanyuApp.swift */; };
 		DC4234BADB48085065C375A7 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3117D6C05476B95A8B2940CF /* MetalKit.framework */; };
 		E04387D9CA7CFF64CF3DFDDD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 92B4C00B679106AEBF0A8EE6 /* PrivacyInfo.xcprivacy */; };
+		E708516832C5CECB5B1ED9F1 /* KeyboardDictationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CC3A970EACA83E7A5F27989 /* KeyboardDictationController.swift */; };
 		EE494D8B6734DA596FEA4278 /* InferenceEvaluation.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD7327276CD994D68B3CB22 /* InferenceEvaluation.swift */; };
+		F0371D69F8AB8C8AB3AD8ACE /* KeyboardSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7C9D3550C4E27F16CF0919C /* KeyboardSessionStore.swift */; };
 		F220F3951380052C44592023 /* ModelCatalogInstallTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F2B131B17878E1C1A33FF4C /* ModelCatalogInstallTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		8239D40317EEA720F8FEE53F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 838BA40288049C48C8F9DB87 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9A2800E6184A7269AF006CEF;
+			remoteInfo = YanyuKeyboard;
+		};
 		89A2CC613B7499B3A8091E71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 838BA40288049C48C8F9DB87 /* Project object */;
@@ -71,6 +89,20 @@
 			remoteInfo = Yanyu;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3B708462C846EAC4707D4518 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6DA5867C0AE865C50AEE6F18 /* YanyuKeyboard.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		00A6767A83DB958631568F19 /* ModelPackageInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelPackageInstallerTests.swift; sourceTree = "<group>"; };
@@ -98,6 +130,8 @@
 		6091FEB4E7F3CDC0D321FB3A /* FleursEvaluationManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FleursEvaluationManifest.swift; sourceTree = "<group>"; };
 		69B3CD579669C4AF26FD18F1 /* ModelCatalogDownloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCatalogDownloadTests.swift; sourceTree = "<group>"; };
 		7586E1C8C70A1FA8622E7C0B /* YanyuTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = YanyuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7AC7B58B26B01A840540D4E4 /* KeyboardResultConsumer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardResultConsumer.swift; sourceTree = "<group>"; };
+		7CCF70F1E7AA18F2B8A51FF2 /* KeyboardSessionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSessionStoreTests.swift; sourceTree = "<group>"; };
 		7E6AFEE6752DDDDBF72ACD44 /* ModelLanguageSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelLanguageSelection.swift; sourceTree = "<group>"; };
 		7F287BA9413FFA222F890721 /* DeviceResourceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceResourceMonitor.swift; sourceTree = "<group>"; };
 		820B82B1F8BA4EC245BCEACC /* TranscriptRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptRecordTests.swift; sourceTree = "<group>"; };
@@ -108,22 +142,31 @@
 		9512B5EE1E566C95A1020CED /* TranscriptionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionEngineTests.swift; sourceTree = "<group>"; };
 		95CF62ADB03F5AE4FD971B33 /* yanyu_coreFFI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = yanyu_coreFFI.h; sourceTree = "<group>"; };
 		994ECABECECB90C95812E36A /* TranscriptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptStore.swift; sourceTree = "<group>"; };
+		9A4B66ADC245FE00E7190832 /* Yanyu.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Yanyu.entitlements; sourceTree = "<group>"; };
+		9CC3A970EACA83E7A5F27989 /* KeyboardDictationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDictationController.swift; sourceTree = "<group>"; };
+		9F53BFDA1763E980439570CB /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
 		9FB28931BDBD9E33D167D23B /* yanyu_core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = yanyu_core.swift; sourceTree = "<group>"; };
 		A3BCC0E11AD1A9B79C9F23F0 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		A67ADB5B9BD89A8D4F03B67F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B0E94C74A87597AAFA9329F2 /* AudioCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureService.swift; sourceTree = "<group>"; };
+		BA4C324AFC180FF7D3FC3E93 /* KeyboardResultConsumerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardResultConsumerTests.swift; sourceTree = "<group>"; };
 		BA812D6F72B3A38A1616534D /* WhisperKitEvaluationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperKitEvaluationEngine.swift; sourceTree = "<group>"; };
 		C0DC1198D2CF28F1F531AC09 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		C1D8462FD3793972BF0F9ED2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C3F98AE07F3A2FA35CCAC6DB /* Yanyu.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Yanyu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C62958F127D6E21AB741EBA6 /* InferenceEvaluationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceEvaluationTests.swift; sourceTree = "<group>"; };
 		CCA047534E2FD24501B31151 /* DictationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationViewModel.swift; sourceTree = "<group>"; };
+		D285EDC02744C43CFE4A22CE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D7BF9D72ED21EE42376FC3C4 /* TemporaryAudioFileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryAudioFileTests.swift; sourceTree = "<group>"; };
 		D8B03C50805D04771E80C998 /* AppearancePreferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearancePreferenceTests.swift; sourceTree = "<group>"; };
 		DA6FC6250F1DDEAEF3729A4D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		DA97A34813D10BB045869A92 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		DAE51E9614EBA98DF3A94B13 /* KeyboardDictationControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDictationControllerTests.swift; sourceTree = "<group>"; };
+		E1F6483D68A2323F4667800E /* KeyboardSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSetupView.swift; sourceTree = "<group>"; };
 		ECD7327276CD994D68B3CB22 /* InferenceEvaluation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceEvaluation.swift; sourceTree = "<group>"; };
 		F11729BE00B65397CC956E85 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		F7C9D3550C4E27F16CF0919C /* KeyboardSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSessionStore.swift; sourceTree = "<group>"; };
+		F7CC1811582A5132810A43BF /* YanyuKeyboard.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = YanyuKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE801305A5C9C3C6040BC9D6 /* ModelCatalogDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCatalogDownload.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -154,10 +197,20 @@
 			isa = PBXGroup;
 			children = (
 				C3F98AE07F3A2FA35CCAC6DB /* Yanyu.app */,
+				F7CC1811582A5132810A43BF /* YanyuKeyboard.appex */,
 				7586E1C8C70A1FA8622E7C0B /* YanyuTests.xctest */,
 				24CF7FB09B534D5E96F7234A /* YanyuUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		29E4A7BC646A322C69F82513 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				7AC7B58B26B01A840540D4E4 /* KeyboardResultConsumer.swift */,
+				F7C9D3550C4E27F16CF0919C /* KeyboardSessionStore.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		3E5F7F066F0017BE9CE0EE8D /* YanyuUITests */ = {
@@ -187,6 +240,9 @@
 				0D0B490079B4C1D9EB5DF104 /* DictationStateMachine.swift */,
 				CCA047534E2FD24501B31151 /* DictationViewModel.swift */,
 				ECD7327276CD994D68B3CB22 /* InferenceEvaluation.swift */,
+				D285EDC02744C43CFE4A22CE /* Info.plist */,
+				9CC3A970EACA83E7A5F27989 /* KeyboardDictationController.swift */,
+				E1F6483D68A2323F4667800E /* KeyboardSetupView.swift */,
 				FE801305A5C9C3C6040BC9D6 /* ModelCatalogDownload.swift */,
 				7E6AFEE6752DDDDBF72ACD44 /* ModelLanguageSelection.swift */,
 				3EE847859393E509024BC2D7 /* ModelPackageInstaller.swift */,
@@ -197,6 +253,7 @@
 				449DB5BC0A62700C33991009 /* TranscriptRecord.swift */,
 				994ECABECECB90C95812E36A /* TranscriptStore.swift */,
 				367FCA2BC972D87407057FE9 /* Yanyu-Bridging-Header.h */,
+				9A4B66ADC245FE00E7190832 /* Yanyu.entitlements */,
 				27848E55F12FDC11730773E1 /* YanyuApp.swift */,
 				02CC973513BAD1DAE55E2BB2 /* YanyuCoreService.swift */,
 				8570D23A0911A8CBB3BAB946 /* Generated */,
@@ -209,7 +266,9 @@
 		724C1D4BD2B3C5C671A2C330 = {
 			isa = PBXGroup;
 			children = (
+				29E4A7BC646A322C69F82513 /* Shared */,
 				51069F7CCDC79070256A4392 /* Yanyu */,
+				BA1D2F40648A250620AC43E2 /* YanyuKeyboard */,
 				FFA6543036FA7157698B4C2E /* YanyuTests */,
 				3E5F7F066F0017BE9CE0EE8D /* YanyuUITests */,
 				CDE092D10D790218DBD04EA3 /* Frameworks */,
@@ -225,6 +284,14 @@
 				149AE0AB583CF0ADB22A80F9 /* yanyu_coreFFI.modulemap */,
 			);
 			path = Generated;
+			sourceTree = "<group>";
+		};
+		BA1D2F40648A250620AC43E2 /* YanyuKeyboard */ = {
+			isa = PBXGroup;
+			children = (
+				9F53BFDA1763E980439570CB /* KeyboardViewController.swift */,
+			);
+			path = YanyuKeyboard;
 			sourceTree = "<group>";
 		};
 		CDE092D10D790218DBD04EA3 /* Frameworks */ = {
@@ -247,6 +314,9 @@
 				6091FEB4E7F3CDC0D321FB3A /* FleursEvaluationManifest.swift */,
 				51E20F33309ED559C722326D /* FleursEvaluationManifestTests.swift */,
 				C62958F127D6E21AB741EBA6 /* InferenceEvaluationTests.swift */,
+				DAE51E9614EBA98DF3A94B13 /* KeyboardDictationControllerTests.swift */,
+				BA4C324AFC180FF7D3FC3E93 /* KeyboardResultConsumerTests.swift */,
+				7CCF70F1E7AA18F2B8A51FF2 /* KeyboardSessionStoreTests.swift */,
 				94DED4743051035C440B9AD5 /* ModelArtifactIntegrityTests.swift */,
 				69B3CD579669C4AF26FD18F1 /* ModelCatalogDownloadTests.swift */,
 				2F2B131B17878E1C1A33FF4C /* ModelCatalogInstallTests.swift */,
@@ -284,6 +354,23 @@
 			productReference = 24CF7FB09B534D5E96F7234A /* YanyuUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		9A2800E6184A7269AF006CEF /* YanyuKeyboard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E80D6153D08E6AD1D16E738 /* Build configuration list for PBXNativeTarget "YanyuKeyboard" */;
+			buildPhases = (
+				7BB0AF54A8686606D75C2E9A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = YanyuKeyboard;
+			packageProductDependencies = (
+			);
+			productName = YanyuKeyboard;
+			productReference = F7CC1811582A5132810A43BF /* YanyuKeyboard.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		C21C5F1CD467A2BE445A6B68 /* Yanyu */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9953F96BA893A0C94544D7F4 /* Build configuration list for PBXNativeTarget "Yanyu" */;
@@ -292,10 +379,12 @@
 				AB0D5B8B87DDFC787FCB871E /* Sources */,
 				247B884005DABE5246400F08 /* Resources */,
 				B1F92DDE2F5425CF11F871CF /* Frameworks */,
+				3B708462C846EAC4707D4518 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3B3C1B1AC5045E9DDB9FD17A /* PBXTargetDependency */,
 			);
 			name = Yanyu;
 			packageProductDependencies = (
@@ -360,6 +449,7 @@
 			projectRoot = "";
 			targets = (
 				C21C5F1CD467A2BE445A6B68 /* Yanyu */,
+				9A2800E6184A7269AF006CEF /* YanyuKeyboard */,
 				E9620DCEB6093BE4F1B9CECA /* YanyuTests */,
 				310B5B3C65573573B2394C60 /* YanyuUITests */,
 			);
@@ -442,6 +532,9 @@
 				3D46FB835885F008BBA96594 /* FleursEvaluationManifest.swift in Sources */,
 				2B1B6D6BC14DE99917BF3865 /* FleursEvaluationManifestTests.swift in Sources */,
 				9E7DB643385A15AC919C3882 /* InferenceEvaluationTests.swift in Sources */,
+				4F926567DD6B9B83CA49C94F /* KeyboardDictationControllerTests.swift in Sources */,
+				803EE1E360ADB76773C65881 /* KeyboardResultConsumerTests.swift in Sources */,
+				AB811E6F226F463E0E021CA8 /* KeyboardSessionStoreTests.swift in Sources */,
 				84AF82DC56E5099D2DCA0C8B /* ModelArtifactIntegrityTests.swift in Sources */,
 				B6E0BF5CC59136B6A7EB8D64 /* ModelCatalogDownloadTests.swift in Sources */,
 				F220F3951380052C44592023 /* ModelCatalogInstallTests.swift in Sources */,
@@ -457,6 +550,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7BB0AF54A8686606D75C2E9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7274DF5407649A5C2A4EF4F8 /* KeyboardResultConsumer.swift in Sources */,
+				F0371D69F8AB8C8AB3AD8ACE /* KeyboardSessionStore.swift in Sources */,
+				091C1B76C56778FFEEA21F76 /* KeyboardViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AB0D5B8B87DDFC787FCB871E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -468,6 +571,10 @@
 				45BCA3B0CA8C5385D03FA2A7 /* DictationStateMachine.swift in Sources */,
 				606BF4053CAD8352C6BA92C1 /* DictationViewModel.swift in Sources */,
 				EE494D8B6734DA596FEA4278 /* InferenceEvaluation.swift in Sources */,
+				E708516832C5CECB5B1ED9F1 /* KeyboardDictationController.swift in Sources */,
+				B9019C5358540183506E83FC /* KeyboardResultConsumer.swift in Sources */,
+				6A266F9A69E0DD1F7D9640C4 /* KeyboardSessionStore.swift in Sources */,
+				67838B29B00C3DE94CC90E5D /* KeyboardSetupView.swift in Sources */,
 				2C1CFABE6191535D4A9191E0 /* ModelCatalogDownload.swift in Sources */,
 				5C37EB5D6C9C1B0AE33F34EA /* ModelLanguageSelection.swift in Sources */,
 				6A80F7C502D4AACDB2E97A59 /* ModelPackageInstaller.swift in Sources */,
@@ -486,6 +593,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		3B3C1B1AC5045E9DDB9FD17A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9A2800E6184A7269AF006CEF /* YanyuKeyboard */;
+			targetProxy = 8239D40317EEA720F8FEE53F /* PBXContainerItemProxy */;
+		};
 		622311376FD47245CA8A44A4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C21C5F1CD467A2BE445A6B68 /* Yanyu */;
@@ -533,10 +645,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Yanyu/Yanyu.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Yanyu/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Yanyu;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Required to hear your voice for transcription.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -552,6 +666,26 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.siyuqian.yanyu.ios;
 				SDKROOT = iphoneos;
 				SWIFT_OBJC_BRIDGING_HEADER = "Yanyu/Yanyu-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		4F487634DC010035749726F6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = YanyuKeyboard/YanyuKeyboard.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = YanyuKeyboard/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.siyuqian.yanyu.ios.keyboard;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -733,10 +867,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Yanyu/Yanyu.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Yanyu/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Yanyu;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Required to hear your voice for transcription.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -752,6 +888,26 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.siyuqian.yanyu.ios;
 				SDKROOT = iphoneos;
 				SWIFT_OBJC_BRIDGING_HEADER = "Yanyu/Yanyu-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F13F7A5DF764D78F71EEC6B5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = YanyuKeyboard/YanyuKeyboard.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = YanyuKeyboard/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.siyuqian.yanyu.ios.keyboard;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -773,6 +929,15 @@
 			buildConfigurations = (
 				70355131C64C7646885696AD /* Debug */,
 				5339F7527D117C2FD78113A4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6E80D6153D08E6AD1D16E738 /* Build configuration list for PBXNativeTarget "YanyuKeyboard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F13F7A5DF764D78F71EEC6B5 /* Debug */,
+				4F487634DC010035749726F6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

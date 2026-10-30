@@ -1505,6 +1505,342 @@
         }
       }
     },
+    "iosApp.keyboardDelete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete backward"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退格"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardEnable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable the keyboard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用键盘"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording or transcription stopped. Open Yanyu to retry or delete the retained audio."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "录音或转写已停止。打开言语，可重试或删除保留的录音。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardFullAccess": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Full Access in keyboard settings to stop here, or stop in Yanyu. Recording ends after 60 seconds."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在键盘设置中允许完全访问，即可在此结束录音；也可返回言语结束。录音将在 60 秒后停止。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardIdle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Yanyu and start keyboard dictation, then return here."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开言语并开始键盘语音输入，然后返回此处。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardInsert": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insert text"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插入文字"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardInserted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text inserted. Start a new recording in Yanyu."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字已插入。请在言语中开始新的录音。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardNext": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next keyboard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换键盘"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardPrivacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start here, then switch to another app and select Yanyu using the globe key. Recording continues for up to 60 seconds. Stop from the keyboard, review the transcript, then tap Insert text. Audio and transcription stay on this iPhone. Only this session’s text is shared with the keyboard, for up to 5 minutes. Each recording must start in Yanyu. Locking the phone stops the session."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此开始后，切换到其他 App，长按地球键选择言语。录音最多持续 60 秒。在键盘中结束录音，检查转写后点击「插入文字」。录音和转写均在此 iPhone 上处理；仅本次文字会向键盘提供，最长 5 分钟。每次录音都需在言语中开始，锁屏会停止会话。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardRecording": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording in Yanyu · stops after 60 seconds"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言语正在录音 · 60 秒后自动结束"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardRecovery": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to the recording screen to retry or delete the retained audio."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回录音页面，可重试或删除保留的录音。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardReturn": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New line"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "换行"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardReview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review the text, then insert it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请检查文字，然后插入。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardSetupInstructions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Settings → General → Keyboard → Keyboards → Add New Keyboard, select Yanyu. Enable Allow Full Access to stop a recording from the keyboard. Basic typing works without it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在「设置 → 通用 → 键盘 → 键盘 → 添加新键盘」中选择言语。开启「允许完全访问」后，可从键盘结束录音；基础文字输入无需此权限。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardShift": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shift"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换大小写"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardSpace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空格"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardStartInApp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start recording in Yanyu"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在言语中开始录音"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardStartRecording": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start keyboard dictation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始键盘语音输入"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yanyu Keyboard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言语键盘"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardUnavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard sharing is unavailable. Check Full Access and the app’s setup, or use copy/share in Yanyu."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键盘共享不可用。请检查完全访问权限及 App 配置，或使用言语中的复制与分享。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardVoiceInput": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice input"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语音输入"
+          }
+        }
+      }
+    },
     "iosApp.language": {
       "localizations": {
         "en": {

@@ -24,6 +24,10 @@
 
 跨窗口发言人匹配使用声学参考音频，并标记不确定的归属。真实 MOSS 中英混合语音的发言人质量、原生权限与设备行为、听写静音设置下的并行录音，以及两小时有声会议推理尚未验证；合成存储测试不代表这些条件已通过。可按[会议验证说明](docs/DEVELOPMENT.md#meeting-notetaker-verification)运行本地实验。Windows、Linux 和 Intel Mac 不支持会议录音，现有听写功能继续保留。
 
+## iPhone 键盘（开发中）
+
+原生 iOS 工程已加入键盘扩展，支持基础文字输入与本地语音转写结果插入。每次先在言语中开始录音，再切换到其他 App，在键盘中结束录音、检查结果并手动插入。录音最长 60 秒。设备签名、App Group 配置和真机后台录音与转写仍需验证。详见 [iOS 配置与限制](ios/README.md#keyboard-extension-and-voice-input)。
+
 ## 项目来源
 
 - 上游项目：[cjpais/Handy](https://github.com/cjpais/Handy)

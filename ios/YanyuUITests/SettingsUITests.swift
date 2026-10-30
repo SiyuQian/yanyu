@@ -2,6 +2,18 @@ import XCTest
 
 final class SettingsUITests: XCTestCase {
   @MainActor
+  func testKeyboardSetupExplainsActivationAndDoesNotRecordWithoutAModel() throws {
+    let app = launchApp(language: "en", locale: "en_US")
+    let setup = app.buttons["keyboardSetup"]
+    XCTAssertTrue(setup.waitForExistence(timeout: 10))
+    setup.tap()
+    XCTAssertTrue(app.navigationBars["Yanyu Keyboard"].waitForExistence(timeout: 5))
+    XCTAssertTrue(app.staticTexts["keyboardSetupInstructions"].exists)
+    XCTAssertFalse(app.buttons["keyboardStartRecording"].isEnabled)
+    XCTAssertTrue(app.buttons["Open System Settings"].exists)
+  }
+
+  @MainActor
   func testFirstRunShowsLocalProcessingDisclosureAndContinueAction() throws {
     let app = XCUIApplication()
     app.launchArguments += [
