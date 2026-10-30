@@ -24,6 +24,10 @@ Install MOSS-Transcribe-Diarize explicitly from Models and the existing Qwen3-0.
 
 Cross-window speaker matching uses acoustic reference reels and marks uncertain attribution. Real MOSS mixed-language speaker quality, native permissions/device behavior, concurrent dictation with output mute, and two-hour voiced inference have not yet been verified. Synthetic storage tests do not establish these properties. See [meeting verification](docs/DEVELOPMENT.md#meeting-notetaker-verification) for opt-in local experiments. Windows, Linux and Intel Mac meeting recording are unavailable; existing dictation remains supported.
 
+## iPhone keyboard (development)
+
+The native iOS target includes a keyboard extension with basic typing and local voice-transcript insertion. Start each recording in Yanyu, switch apps, stop from the keyboard, review the result, and insert it manually. Recordings stop after 60 seconds. Device signing, App Group provisioning and real-device background recording/inference still need verification. See [iOS setup and limitations](ios/README.md#keyboard-extension-and-voice-input).
+
 ## Project origin
 
 - Upstream project: [cjpais/Handy](https://github.com/cjpais/Handy)

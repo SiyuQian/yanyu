@@ -22,13 +22,22 @@ targets:
     platform: iOS
     sources:
       - path: Yanyu
+      - path: Shared
     resources:
       - path: Yanyu/Resources/PrivacyInfo.xcprivacy
     dependencies:
+      - target: YanyuKeyboard
+        embed: true
       - sdk: Accelerate.framework
       - sdk: Foundation.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
+    info:
+      path: Yanyu/Info.plist
+      properties:
+        UIBackgroundModes: [audio]
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
     preBuildScripts:
       - name: Build portable Rust core
         script: "${SRCROOT}/../scripts/build-ios-core.sh"
@@ -60,6 +69,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.siyuqian.yanyu.ios
+        CODE_SIGN_ENTITLEMENTS: Yanyu/Yanyu.entitlements
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Yanyu
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Required to hear your voice for transcription."
@@ -72,6 +82,38 @@ targets:
         LIBRARY_SEARCH_PATHS: "$(inherited) $(SRCROOT)/build/$(PLATFORM_NAME)"
         OTHER_LDFLAGS: "$(inherited) -lyanyu_core -lc++"
         SWIFT_OBJC_BRIDGING_HEADER: Yanyu/Yanyu-Bridging-Header.h
+
+  YanyuKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: YanyuKeyboard
+        excludes: [Info.plist, YanyuKeyboard.entitlements]
+      - path: Shared
+    resources:
+      - path: Yanyu/Resources/Localizable.xcstrings
+      - path: Yanyu/Resources/PrivacyInfo.xcprivacy
+    info:
+      path: YanyuKeyboard/Info.plist
+      properties:
+        CFBundleDisplayName: Yanyu
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).KeyboardViewController"
+          NSExtensionAttributes:
+            IsASCIICapable: true
+            PrimaryLanguage: en-US
+            RequestsOpenAccess: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.siyuqian.yanyu.ios.keyboard
+        CODE_SIGN_ENTITLEMENTS: YanyuKeyboard/YanyuKeyboard.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
 
   YanyuTests:
     type: bundle.unit-test
