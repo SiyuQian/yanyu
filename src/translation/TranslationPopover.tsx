@@ -85,11 +85,11 @@ export default function TranslationPopover() {
       className="flex h-screen flex-col overflow-hidden rounded-2xl border border-mid-gray/25 bg-background text-text shadow-2xl"
       aria-label={t(`${namespace}.title`)}
     >
-      <header className="flex shrink-0 items-center gap-3 border-b border-mid-gray/15 px-5 py-4">
-        <div
-          data-tauri-drag-region
-          className="flex min-w-0 flex-1 cursor-grab items-center gap-3 active:cursor-grabbing"
-        >
+      <header
+        data-tauri-drag-region="deep"
+        className="flex shrink-0 cursor-grab items-center gap-3 border-b border-mid-gray/15 px-5 py-4 active:cursor-grabbing"
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-logo-primary/20 text-logo-stroke">
             {polishing ? (
               <Sparkles size={19} aria-hidden="true" />

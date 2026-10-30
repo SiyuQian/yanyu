@@ -2,5 +2,9 @@
   "identifier": "translation",
   "description": "Minimal event access for the shared local translation/polishing popover. Clipboard writing is performed only by copy_translation.",
   "windows": ["translation_overlay"],
-  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten"]
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:window:allow-start-dragging"
+  ]
 }
