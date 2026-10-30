@@ -32,7 +32,7 @@ serde = { version = "1", features = ["derive"] }
 [dependencies]
 once_cell = "1"
 yanyu-core = { path = "../crates/yanyu-core", features = ["desktop-specta", "inference"] }
-tauri = { version = "2.11.5", features = [
+tauri = { version = "2.12.5", features = [
   "protocol-asset",
   "macos-private-api",
   "tray-icon",
@@ -96,13 +96,13 @@ signal-hook = "0.4"
 tauri-plugin-autostart = "2.5.1"
 tauri-plugin-global-shortcut = "2.3.1"
 tauri-plugin-single-instance = "2.3.2"
-tauri-plugin-updater = "2.10.1"
+tauri-plugin-updater = "2.14.1"
 
 [target.'cfg(windows)'.dependencies]
 # Used to reach ICoreWebView2Settings3 through the webview's controller
 # (disabling browser accelerator keys in the main window). Must match the
 # version wry links against so the COM types are identical.
-webview2-com = "0.38"
+webview2-com = "0.39"
 # ONNX Runtime on Windows is CPU-only (no ort-directml), matching macOS/Linux.
 # The DirectML EP was experimental and, more importantly, pulled in pyke's
 # prebuilt ONNX Runtime which is compiled with a global /arch:AVX2 baseline that
@@ -111,7 +111,7 @@ webview2-com = "0.38"
 # link a baseline ONNX Runtime (dynamically, via ORT_LIB_LOCATION in build.yml)
 # with proper runtime CPU dispatch. Base `transcribe-rs` (features = ["onnx"])
 # is inherited here, so Parakeet/Moonshine/etc. still run on CPU.
-windows = { version = "0.61.3", features = [
+windows = { version = "0.62.2", features = [
   "Win32_Media_Audio_Endpoints",
   "Win32_System_Com_StructuredStorage",
   "Win32_System_DataExchange",
@@ -171,25 +171,11 @@ transcribe-cpp = { version = "0.3.1", default-features = false, features = [
   "vulkan",
 ] }
 
-# TEMPORARY: tao pinned past 0.35.3 for the Wayland client-side-decorations fix
-# (tao #1218, fixes tauri #11856 — dead titlebar buttons after visible(false) →
-# show()). Drop this once a tao release containing it lands in tauri.
-#
-# The rev is a cjpais/tao branch, not upstream: dev past 0.35.3 also carries
-# tao #1231 (removed window subclassing), which left the thread event target's
-# WNDPROC falling through to DefSubclassProc. On a no-longer-subclassed window
-# that returns 0, so WM_QUERYENDSESSION answered FALSE and vetoed Windows
-# shutdown (Handy #1710). `handy` = 07f3742b + a cherry-pick of tao #1274
-# (DefSubclassProc → DefWindowProcW). Repoint at upstream once #1274 merges.
-#
-# tao-macros must be patched to the SAME rev even though nothing here depends on
-# it directly: wry pulls tao-macros 0.1.3 from crates.io, so without this the
-# lockfile carries two tao-macros 0.1.3 entries (registry + git). cargo tolerates
-# that, but Nix's importCargoLock vendors both to the same `tao-macros-0.1.3`
-# dir and fails with a symlink collision. Unifying the source removes the dup.
 [patch.crates-io]
-tao = { git = "https://github.com/cjpais/tao", rev = "c3bee28c1d446d95f08c95c3b6f8d4bde052b876" }
-tao-macros = { git = "https://github.com/cjpais/tao", rev = "c3bee28c1d446d95f08c95c3b6f8d4bde052b876" }
+# Use upstream's zip 9 security fix until it ships in a candle-core release.
+candle-core = { git = "https://github.com/huggingface/candle", rev = "9515d410e3af803fd45efebfef8137f47d85a63d" }
+candle-nn = { git = "https://github.com/huggingface/candle", rev = "9515d410e3af803fd45efebfef8137f47d85a63d" }
+candle-transformers = { git = "https://github.com/huggingface/candle", rev = "9515d410e3af803fd45efebfef8137f47d85a63d" }
 
 [dev-dependencies]
 tempfile = "3"
