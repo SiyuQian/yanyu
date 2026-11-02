@@ -1408,7 +1408,7 @@ export type KeyboardDiagnosticReport = { secure_input_enabled: boolean; culprit_
  * Counts only — key identity is deliberately never captured.
  */
 key_down: number; key_up: number; flags_changed: number; mouse: number; duration_ms: number }
-export type KeyboardImplementation = "tauri" | "handy_keys"
+export type KeyboardImplementation = "tauri" | "handy_keys" | "none"
 export type LLMPrompt = { id: string; name: string; prompt: string }
 export type LocalPolishingStatus = { phase: string; progress: number; error: string | null; downloaded: boolean; supported: boolean }
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
