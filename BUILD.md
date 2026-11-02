@@ -360,28 +360,78 @@ The `Release` workflow reuses the cross-platform build workflow and uploads inst
 as assets on a GitHub Release. It builds macOS (Apple Silicon and Intel), Windows
 (x64 and ARM64), and Linux (x64 and ARM64).
 
-### Publish from the GitHub Releases page
+### Set the desktop version
 
-1. Update the application version in `src-tauri/tauri.conf.json`, `package.json`,
-   and `src-tauri/Cargo.toml`. Keep `src-tauri/Cargo.lock` consistent with the Rust version.
-2. Merge the version change and this workflow into the commit you want to release.
-3. Create a tag that matches the Tauri version, such as `0.0.1` or `v0.0.1`, on that commit.
-4. Create and publish a Release for that tag in GitHub, either stable or prerelease.
-5. Wait for the `Release` workflow to finish in Actions. Download installers from
-   the Release's **Assets** section.
+Choose a version explicitly and run from the repository root:
 
-The workflow builds the tagged commit and uploads to the Release you published.
-A mismatched tag fails before builds start. Saving a draft does not trigger builds.
-The Release is public before installers finish uploading. Some assets may appear
-before other platforms finish. If a build fails, rerun the failed jobs in Actions.
+```bash
+bun run version:set 0.1.0
+bun run check:version
+bun run test:release
+```
 
-### Build a draft before publishing
+`version:set` synchronizes `package.json`, `src-tauri/tauri.conf.json`,
+`src-tauri/Cargo.toml`, and the app entry in `src-tauri/Cargo.lock`. Tauri uses this
+version for the app and installers; Rust also uses it in the tray and settings.
+Dependency versions, the portable core crate, and native iOS versions are independent.
+The command changes files only: it does not commit, tag, or push.
 
-For a Release with installers ready at publication, run **Actions → Release → Run
-workflow** on the desired commit's branch. The workflow creates a draft Release with
-its application version and uploads the installers. Check that all build jobs pass,
-then publish the draft from the Releases page. Publishing it also triggers the Release
-workflow again, so this route currently rebuilds the packages.
+Use `major.minor.patch` or a numeric prerelease such as `0.2.0-1`, without a `v`
+prefix, build metadata, or leading zeros. Every release includes Windows MSI,
+so major/minor are limited to 255, patch and the optional prerelease number to 65535. Named prereleases such as `rc.1` are unsupported by the bundled Tauri MSI
+version converter. Invalid versions fail before files are written. CI checks that all
+four desktop version sources agree. `bun run check:version v0.1.0` additionally
+checks that a release tag matches the application version.
+
+Prefer stable versions for distribution. Debian interprets the numeric suffix as
+a package revision, so `0.2.0-1` sorts above `0.2.0`. After distributing that
+prerelease, use a higher stable version such as `0.2.1` to preserve package upgrade
+ordering.
+
+Add any in-app release notes under `src/content/release-notes/{version}.md` before
+tagging; see [the release notes guide](src/content/release-notes/README.md).
+The GitHub Release description is generated from repository changes separately.
+
+### Push a version tag
+
+1. Commit the version files and release notes using a conventional commit such as
+   `chore(release): prepare 0.1.0` so the app and installers share one version.
+2. Merge the changes into `main`, including the release workflow, and update your
+   local checkout to the merged commit. Run the usual lint and formatting checks.
+3. Tag that exact commit and push the tag:
+
+   ```bash
+   git tag -a v0.1.0 -m "Release v0.1.0"
+   git push origin v0.1.0
+   ```
+
+4. Follow **Actions → Release**. The tag push starts the workflow automatically.
+   It validates the tag and all version files, creates or reuses a draft, then
+   builds the exact tagged commit across all seven build jobs without Rust caches.
+5. Once every build and package audit succeeds, the workflow publishes the draft
+   with its installers. Download them from the Release's **Assets** section or
+   the link in the workflow summary.
+
+Tags must use the exact `v{version}` format. A prerelease version such as
+`v0.2.0-1` produces a GitHub prerelease and does not become the latest stable
+release. Stable releases use GitHub's date and semantic-version selection for
+Latest, so retrying an older version does not explicitly promote it over a newer
+version. Moving a tag during a run prevents publication. Create a new version to
+change an already published release; its installers are never replaced by this workflow.
+
+Push tags with your own Git credentials. Tags pushed by a workflow's built-in
+`GITHUB_TOKEN` do not trigger another push workflow; that automation must explicitly
+dispatch `Release` instead.
+
+### Retry a failed release
+
+A failed platform build leaves the release as a draft. Rerun the failed jobs in
+Actions, or use **Actions → Release → Run workflow** from `main` and supply the
+existing tag (for example `v0.1.0`). Manual dispatch builds that tag's commit,
+regardless of the branch selected in the Actions form. The draft is reused,
+including edited release notes, and publication still waits for all builds and
+audits. Keep the tag fixed while retrying. Published releases are rejected before
+builds start. Publishing a draft manually does not trigger another build.
 
 ### Signing and download access
 
@@ -397,6 +447,6 @@ without repository access to download its releases. These installers do not enab
 in-app automatic updates (`createUpdaterArtifacts` is currently disabled).
 
 Yanyu uses its own application version, starting at `0.0.1`, independently of
-upstream Handy. Release tags accept the application version with an optional `v`
-prefix. Existing tags still refer to their original commits. Rerunning an old
-Release job does not include version or workflow fixes merged afterward.
+upstream Handy. Existing tags still refer to their original commits. Merge this
+workflow before creating a new version tag: rerunning an old Release job does not
+include version or workflow fixes merged afterward.
