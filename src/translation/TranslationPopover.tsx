@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
 import {
   Check,
   Copy,
@@ -85,11 +87,20 @@ export default function TranslationPopover() {
       className="flex h-screen flex-col overflow-hidden rounded-2xl border border-mid-gray/25 bg-background text-text shadow-2xl"
       aria-label={t(`${namespace}.title`)}
     >
-      <header className="flex shrink-0 items-center gap-3 border-b border-mid-gray/15 px-5 py-4">
-        <div
-          data-tauri-drag-region
-          className="flex min-w-0 flex-1 cursor-grab items-center gap-3 active:cursor-grabbing"
-        >
+      <header
+        className="flex shrink-0 cursor-grab select-none items-center gap-3 border-b border-mid-gray/15 px-5 py-4 active:cursor-grabbing"
+        onMouseDown={(event) => {
+          if (event.button !== 0 || (event.target as Element).closest("button"))
+            return;
+          event.preventDefault();
+          void getCurrentWindow()
+            .startDragging()
+            .catch((error) =>
+              console.error("Could not drag selection preview:", error),
+            );
+        }}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-logo-primary/20 text-logo-stroke">
             {polishing ? (
               <Sparkles size={19} aria-hidden="true" />
@@ -126,12 +137,24 @@ export default function TranslationPopover() {
         )}
         {state.phase === "result" && (
           <div className="min-h-full rounded-xl border border-mid-gray/15 bg-mid-gray/5 p-4">
-            <p
-              className="whitespace-pre-wrap break-words text-[15px] leading-7"
-              lang={polishing ? undefined : "zh-CN"}
-            >
-              {state.text}
-            </p>
+            {polishing ? (
+              <p className="whitespace-pre-wrap break-words text-[15px] leading-7">
+                {state.text}
+              </p>
+            ) : (
+              <div
+                className="space-y-4 break-words text-[15px] leading-7 [&_p]:whitespace-pre-wrap [&_ol]:list-decimal [&_ul]:list-disc [&_ol]:ps-6 [&_ul]:ps-6 [&_li]:ps-1 [&_li+li]:mt-2 [&_li>p+p]:mt-2 [&_blockquote]:border-s-2 [&_blockquote]:border-mid-gray/30 [&_blockquote]:ps-3 [&_pre]:whitespace-pre-wrap"
+                lang="zh-CN"
+              >
+                <ReactMarkdown
+                  skipHtml
+                  disallowedElements={["a", "img"]}
+                  unwrapDisallowed
+                >
+                  {state.text}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         )}
         {state.phase === "error" && (

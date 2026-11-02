@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
+import translationCapability from "../src-tauri/capabilities/translation.json" with { type: "json" };
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
+  await page.addInitScript((capability) => {
     const callbacks = new Map<number, (event: unknown) => void>();
     let next = 0;
     let listener = 0;
@@ -17,11 +18,26 @@ test.beforeEach(async ({ page }) => {
       },
       __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: () => {} },
       __TAURI_INTERNALS__: {
+        metadata: {
+          currentWindow: { label: "translation_overlay" },
+          currentWebview: { label: "translation_overlay" },
+        },
         transformCallback: (callback: (event: unknown) => void) => {
           callbacks.set(++next, callback);
           return next;
         },
         invoke: async (command: string, args: Record<string, unknown>) => {
+          if (command === "plugin:window|start_dragging") {
+            if (
+              !capability.windows.includes(String(args.label)) ||
+              !capability.permissions.includes(
+                "core:window:allow-start-dragging",
+              )
+            )
+              throw new Error("Window dragging is not allowed");
+            localStorage.setItem("dragWindow", String(args.label));
+            return;
+          }
           if (command === "plugin:event|listen") {
             if (args.event === "translation-state")
               listener = Number(args.handler);
@@ -56,8 +72,32 @@ test.beforeEach(async ({ page }) => {
       },
     });
     localStorage.setItem("clipboard", "sentinel");
-  });
+  }, translationCapability);
   await page.goto("/src/translation/index.html");
+});
+
+test("the whole popover header starts native dragging without intercepting controls", async ({
+  page,
+}) => {
+  const header = page.locator("header");
+  for (const target of [
+    page.getByRole("heading", { name: "Selection translation" }),
+    header.locator("svg").first().locator("path").first(),
+    header,
+  ]) {
+    await page.evaluate(() => localStorage.removeItem("dragWindow"));
+    await target.dispatchEvent("mousedown", { button: 0 });
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem("dragWindow")))
+      .toBe("translation_overlay");
+  }
+  await page.evaluate(() => localStorage.removeItem("dragWindow"));
+  await header.dispatchEvent("mousedown", { button: 2 });
+  await page.getByRole("button", { name: "Close" }).click();
+  expect(
+    await page.evaluate(() => localStorage.getItem("dragWindow")),
+  ).toBeNull();
+  await expect(page.getByRole("status")).not.toBeVisible();
 });
 
 test("loading and result display preserve clipboard until Copy", async ({
@@ -86,6 +126,43 @@ test("loading and result display preserve clipboard until Copy", async ({
     .click();
   expect(await page.evaluate(() => localStorage.getItem("clipboard"))).toBe(
     "你好，世界。",
+  );
+});
+
+test("translation displays paragraphs and numbered lists without loading remote content", async ({
+  page,
+}) => {
+  const text =
+    "谢谢你的提案，报价为 NZ$24,800 + GST。\n\n请确认以下事项：\n\n1. 交付范围：预计 155 小时。\n2. 时间安排：10 月 27 日完成。\n\n期待你的回复。\n\n![remote](https://example.com/tracker.png)\n\n[参考资料](https://example.com)";
+  await page.evaluate((text) => {
+    (
+      window as unknown as { setTranslation: (state: unknown) => void }
+    ).setTranslation({
+      operation: "translate",
+      phase: "result",
+      text,
+      error: null,
+      revision: 2,
+    });
+  }, text);
+  await expect(page.getByRole("listitem")).toHaveText([
+    "交付范围：预计 155 小时。",
+    "时间安排：10 月 27 日完成。",
+  ]);
+  await expect(page.locator("ol")).toHaveCSS("list-style-type", "decimal");
+  await expect(
+    page.locator("p").filter({ hasText: "谢谢你的提案" }),
+  ).toHaveText("谢谢你的提案，报价为 NZ$24,800 + GST。");
+  await expect(
+    page.locator("p").filter({ hasText: "期待你的回复" }),
+  ).toHaveText("期待你的回复。");
+  await expect(page.getByRole("img")).toHaveCount(0);
+  await expect(page.getByRole("link")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Copy translation", exact: true })
+    .click();
+  expect(await page.evaluate(() => localStorage.getItem("clipboard"))).toBe(
+    text,
   );
 });
 
