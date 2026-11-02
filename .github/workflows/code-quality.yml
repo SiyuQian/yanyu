@@ -34,6 +34,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Check desktop version consistency
+        run: bun run check:version
+
+      - name: Test release version management
+        run: bun run test:release
+
       - name: Check translation consistency
         run: bun run check:translations
 

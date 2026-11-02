@@ -527,6 +527,21 @@ jobs:
           chmod +x "$tools_dir/linuxdeploy-${arch}.AppImage"
           "$tools_dir/linuxdeploy-${arch}.AppImage" --appimage-extract-and-run --version
 
+      # A single matrix job can be rerun without rerunning release preparation.
+      - name: Require a draft before uploading release installers
+        if: inputs.release-id != ''
+        uses: actions/github-script@v9
+        env:
+          RELEASE_ID: ${{ inputs.release-id }}
+        with:
+          script: |
+            const { data: release } = await github.rest.repos.getRelease({
+              ...context.repo, release_id: Number(process.env.RELEASE_ID)
+            });
+            if (!release.draft) {
+              throw new Error('Release is already published; refusing to replace its installers');
+            }
+
       - name: Build with Tauri
         uses: tauri-apps/tauri-action@v0
         env:
