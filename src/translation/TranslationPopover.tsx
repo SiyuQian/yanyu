@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
+import ReactMarkdown from "react-markdown";
 import {
   Check,
   Copy,
@@ -126,12 +127,24 @@ export default function TranslationPopover() {
         )}
         {state.phase === "result" && (
           <div className="min-h-full rounded-xl border border-mid-gray/15 bg-mid-gray/5 p-4">
-            <p
-              className="whitespace-pre-wrap break-words text-[15px] leading-7"
-              lang={polishing ? undefined : "zh-CN"}
-            >
-              {state.text}
-            </p>
+            {polishing ? (
+              <p className="whitespace-pre-wrap break-words text-[15px] leading-7">
+                {state.text}
+              </p>
+            ) : (
+              <div
+                className="space-y-4 break-words text-[15px] leading-7 [&_p]:whitespace-pre-wrap [&_ol]:list-decimal [&_ul]:list-disc [&_ol]:ps-6 [&_ul]:ps-6 [&_li]:ps-1 [&_li+li]:mt-2 [&_li>p+p]:mt-2 [&_blockquote]:border-s-2 [&_blockquote]:border-mid-gray/30 [&_blockquote]:ps-3 [&_pre]:whitespace-pre-wrap"
+                lang="zh-CN"
+              >
+                <ReactMarkdown
+                  skipHtml
+                  disallowedElements={["a", "img"]}
+                  unwrapDisallowed
+                >
+                  {state.text}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         )}
         {state.phase === "error" && (

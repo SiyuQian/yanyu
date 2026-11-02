@@ -57,6 +57,10 @@ For detailed platform-specific build setup, see [BUILD.md](../BUILD.md).
 
 `polish_selection` defaults to `option+shift+p` on Apple Silicon Macs. It shares the translation popover and Qwen model worker with `translate_selection`, but uses separate editing rules and preserves the model's output writing system. Reading the selection uses Accessibility only. Preview, errors and dismissal do not access the clipboard; the explicit Copy action writes only the current completed result. Selection drafts are transient and never enter dictation history.
 
+Selection translation asks the local model for a JSON array of topic paragraphs and Markdown list items while preserving meaning, names, quantities, prices and dates. The popover renders paragraphs and lists with spacing; Copy retains their plain-text line breaks and list markers. Model-generated JSON envelopes, including JSON code fences, are decoded before display and copy; legacy string output is accepted, while invalid envelopes and empty or mixed-type paragraph arrays are rejected. Independently translated chunks are separated by blank lines so their lists remain distinct. Translation Markdown does not load images or create clickable links.
+
+An unformatted translation longer than 80 characters with more than three sentences gets an optional local layout pass, limited to five seconds within the existing selection deadline. This pass returns only sentence indices for paragraph boundaries; it cannot rewrite the accepted translation. Invalid or unavailable boundaries fall back to a paragraph every three sentences. Existing multiline output is retained. Topic grouping and translation fidelity depend on the local model and are not guaranteed for every input.
+
 ```bash
 bunx playwright test tests/translation.spec.ts
 cargo test --manifest-path src-tauri/Cargo.toml --lib selection
@@ -64,6 +68,8 @@ cargo test --manifest-path src-tauri/Cargo.toml --lib managers::translation::tes
 # Opt-in real-model fixtures; never use private messages as fixtures.
 LOCAL_POLISHING_SMOKE_DIR=/path/to/local-polishing/qwen3-0.6b \
   cargo test --manifest-path src-tauri/Cargo.toml --lib selection_polish_real_model -- --ignored --nocapture
+LOCAL_POLISHING_SMOKE_DIR=/path/to/local-polishing/qwen3-0.6b \
+  cargo test --manifest-path src-tauri/Cargo.toml --lib translation_real_model_formats -- --ignored --nocapture
 ```
 
 These tests cover the shared state, fixed prompt/data boundary, shortcut migration, output parsing and preview/copy behavior. The opt-in test checks synthetic English, Simplified Chinese and Traditional Chinese messages. The language guard measures Han-character overlap; it can reject valid Chinese edits and cannot detect translation between languages using the same alphabet. These checks do not establish semantic fidelity or Accessibility compatibility with every application. Manually check first-use permissions, selection capture, the global shortcut, preview placement and cancellation in target apps before release.
