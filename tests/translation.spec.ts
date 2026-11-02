@@ -129,6 +129,43 @@ test("loading and result display preserve clipboard until Copy", async ({
   );
 });
 
+test("translation displays paragraphs and numbered lists without loading remote content", async ({
+  page,
+}) => {
+  const text =
+    "谢谢你的提案，报价为 NZ$24,800 + GST。\n\n请确认以下事项：\n\n1. 交付范围：预计 155 小时。\n2. 时间安排：10 月 27 日完成。\n\n期待你的回复。\n\n![remote](https://example.com/tracker.png)\n\n[参考资料](https://example.com)";
+  await page.evaluate((text) => {
+    (
+      window as unknown as { setTranslation: (state: unknown) => void }
+    ).setTranslation({
+      operation: "translate",
+      phase: "result",
+      text,
+      error: null,
+      revision: 2,
+    });
+  }, text);
+  await expect(page.getByRole("listitem")).toHaveText([
+    "交付范围：预计 155 小时。",
+    "时间安排：10 月 27 日完成。",
+  ]);
+  await expect(page.locator("ol")).toHaveCSS("list-style-type", "decimal");
+  await expect(
+    page.locator("p").filter({ hasText: "谢谢你的提案" }),
+  ).toHaveText("谢谢你的提案，报价为 NZ$24,800 + GST。");
+  await expect(
+    page.locator("p").filter({ hasText: "期待你的回复" }),
+  ).toHaveText("期待你的回复。");
+  await expect(page.getByRole("img")).toHaveCount(0);
+  await expect(page.getByRole("link")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Copy translation", exact: true })
+    .click();
+  expect(await page.evaluate(() => localStorage.getItem("clipboard"))).toBe(
+    text,
+  );
+});
+
 test("selection polishing previews the result and copies only on request", async ({
   page,
 }) => {
