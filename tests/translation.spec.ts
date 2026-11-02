@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
+import translationCapability from "../src-tauri/capabilities/translation.json" with { type: "json" };
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
+  await page.addInitScript((capability) => {
     const callbacks = new Map<number, (event: unknown) => void>();
     let next = 0;
     let listener = 0;
@@ -17,11 +18,26 @@ test.beforeEach(async ({ page }) => {
       },
       __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: () => {} },
       __TAURI_INTERNALS__: {
+        metadata: {
+          currentWindow: { label: "translation_overlay" },
+          currentWebview: { label: "translation_overlay" },
+        },
         transformCallback: (callback: (event: unknown) => void) => {
           callbacks.set(++next, callback);
           return next;
         },
         invoke: async (command: string, args: Record<string, unknown>) => {
+          if (command === "plugin:window|start_dragging") {
+            if (
+              !capability.windows.includes(String(args.label)) ||
+              !capability.permissions.includes(
+                "core:window:allow-start-dragging",
+              )
+            )
+              throw new Error("Window dragging is not allowed");
+            localStorage.setItem("dragWindow", String(args.label));
+            return;
+          }
           if (command === "plugin:event|listen") {
             if (args.event === "translation-state")
               listener = Number(args.handler);
@@ -56,8 +72,32 @@ test.beforeEach(async ({ page }) => {
       },
     });
     localStorage.setItem("clipboard", "sentinel");
-  });
+  }, translationCapability);
   await page.goto("/src/translation/index.html");
+});
+
+test("the whole popover header starts native dragging without intercepting controls", async ({
+  page,
+}) => {
+  const header = page.locator("header");
+  for (const target of [
+    page.getByRole("heading", { name: "Selection translation" }),
+    header.locator("svg").first().locator("path").first(),
+    header,
+  ]) {
+    await page.evaluate(() => localStorage.removeItem("dragWindow"));
+    await target.dispatchEvent("mousedown", { button: 0 });
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem("dragWindow")))
+      .toBe("translation_overlay");
+  }
+  await page.evaluate(() => localStorage.removeItem("dragWindow"));
+  await header.dispatchEvent("mousedown", { button: 2 });
+  await page.getByRole("button", { name: "Close" }).click();
+  expect(
+    await page.evaluate(() => localStorage.getItem("dragWindow")),
+  ).toBeNull();
+  await expect(page.getByRole("status")).not.toBeVisible();
 });
 
 test("loading and result display preserve clipboard until Copy", async ({
