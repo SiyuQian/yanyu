@@ -79,7 +79,7 @@ transcribe-cpp = { version = "0.3.1", default-features = false, features = [
   "serde",
 ] }
 handy-keys = "0.3.4"
-ferrous-opencc = "0.2.3"
+ferrous-opencc = "0.4.0"
 clap = { version = "4", features = ["derive"] }
 specta = "=2.0.0-rc.22"
 specta-typescript = "0.0.9"
