@@ -2,6 +2,7 @@
 
 ## Active
 
+- [iPhone dictation experience](exec-plans/ios-flow-experience.md): bring first use, keyboard delivery, shortcuts and recovery closer to the evidence-backed Wispr Flow workflow while retaining local recognition. Implementation and physical-device acceptance are tracked separately.
 - [iOS app](exec-plans/ios-app.md): native SwiftUI, local-first iPhone app with a portable Rust core, transcript editing, history, and copy/share. Phase 0 is in progress; a real model now loads through UniFFI and transcribes on an iOS simulator, while physical-device inference, performance, and mixed-language quality remain open.
 
 ## Proposed

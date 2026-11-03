@@ -4,11 +4,13 @@ import UIKit
 final class KeyboardViewController: UIInputViewController {
   private let store = KeyboardSessionStore.shared()
   private let consumer = KeyboardResultConsumer(defaults: .standard)
+  private let delivery = KeyboardTextDelivery(defaults: .standard)
   private let statusLabel = UILabel()
   private let previewLabel = UITextView()
   private let contentStack = UIStackView()
   private var heightConstraint: NSLayoutConstraint?
   private let voiceButton = UIButton(type: .system)
+  private let undoButton = UIButton(type: .system)
   private var snapshot: KeyboardSessionSnapshot?
   private var pendingStopID: UUID?
   private var refreshTask: Task<Void, Never>?
@@ -48,7 +50,15 @@ final class KeyboardViewController: UIInputViewController {
     voiceButton.addTarget(self, action: #selector(voiceAction), for: .touchUpInside)
     voiceButton.accessibilityIdentifier = "keyboardVoiceAction"
     voiceButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
-    stack.addArrangedSubview(voiceButton)
+    let actions = makeRow()
+    actions.addArrangedSubview(voiceButton)
+    undoButton.configuration = .bordered()
+    undoButton.setTitle(localized("iosApp.keyboardUndo"), for: .normal)
+    undoButton.accessibilityIdentifier = "keyboardUndoAction"
+    undoButton.addTarget(self, action: #selector(undoInsertion), for: .touchUpInside)
+    undoButton.isHidden = true
+    actions.addArrangedSubview(undoButton)
+    stack.addArrangedSubview(actions)
     keyRows.axis = .vertical
     keyRows.spacing = 6
     stack.addArrangedSubview(keyRows)
@@ -88,12 +98,48 @@ final class KeyboardViewController: UIInputViewController {
     super.viewDidDisappear(animated)
     refreshTask?.cancel()
     refreshTask = nil
+    delivery.invalidateContext()
+  }
+
+  override func textWillChange(_ textInput: (any UITextInput)?) {
+    super.textWillChange(textInput)
+    delivery.invalidateContext()
+  }
+
+  override func selectionWillChange(_ textInput: (any UITextInput)?) {
+    super.selectionWillChange(textInput)
+    delivery.invalidateContext()
   }
 
   @objc private func refresh() {
     do {
       snapshot = try store?.read()
-      previewLabel.text = snapshot?.phase == .ready ? snapshot?.text : nil
+      let document = ProxyKeyboardDocument(proxy: textDocumentProxy)
+      var handledByKeyboard = false
+      if let snapshot, snapshot.phase == .ready {
+        handledByKeyboard = try store?.isResultHandled(for: snapshot.id) ?? false
+      }
+      if let snapshot, snapshot.phase == .ready, !handledByKeyboard, view.window != nil,
+        hasFullAccess
+      {
+        _ = delivery.insert(snapshot, into: document, automatically: true)
+      }
+      var handlingUpdatePending = false
+      if let snapshot, snapshot.phase == .ready, !handledByKeyboard,
+        consumer.hasConsumed(snapshot.id), hasFullAccess
+      {
+        do {
+          try store?.markResultHandled(for: snapshot.id)
+        } catch {
+          // Retry on refresh without losing local deduplication or the Undo affordance.
+          handlingUpdatePending = true
+        }
+      }
+      undoButton.isHidden = !delivery.canUndo(in: document.context)
+      previewLabel.text =
+        !handledByKeyboard && snapshot?.phase == .ready
+          && snapshot.map({ consumer.canInsert($0) }) == true
+        ? snapshot?.text : nil
       previewLabel.isHidden = previewLabel.text == nil
       voiceButton.isEnabled = false
       voiceButton.setTitle(localized("iosApp.keyboardStartInApp"), for: .normal)
@@ -110,15 +156,19 @@ final class KeyboardViewController: UIInputViewController {
       case .transcribing:
         statusLabel.text = localized("iosApp.transcribing")
       case .ready:
-        let available = consumer.canInsert(snapshot)
+        let available = !handledByKeyboard && consumer.canInsert(snapshot)
         statusLabel.text = localized(
-          available ? "iosApp.keyboardReview" : "iosApp.keyboardInserted")
+          handlingUpdatePending
+            ? "iosApp.keyboardHandlingPending"
+            : available ? "iosApp.keyboardReview" : "iosApp.keyboardInserted")
         voiceButton.setTitle(localized("iosApp.keyboardInsert"), for: .normal)
         voiceButton.isEnabled = available
       case .failed:
         statusLabel.text = localized("iosApp.keyboardFailed")
       }
     } catch {
+      delivery.invalidateContext()
+      undoButton.isHidden = true
       snapshot = nil
       previewLabel.isHidden = true
       voiceButton.isEnabled = false
@@ -134,16 +184,26 @@ final class KeyboardViewController: UIInputViewController {
         return
       }
       if current.phase == .recording, hasFullAccess {
+        delivery.prepareAutomaticInsertion(
+          for: current.id, in: ProxyKeyboardDocument(proxy: textDocumentProxy).context)
         try store?.requestStop(for: current.id)
         pendingStopID = current.id
-      } else if let text = consumer.consume(current) {
-        textDocumentProxy.insertText(text)
+      } else {
+        if try store?.isResultHandled(for: current.id) != true {
+          _ = delivery.insert(current, into: ProxyKeyboardDocument(proxy: textDocumentProxy))
+        }
       }
       refresh()
     } catch {
+      delivery.invalidateContext()
       statusLabel.text = localized("iosApp.keyboardUnavailable")
       voiceButton.isEnabled = false
     }
+  }
+
+  @objc private func undoInsertion() {
+    _ = delivery.undo(in: ProxyKeyboardDocument(proxy: textDocumentProxy))
+    refresh()
   }
 
   private func buildKeys() {
@@ -159,7 +219,11 @@ final class KeyboardViewController: UIInputViewController {
       let row = makeRow()
       for character in characters {
         let value = uppercase ? String(character).uppercased() : String(character)
-        let button = makeButton(value) { [weak self] in self?.textDocumentProxy.insertText(value) }
+        let button = makeButton(value) { [weak self] in
+          self?.delivery.invalidateContext()
+          self?.textDocumentProxy.insertText(value)
+          self?.refresh()
+        }
         row.addArrangedSubview(button)
       }
       keyRows.addArrangedSubview(row)
@@ -185,12 +249,22 @@ final class KeyboardViewController: UIInputViewController {
     controls.addArrangedSubview(shift)
     controls.addArrangedSubview(
       makeButton(localized("iosApp.keyboardSpace")) { [weak self] in
+        self?.delivery.invalidateContext()
         self?.textDocumentProxy.insertText(" ")
+        self?.refresh()
       })
-    let delete = makeButton("⌫") { [weak self] in self?.textDocumentProxy.deleteBackward() }
+    let delete = makeButton("⌫") { [weak self] in
+      self?.delivery.invalidateContext()
+      self?.textDocumentProxy.deleteBackward()
+      self?.refresh()
+    }
     delete.accessibilityLabel = localized("iosApp.keyboardDelete")
     controls.addArrangedSubview(delete)
-    let newline = makeButton("↵") { [weak self] in self?.textDocumentProxy.insertText("\n") }
+    let newline = makeButton("↵") { [weak self] in
+      self?.delivery.invalidateContext()
+      self?.textDocumentProxy.insertText("\n")
+      self?.refresh()
+    }
     newline.accessibilityLabel = localized("iosApp.keyboardReturn")
     controls.addArrangedSubview(newline)
     keyRows.addArrangedSubview(controls)
@@ -222,4 +296,23 @@ final class KeyboardViewController: UIInputViewController {
   private func localized(_ key: String) -> String {
     NSLocalizedString(key, comment: "")
   }
+}
+
+@MainActor
+private final class ProxyKeyboardDocument: KeyboardTextDocument {
+  let proxy: any UITextDocumentProxy
+
+  init(proxy: any UITextDocumentProxy) { self.proxy = proxy }
+
+  var context: KeyboardTextContext {
+    KeyboardTextContext(
+      documentID: proxy.documentIdentifier,
+      before: proxy.documentContextBeforeInput,
+      after: proxy.documentContextAfterInput,
+      selected: proxy.selectedText,
+      hasText: proxy.hasText)
+  }
+
+  func insertText(_ text: String) { proxy.insertText(text) }
+  func deleteBackward() { proxy.deleteBackward() }
 }

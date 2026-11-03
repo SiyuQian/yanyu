@@ -24,6 +24,7 @@ final class KeyboardDictationController {
   private var startedAt: Date?
   private var backgroundTask = UIBackgroundTaskIdentifier.invalid
   private(set) var isActive = false
+  private(set) var pendingResult: KeyboardSessionSnapshot?
 
   init(store: KeyboardSessionStore? = .shared()) {
     self.store = store
@@ -39,7 +40,17 @@ final class KeyboardDictationController {
       viewModel.errorKey = "iosApp.keyboardUnavailable"
       return
     }
+    pendingResult = nil
     do {
+      let snapshot = try store.read()
+      if let snapshot, snapshot.phase == .ready {
+        pendingResult = snapshot
+        guard try store.isResultHandled(for: snapshot.id) else {
+          viewModel.errorKey = "iosApp.keyboardPendingResult"
+          return
+        }
+        pendingResult = nil
+      }
       try store.clear()
     } catch {
       viewModel.errorKey = "iosApp.keyboardUnavailable"
@@ -71,9 +82,18 @@ final class KeyboardDictationController {
   ) {
     guard let store else { return }
     guard let id = sessionID else {
-      // iOS may suspend us after completing a result; purge it on the next app activation.
+      // iOS may suspend us after completing a result; retain unhandled text until expiry.
+      pendingResult = nil
       do {
-        if try store.read(now: now) == nil { try store.clear() }
+        let snapshot = try store.read(now: now)
+        if let snapshot, snapshot.phase == .ready {
+          pendingResult = snapshot
+          if try store.isResultHandled(for: snapshot.id) { pendingResult = nil }
+        }
+        if snapshot == nil { try store.clear() }
+        if pendingResult == nil, viewModel.errorKey == "iosApp.keyboardPendingResult" {
+          viewModel.errorKey = nil
+        }
       } catch {
         viewModel.errorKey = "iosApp.keyboardUnavailable"
       }
@@ -102,10 +122,28 @@ final class KeyboardDictationController {
         snapshot = .init(id: id, phase: .failed, updatedAt: now)
       }
       try store.write(snapshot)
-      if snapshot.phase == .ready || snapshot.phase == .failed { finish() }
+      if snapshot.phase == .ready || snapshot.phase == .failed {
+        pendingResult = snapshot.phase == .ready ? snapshot : nil
+        finish()
+      }
     } catch {
       cancel(viewModel: viewModel)
       viewModel.errorKey = "iosApp.keyboardUnavailable"
+    }
+  }
+
+  /// Clears only the current shared handoff, leaving saved transcript history untouched.
+  func dismissPendingResult(id: UUID) -> Bool {
+    guard !isActive, let store else { return false }
+    do {
+      guard let snapshot = try store.read(), snapshot.id == id, snapshot.phase == .ready else {
+        return false
+      }
+      try store.clear()
+      pendingResult = nil
+      return true
+    } catch {
+      return false
     }
   }
 

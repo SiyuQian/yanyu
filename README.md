@@ -26,7 +26,9 @@ Cross-window speaker matching uses acoustic reference reels and marks uncertain 
 
 ## iPhone keyboard (development)
 
-The native iOS target includes a keyboard extension with basic typing and local voice-transcript insertion. Start each recording in Yanyu, switch apps, stop from the keyboard, review the result, and insert it manually. Recordings stop after 60 seconds. Device signing, App Group provisioning and real-device background recording/inference still need verification. See [iOS setup and limitations](ios/README.md#keyboard-extension-and-voice-input).
+The native iOS target includes a keyboard extension with basic typing and local voice-transcript insertion. Prepare the pinned Qwen speech-model candidate from the main app; downloads show size, progress, cancellation and retry. Model quality and performance on physical iPhones are not yet accepted.
+
+Start keyboard dictation in Yanyu or add its **Start Keyboard Dictation** action in Shortcuts. This foreground shortcut opens Yanyu; return to your destination app manually. Stop from the keyboard to insert automatically only while the original input field and cursor context are unchanged. Otherwise, review and insert manually. A new keyboard dictation waits while a previous result still needs handling. You can copy that result in Yanyu and explicitly clear the keyboard handoff while keeping its history copy. Undo is offered only when the host exposes the full insertion with safe text boundaries; typing, moving the cursor or changing fields invalidates it. Yanyu never sends the message. Recordings stop after 60 seconds. Device signing, App Group provisioning, Shortcut/Action Button invocation and real-device background recording/inference still need verification. See [iOS setup and limitations](ios/README.md#keyboard-extension-and-voice-input) and the [experience plan](docs/exec-plans/ios-flow-experience.md).
 
 ## Project origin
 

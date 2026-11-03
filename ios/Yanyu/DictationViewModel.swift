@@ -42,13 +42,13 @@ final class DictationViewModel {
     private(set) var evaluation: InferenceEvaluation?
     private(set) var isEvaluatingAudio = false
     var evaluationErrorKey: String?
-    private(set) var isInstallingCatalogModel = false
-    private(set) var isLoadingCatalogModel = false
-    private(set) var catalogModelDownloadProgress: ModelPackageDownloadProgress?
-    var catalogModelInstallErrorKey: String?
-    private var catalogModelInstallTask: Task<InstalledModelPackage, Error>?
-    private var catalogModelInstallID: UUID?
   #endif
+  private(set) var isInstallingCatalogModel = false
+  private(set) var isLoadingCatalogModel = false
+  private(set) var catalogModelDownloadProgress: ModelPackageDownloadProgress?
+  var catalogModelInstallErrorKey: String?
+  private var catalogModelInstallTask: Task<InstalledModelPackage, Error>?
+  private var catalogModelInstallID: UUID?
 
   var hasPendingAudioRecovery: Bool {
     pendingAudioFile != nil && canRetryPendingTranscription && pendingTranscriptRecord == nil
@@ -213,6 +213,8 @@ final class DictationViewModel {
       return
     }
 
+    isLoadingCatalogModel = true
+    defer { isLoadingCatalogModel = false }
     let modelURL = URL(fileURLWithPath: modelPath)
     let packageStore: ModelPackageStore
     do {
@@ -326,141 +328,144 @@ final class DictationViewModel {
     }
   #endif
 
-  #if DEBUG
-    var canInstallCatalogModel: Bool {
-      !isInstallingCatalogModel
-        && !isLoadingCatalogModel
-        && !isEvaluatingAudio
-        && state != .recording
-        && state != .requestingPermission
-        && state != .transcribing
+  var isPreparingModel: Bool {
+    isInstallingCatalogModel || isLoadingCatalogModel
+  }
+
+  var canInstallCatalogModel: Bool {
+    #if DEBUG
+      guard !isEvaluatingAudio else { return false }
+    #endif
+    return !isPreparingModel
+      && state != .recording
+      && state != .requestingPermission
+      && state != .transcribing
+  }
+
+  func installCatalogModel(model: ModelDescriptor, file: QuantFile) async {
+    guard canInstallCatalogModel else {
+      return
     }
 
-    func installCatalogModel(model: ModelDescriptor, file: QuantFile) async {
-      guard canInstallCatalogModel else {
+    let installID = UUID()
+    catalogModelInstallID = installID
+    isInstallingCatalogModel = true
+    isLoadingCatalogModel = false
+    catalogModelDownloadProgress = nil
+    catalogModelInstallErrorKey = nil
+    defer {
+      catalogModelInstallTask = nil
+      catalogModelInstallID = nil
+      catalogModelDownloadProgress = nil
+      isInstallingCatalogModel = false
+      isLoadingCatalogModel = false
+    }
+
+    do {
+      let download = try makeCatalogModelPackageDownload(model: model, file: file)
+      let packageStore = try modelPackageStore ?? ModelPackageStore.applicationStore()
+      let installer = ModelPackageInstaller(
+        store: packageStore,
+        transport: modelPackageDownloadTransport
+      )
+      let updateProgress: @Sendable (ModelPackageDownloadProgress) -> Void = {
+        [weak self] progress in
+        Task { @MainActor [weak self] in
+          guard self?.catalogModelInstallID == installID else {
+            return
+          }
+          self?.catalogModelDownloadProgress = progress
+        }
+      }
+      let installTask = Task<InstalledModelPackage, Error> { [weak self] in
+        guard let self else {
+          throw CancellationError()
+        }
+        return try await self.installOrReuseCatalogPackage(
+          download.manifest,
+          sources: download.sources,
+          in: packageStore,
+          using: installer,
+          progress: updateProgress
+        )
+      }
+      catalogModelInstallTask = installTask
+      let installedPackage: InstalledModelPackage
+      do {
+        installedPackage = try await withTaskCancellationHandler {
+          try await installTask.value
+        } onCancel: {
+          installTask.cancel()
+        }
+      } catch {
+        if error is CancellationError || (error as? URLError)?.code == .cancelled {
+          return
+        }
+        throw error
+      }
+
+      catalogModelInstallTask = nil
+      isInstallingCatalogModel = false
+      isLoadingCatalogModel = true
+      let modelURL = installedPackage.directoryURL.appendingPathComponent(file.filename)
+      let probe = probeModelFile(path: modelURL.path)
+      guard probe.verdict != .unsupported else {
+        try await packageStore.remove(
+          id: installedPackage.manifest.id,
+          version: installedPackage.manifest.version
+        )
+        catalogModelInstallErrorKey = "iosApp.invalidModel"
         return
       }
 
-      let installID = UUID()
-      catalogModelInstallID = installID
-      isInstallingCatalogModel = true
-      isLoadingCatalogModel = false
-      catalogModelDownloadProgress = nil
-      catalogModelInstallErrorKey = nil
-      defer {
-        catalogModelInstallTask = nil
-        catalogModelInstallID = nil
-        catalogModelDownloadProgress = nil
-        isInstallingCatalogModel = false
-        isLoadingCatalogModel = false
-      }
+      try await transcriptionEngine.loadModel(at: modelURL)
+      languageSelection.updateCapabilities(probe)
+      preferencesDefaults.set(modelURL.path, forKey: modelPathKey)
+      preferencesDefaults.set("\(model.name) · \(file.quant)", forKey: modelNameKey)
+      preferencesDefaults.set(installedPackage.manifest.id, forKey: modelPackageIDKey)
+      preferencesDefaults.set(installedPackage.manifest.version, forKey: modelPackageVersionKey)
+      isModelLoaded = true
+      errorKey = nil
+    } catch {
+      catalogModelInstallErrorKey = "iosApp.modelPreparationFailed"
+    }
+  }
 
+  func cancelCatalogModelInstall() {
+    catalogModelInstallTask?.cancel()
+  }
+
+  private func installOrReuseCatalogPackage(
+    _ manifest: ModelPackageManifest,
+    sources: [ModelPackageDownloadSource],
+    in store: ModelPackageStore,
+    using installer: ModelPackageInstaller,
+    progress: @escaping @Sendable (ModelPackageDownloadProgress) -> Void
+  ) async throws -> InstalledModelPackage {
+    do {
+      let installed = try await store.resolveInstalledPackage(
+        id: manifest.id,
+        version: manifest.version
+      )
       do {
-        let download = try makeCatalogModelPackageDownload(model: model, file: file)
-        let packageStore = try modelPackageStore ?? ModelPackageStore.applicationStore()
-        let installer = ModelPackageInstaller(
-          store: packageStore,
-          transport: modelPackageDownloadTransport
-        )
-        let updateProgress: @Sendable (ModelPackageDownloadProgress) -> Void = {
-          [weak self] progress in
-          Task { @MainActor [weak self] in
-            guard self?.catalogModelInstallID == installID else {
-              return
-            }
-            self?.catalogModelDownloadProgress = progress
-          }
-        }
-        let installTask = Task<InstalledModelPackage, Error> { [weak self] in
-          guard let self else {
-            throw CancellationError()
-          }
-          return try await self.installOrReuseCatalogPackage(
-            download.manifest,
-            sources: download.sources,
-            in: packageStore,
-            using: installer,
-            progress: updateProgress
+        for file in installed.manifest.files {
+          let fileURL = installed.directoryURL.appendingPathComponent(file.relativePath)
+          _ = try verifyFileIntegrity(
+            path: fileURL.path,
+            expectedSizeBytes: file.sizeBytes,
+            expectedSha256: file.sha256
           )
         }
-        catalogModelInstallTask = installTask
-        let installedPackage: InstalledModelPackage
-        do {
-          installedPackage = try await withTaskCancellationHandler {
-            try await installTask.value
-          } onCancel: {
-            installTask.cancel()
-          }
-        } catch {
-          if error is CancellationError || (error as? URLError)?.code == .cancelled {
-            return
-          }
-          throw error
-        }
-
-        catalogModelInstallTask = nil
-        isInstallingCatalogModel = false
-        isLoadingCatalogModel = true
-        let modelURL = installedPackage.directoryURL.appendingPathComponent(file.filename)
-        let probe = probeModelFile(path: modelURL.path)
-        guard probe.verdict != .unsupported else {
-          try await packageStore.remove(
-            id: installedPackage.manifest.id,
-            version: installedPackage.manifest.version
-          )
-          catalogModelInstallErrorKey = "iosApp.invalidModel"
-          return
-        }
-
-        try await transcriptionEngine.loadModel(at: modelURL)
-        languageSelection.updateCapabilities(probe)
-        preferencesDefaults.set(modelURL.path, forKey: modelPathKey)
-        preferencesDefaults.set("\(model.name) · \(file.quant)", forKey: modelNameKey)
-        preferencesDefaults.set(installedPackage.manifest.id, forKey: modelPackageIDKey)
-        preferencesDefaults.set(installedPackage.manifest.version, forKey: modelPackageVersionKey)
-        isModelLoaded = true
-        errorKey = nil
+        return installed
       } catch {
-        catalogModelInstallErrorKey = "iosApp.genericError"
-      }
-    }
-
-    func cancelCatalogModelInstall() {
-      catalogModelInstallTask?.cancel()
-    }
-
-    private func installOrReuseCatalogPackage(
-      _ manifest: ModelPackageManifest,
-      sources: [ModelPackageDownloadSource],
-      in store: ModelPackageStore,
-      using installer: ModelPackageInstaller,
-      progress: @escaping @Sendable (ModelPackageDownloadProgress) -> Void
-    ) async throws -> InstalledModelPackage {
-      do {
-        let installed = try await store.resolveInstalledPackage(
-          id: manifest.id,
-          version: manifest.version
-        )
-        do {
-          for file in installed.manifest.files {
-            let fileURL = installed.directoryURL.appendingPathComponent(file.relativePath)
-            _ = try verifyFileIntegrity(
-              path: fileURL.path,
-              expectedSizeBytes: file.sizeBytes,
-              expectedSha256: file.sha256
-            )
-          }
-          return installed
-        } catch {
-          try await store.remove(id: manifest.id, version: manifest.version)
-        }
-      } catch ModelPackageStoreError.packageNotInstalled {
-      } catch ModelPackageStoreError.installedPackageMismatch {
         try await store.remove(id: manifest.id, version: manifest.version)
       }
-      return try await installer.install(manifest, from: sources, progress: progress)
+    } catch ModelPackageStoreError.packageNotInstalled {
+    } catch ModelPackageStoreError.installedPackageMismatch {
+      try await store.remove(id: manifest.id, version: manifest.version)
     }
-  #endif
+    return try await installer.install(manifest, from: sources, progress: progress)
+  }
 
   private func clearSavedModelPreferences() {
     preferencesDefaults.removeObject(forKey: modelPathKey)
@@ -568,6 +573,7 @@ final class DictationViewModel {
   #endif
 
   func startRecording() async {
+    guard !isPreparingModel else { return }
     guard isModelLoaded else {
       errorKey = "iosApp.modelMissing"
       return
@@ -680,7 +686,8 @@ final class DictationViewModel {
   }
 
   func retryTranscription(using context: ModelContext) {
-    guard hasPendingAudioRecovery,
+    guard !isPreparingModel,
+      hasPendingAudioRecovery,
       let pendingAudioFile
     else {
       return

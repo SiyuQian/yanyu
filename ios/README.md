@@ -43,18 +43,59 @@ A provisioning profile must authorize that group before device installation.
    select Yanyu. Allow Full Access if you want to stop recording from the keyboard.
    Basic typing remains available without Full Access. No network requests are
    made by the keyboard, including with Full Access enabled.
-2. Load a validated model in Yanyu, open the keyboard button in its toolbar,
-   and tap **Start keyboard dictation**. Each session starts explicitly in the app.
+2. Use **Prepare speech model** in Yanyu to download, verify and load the pinned
+   Qwen Q4 candidate, with visible size, progress, cancellation and retry. This
+   preparation is available in Release; arbitrary imports and evaluation tools
+   remain Debug-only. Model quality/performance on a physical iPhone is still an
+   open gate. Open the keyboard button in the toolbar and tap **Start keyboard
+   dictation**. Each session starts explicitly in the app. The ordinary recording
+   button is a separate foreground-only path and stops when the app backgrounds.
 3. Switch to your destination app, focus an editable field, and select Yanyu
    with the globe key. Recording continues in the background, for up to 60 seconds.
 4. Tap **Stop** in the keyboard (or in Yanyu). The containing app transcribes
    locally within the execution time iOS grants after recording stops.
-5. Scroll through the transcript preview and tap **Insert text**. The keyboard
-   inserts once at the current cursor; it never taps Send. Start the next recording
-   by returning to Yanyu.
+5. When stopped through the keyboard, a completed result inserts automatically
+   only if the same keyboard instance, session, field and cursor context remain
+   unchanged. Changing fields, editing, moving the cursor or hiding the keyboard
+   falls back to a preview with **Insert text**. Manual insertion can replace a
+   selection; automatic insertion never replaces selected text. Results insert
+   once. The keyboard never taps Send.
+6. **Undo insertion** is available only while the host exposes the full inserted
+   text and both insertion boundaries are intact. It is unavailable for truncated
+   context or grapheme merges, and is invalidated by typing, selection changes or
+   hiding the keyboard. It removes only that insertion and cannot be repeated.
+   Start the next recording by returning to Yanyu or invoking its foreground
+   Shortcut again.
+7. A ready result that the keyboard has not handled blocks the next keyboard
+   recording. Yanyu shows that result even when no speech model is loaded: copy
+   it, return to the keyboard to insert it, or explicitly choose **Keep in history
+   and clear keyboard result**. Clearing removes only this shared handoff, not
+   the saved transcript. A stale action cannot clear a newer result or an active
+   recording. A Shortcut request opens this recovery page and is consumed; clearing
+   does not start recording automatically.
 
-The shared App Group contains only one session snapshot and a session-specific
-stop request. Only explicit keyboard sessions publish text, after a successful
+### Foreground Shortcut
+
+In Shortcuts, add Yanyu's **Start Keyboard Dictation** action. On supported
+iPhones, assign that shortcut under Settings → Action Button → Shortcut. This
+uses a public foreground App Intent on iOS 17 and later, opens Yanyu, restores its
+existing state, and starts the same keyboard session if setup/model/recovery state
+permits. Return to your destination app manually and select the Yanyu keyboard.
+This does not register automatic Siri phrases or background/Live Activity capture.
+
+A request expires after 30 seconds and is consumed on setup, model or busy errors;
+finish the indicated step and invoke it again. Pending audio, an unsaved result,
+or an unhandled keyboard result blocks a new recording. A new session replaces
+the keyboard snapshot only after handling or an explicit clear; the saved
+transcript remains in the app's history. Shortcut
+metadata/build verification does not establish physical Action Button behavior.
+See the [experience plan](../docs/exec-plans/ios-flow-experience.md).
+
+The shared App Group contains one session snapshot, a session-specific stop
+request, and a UUID-only handling receipt. The receipt records a keyboard insertion
+attempt; it does not prove the destination accepted the text. The keyboard retries
+the receipt after a write failure without repeating insertion. Missing local keyboard
+preferences do not override an existing receipt. Only explicit keyboard sessions publish text, after a successful
 history save. Ordinary dictation/history stay in the app sandbox. Live snapshots
 expire after five seconds without a heartbeat; completed results cannot be read
 or inserted after five minutes. Shared files are protected while the phone is
@@ -64,7 +105,7 @@ stores only the last inserted session ID in its own preferences to prevent repea
 Raw audio follows the existing local recovery/deletion policy.
 
 Device verification is still required for microphone continuity across app switches,
-App Group provisioning and Full Access, background inference deadlines, locking,
+App Group provisioning, Full Access and receipt synchronization, background inference deadlines, locking,
 calls and audio route changes. If iOS expires processing time, return to Yanyu to
 retry or delete the retained capture. Some apps and secure fields disallow custom
 keyboards. The keyboard cannot start its own microphone session; see Apple's
