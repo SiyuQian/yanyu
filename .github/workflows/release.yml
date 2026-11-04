@@ -1,12 +1,20 @@
 name: "Release"
 
 on:
+  push:
+    tags: ["v*"]
   workflow_dispatch:
-  release:
-    types: [published]
+    inputs:
+      tag:
+        description: "Existing version tag to release or retry (for example, v0.0.2)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 concurrency:
-  group: release-${{ github.event.release.tag_name || github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -16,33 +24,63 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release-id: ${{ steps.create-release.outputs.result }}
+      tag: ${{ steps.version.outputs.tag }}
+      sha: ${{ steps.version.outputs.sha }}
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - name: Validate release version and record commit
+        id: version
+        shell: bash
+        env:
+          PUSH_SHA: ${{ github.event_name == 'push' && github.sha || '' }}
+        run: |
+          bun run check:version "$RELEASE_TAG"
+          sha=$(git rev-parse HEAD)
+          if [[ -n "$PUSH_SHA" && "$sha" != "$(git rev-parse "$PUSH_SHA^{commit}")" ]]; then
+            echo "Release tag moved since this push; refusing to build a different commit" >&2
+            exit 1
+          fi
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Select or create release
         id: create-release
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RELEASE_SHA: ${{ steps.version.outputs.sha }}
         with:
           script: |
-            const fs = require('node:fs');
-            const { version } = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
-            const tag = `v${version}`;
-            if (context.eventName === 'release') {
-              const release = context.payload.release;
-              if (release.tag_name !== version && release.tag_name !== tag) {
-                throw new Error(`Release tag ${release.tag_name} must match application version ${version} (optional v prefix)`);
+            const { owner, repo } = context.repo;
+            const tag = process.env.RELEASE_TAG;
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              owner, repo, per_page: 100
+            });
+            const existing = releases.find(release => release.tag_name === tag);
+            if (existing) {
+              if (!existing.draft) {
+                throw new Error(`${tag} is already published; create a new version instead of replacing its installers`);
               }
-              return release.id;
+              core.info(`Resuming draft release ${existing.id} for ${tag}`);
+              return existing.id;
             }
             const { data } = await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner,
+              repo,
               tag_name: tag,
-              target_commitish: context.sha,
+              target_commitish: process.env.RELEASE_SHA,
               name: tag,
               draft: true,
-              prerelease: false,
+              prerelease: tag.includes('-'),
               generate_release_notes: true
             });
             return data.id;
@@ -81,7 +119,7 @@ jobs:
     with:
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
-      ref: ${{ github.sha }}
+      ref: ${{ needs.create-release.outputs.sha }}
       build-args: ${{ matrix.args }}
       sign-binaries: false
       asset-prefix: "yanyu"
@@ -91,3 +129,54 @@ jobs:
       # stale cached native lib can never be linked into a shipped artifact.
       no-cache: true
     secrets: inherit
+
+  publish-release:
+    permissions:
+      contents: write
+    needs: [create-release, publish-tauri]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish verified release
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release-id }}
+          RELEASE_TAG: ${{ needs.create-release.outputs.tag }}
+          RELEASE_SHA: ${{ needs.create-release.outputs.sha }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const tag = process.env.RELEASE_TAG;
+            const { data: ref } = await github.rest.git.getRef({ owner, repo, ref: `tags/${tag}` });
+            let object = ref.object;
+            while (object.type === 'tag') {
+              const { data } = await github.rest.git.getTag({ owner, repo, tag_sha: object.sha });
+              object = data.object;
+            }
+            if (object.type !== 'commit' || object.sha !== process.env.RELEASE_SHA) {
+              throw new Error(`${tag} moved during this run; refusing to publish installers for a different commit`);
+            }
+            const release_id = Number(process.env.RELEASE_ID);
+            const { data: release } = await github.rest.repos.getRelease({ owner, repo, release_id });
+            if (!release.draft || release.tag_name !== tag) {
+              throw new Error(`Release ${release_id} must still be an unpublished draft for ${tag}`);
+            }
+            const { data: assets } = await github.rest.repos.listReleaseAssets({
+              owner, repo, release_id, per_page: 1
+            });
+            if (assets.length === 0) {
+              throw new Error(`Release ${release_id} has no installers; refusing to publish an empty release`);
+            }
+            const prerelease = tag.includes('-');
+            const { data: published } = await github.rest.repos.updateRelease({
+              owner,
+              repo,
+              release_id,
+              draft: false,
+              prerelease,
+              make_latest: prerelease ? 'false' : 'legacy'
+            });
+            await core.summary
+              .addHeading(`Released ${tag}`)
+              .addLink('Download release', published.html_url)
+              .addRaw(`\n\nBuilt and verified all desktop packages from ${process.env.RELEASE_SHA}.\n`)
+              .write();
