@@ -993,6 +993,22 @@
         }
       }
     },
+    "iosApp.developerTools": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Developer evaluation tools"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开发者评测工具"
+          }
+        }
+      }
+    },
     "iosApp.discardRecording": {
       "localizations": {
         "en": {
@@ -1569,6 +1585,22 @@
         }
       }
     },
+    "iosApp.keyboardHandlingPending": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your text. Open Yanyu if the next dictation is blocked."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请检查文字。如果无法开始下一段听写，请打开言语。"
+          }
+        }
+      }
+    },
     "iosApp.keyboardIdle": {
       "localizations": {
         "en": {
@@ -1606,13 +1638,61 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Text inserted. Start a new recording in Yanyu."
+            "value": "Check your text before sending. Start the next recording in Yanyu."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文字已插入。请在言语中开始新的录音。"
+            "value": "发送前请检查文字。请在言语中开始下一次录音。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardKeepPendingResult": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep in history and clear keyboard result"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保留在历史中并清除键盘结果"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardModeGuidance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard dictation starts explicitly here, then continues when you switch apps. Ordinary recording on the main screen stops when you leave Yanyu. The keyboard cannot start its own microphone recording."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在此主动开始键盘语音输入，之后可切换 App 继续录音。主页的普通录音会在离开言语时停止。键盘本身不能启动麦克风录音。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardModelNeeded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to the recording screen to download and prepare the speech model. You can still use history, settings and basic keyboard typing."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请返回录音页面，下载并准备语音模型。你仍可使用历史记录、设置和键盘基础文字输入。"
           }
         }
       }
@@ -1633,18 +1713,66 @@
         }
       }
     },
-    "iosApp.keyboardPrivacy": {
+    "iosApp.keyboardPendingActionFailed": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Start here, then switch to another app and select Yanyu using the globe key. Recording continues for up to 60 seconds. Stop from the keyboard, review the transcript, then tap Insert text. Audio and transcription stay on this iPhone. Only this session’s text is shared with the keyboard, for up to 5 minutes. Each recording must start in Yanyu. Locking the phone stops the session."
+            "value": "The keyboard result changed or could not be cleared. Review the current result and try again."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在此开始后，切换到其他 App，长按地球键选择言语。录音最多持续 60 秒。在键盘中结束录音，检查转写后点击「插入文字」。录音和转写均在此 iPhone 上处理；仅本次文字会向键盘提供，最长 5 分钟。每次录音都需在言语中开始，锁屏会停止会话。"
+            "value": "键盘结果已改变或暂时无法清除，请检查当前结果后重试。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardPendingResult": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your previous dictation is ready. Insert it from the keyboard or copy it here. Keep it in history and clear the keyboard result before starting another."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一段听写已完成。请在键盘中插入，或在这里复制。开始下一段前，也可以将它保留在历史中并清除键盘结果。"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardPendingResultTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous dictation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一段听写"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardPrivacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start here, switch to another app, and select Yanyu with the globe key. Recording continues for up to 60 seconds. Stop from the keyboard to insert automatically into the unchanged field; otherwise review and tap Insert text. Audio and recognition stay on this iPhone. Only this session’s text is shared with the keyboard, for up to 5 minutes. Start the next recording in Yanyu. Locking the phone stops the session."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在这里开始录音，然后切换到其他 App，用地球键选择言语键盘。录音最长持续 60 秒。在键盘中停止后，文字会自动插入未改变的输入框；否则请预览后点击“插入文字”。音频和识别过程留在这台 iPhone 上，键盘只能读取本次会话的文字，最长保留 5 分钟。请在言语中开始下一次录音。锁屏会停止会话。"
           }
         }
       }
@@ -1702,13 +1830,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Review the text, then insert it."
+            "value": "The input field changed or automatic insertion was unavailable. Review the text, then insert it."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请检查文字，然后插入。"
+            "value": "输入框已改变或无法自动插入，请预览文字后手动插入。"
           }
         }
       }
@@ -1825,6 +1953,22 @@
         }
       }
     },
+    "iosApp.keyboardUndo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo insertion"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撤销插入"
+          }
+        }
+      }
+    },
     "iosApp.keyboardVoiceInput": {
       "localizations": {
         "en": {
@@ -1937,18 +2081,50 @@
         }
       }
     },
-    "iosApp.modelMissing": {
+    "iosApp.modelCandidateDisclosure": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A validated speech model is not installed yet."
+            "value": "This speech model is a test candidate. Its accuracy and performance on iPhone have not yet been verified."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "尚未安装经过验证的语音模型。"
+            "value": "此语音模型仍是测试候选项，识别准确率和在 iPhone 上的性能尚未经真机验证。"
+          }
+        }
+      }
+    },
+    "iosApp.modelDownloadPrivacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model downloads from Hugging Face and is checked for integrity before loading. Audio and transcripts stay on this iPhone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型从 Hugging Face 下载，经过完整性校验后才会加载。音频和转写文本留在此 iPhone 上。"
+          }
+        }
+      }
+    },
+    "iosApp.modelMissing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare a speech model to start dictating."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先准备语音模型，再开始语音输入。"
           }
         }
       }
@@ -1958,13 +2134,29 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The saved model package is missing or damaged. Import the model again."
+            "value": "The saved model package is missing or damaged. Prepare the speech model again."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已保存的模型包缺失或损坏，请重新导入模型。"
+            "value": "已保存的模型包缺失或损坏，请重新准备语音模型。"
+          }
+        }
+      }
+    },
+    "iosApp.modelPreparationFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model could not be prepared. Check your connection and available iPhone storage, then retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法准备模型。请检查网络连接和 iPhone 可用存储空间，然后重试。"
           }
         }
       }
@@ -2045,6 +2237,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "麦克风权限已关闭。请在「设置」中允许访问后录音。"
+          }
+        }
+      }
+    },
+    "iosApp.prepareModelTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare on-device speech"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "准备本地语音识别"
+          }
+        }
+      }
+    },
+    "iosApp.prepareSpeechModel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download and prepare speech model"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载并准备语音模型"
           }
         }
       }
@@ -2241,6 +2465,22 @@
         }
       }
     },
+    "iosApp.recordingModeGuidance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start recording creates a transcript here and stops when you leave Yanyu. To dictate into another app, open Voice input and start keyboard dictation before switching apps."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「开始录音」用于在此转写，离开言语时会停止。如需向其他 App 输入文字，请打开「语音输入」，先开始键盘语音输入，再切换 App。"
+          }
+        }
+      }
+    },
     "iosApp.recordingStoppedBackground": {
       "localizations": {
         "en": {
@@ -2285,6 +2525,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在请求麦克风权限…"
+          }
+        }
+      }
+    },
+    "iosApp.retryModelPreparation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry model preparation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试准备模型"
           }
         }
       }
@@ -2429,6 +2685,118 @@
           "stringUnit": {
             "state": "translated",
             "value": "分享评测报告"
+          }
+        }
+      }
+    },
+    "iosApp.shortcutBusy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish or discard the current recording or pending result, then run the shortcut again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先完成或丢弃当前录音或待处理结果，然后重新运行快捷指令。"
+          }
+        }
+      }
+    },
+    "iosApp.shortcutExpired": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The shortcut request expired. Run it again when you are ready."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷指令请求已过期。准备好后请重新运行。"
+          }
+        }
+      }
+    },
+    "iosApp.shortcutModelRequired": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare a speech model, then run the shortcut again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先准备语音模型，然后重新运行快捷指令。"
+          }
+        }
+      }
+    },
+    "iosApp.shortcutOnboardingRequired": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish setup, then run the shortcut again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先完成设置，然后重新运行快捷指令。"
+          }
+        }
+      }
+    },
+    "iosApp.shortcutSetupInstructions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Shortcuts, add Yanyu’s Start Keyboard Dictation action. You can assign the shortcut to the Action Button on supported iPhones. Yanyu opens to record; return to your text field manually."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在“快捷指令”中添加言语的“开始键盘听写”操作。支持操作按钮的 iPhone 可将它分配给操作按钮。言语会打开并开始录音；请手动返回文本输入框。"
+          }
+        }
+      }
+    },
+    "iosApp.shortcutStartDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Yanyu to start local dictation, then return to your text field manually."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开言语开始本地听写，然后手动返回文本输入框。"
+          }
+        }
+      }
+    },
+    "iosApp.shortcutStartTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Keyboard Dictation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始键盘听写"
           }
         }
       }

@@ -18,7 +18,7 @@ The first release is an iOS companion app, not desktop feature parity. Desktop Y
 - On-device transcription using one model selected during the feasibility spike. Chinese and English, including mixed speech, are the initial language requirements.
 - Transcript review and editing, with retry and cancel actions where the runtime supports them.
 - On-device transcript history with search, copy, share, and delete.
-- Requested keyboard handoff: basic typing and manual insertion of a local transcript, with each recording explicitly started in the containing app. Device verification is pending.
+- Requested keyboard handoff: basic typing, safe automatic insertion after a keyboard stop, manual preview/insertion fallback, and bounded undo. Each recording starts explicitly in the containing app, directly or through a foreground Shortcut. Device verification is pending; see the [experience plan](ios-flow-experience.md).
 - Minimal settings for language/model selection, appearance, privacy controls, and local transcription text preferences (custom words and filler cleanup).
 - English and Simplified Chinese UI, reusing the repository's translation keys and source files. SwiftUI consumes an Apple String Catalog generated from the canonical i18next JSON files; a drift check keeps those generated resources in sync.
 - Accessible controls, Dynamic Type-friendly layouts, dark mode, and graceful handling of permission denial, audio interruptions, low storage, and model failures.
@@ -26,8 +26,8 @@ The first release is an iOS companion app, not desktop feature parity. Desktop Y
 
 ### Deferred or excluded
 
-- Direct microphone capture inside a custom keyboard remains unsupported by Apple. The user has now requested a keyboard extension: the native target includes basic typing and a one-session handoff. Start recording explicitly in Yanyu, switch apps, stop through the keyboard, and manually insert the local result. Background capture is capped at 60 seconds; inference uses a finite background task. See [implementation and verification limits](../../ios/README.md#keyboard-extension-and-voice-input).
-- Global hotkeys, system tray and accessibility-driven paste injection remain excluded. Copy/share remain available alongside explicit keyboard insertion.
+- Direct microphone capture inside a custom keyboard remains unsupported by Apple. The native target includes basic typing and a one-session handoff. Start recording explicitly in Yanyu or with its foreground Shortcut, switch apps, and stop through the keyboard. The local result inserts automatically only into the unchanged original field; otherwise it requires manual insertion. Background capture is capped at 60 seconds; inference uses a finite background task. Background Shortcut/Live Activity capture is deferred to a physical-device spike. See [implementation and verification limits](../../ios/README.md#keyboard-extension-and-voice-input).
+- Global hotkeys, system tray and accessibility-driven paste injection remain excluded. Copy/share remain available alongside keyboard insertion.
 - Meetings and computer/system-audio capture. These need a separate mobile product design and feasibility study.
 - Desktop model-catalog parity, local LLM polishing, remote post-processing, cloud sync, accounts, and model training/export.
 - Unbounded background recording. Only explicit keyboard sessions continue capture after an app switch; ordinary dictation retains its foreground-only behavior. Locking or interruption ends the session. Real-device verification remains pending.
@@ -40,7 +40,7 @@ Use these defaults to execute the spike; confirm them before the v1 UI is finali
 2. **Recognition:** local-only for v1, with one verified model. Do not silently send audio or transcripts to a service.
 3. **Language bar:** Chinese, English, and mixed Chinese/English speech. If no model meets the quality and performance gate on the target devices, pause and re-scope before building the full UI.
 4. **History:** persist editable transcript text locally and mark its Application Support directory as excluded from device backups and CloudKit. Delete raw audio after the transcript is saved; keep it locally with explicit retry/delete actions if transcription or persistence fails.
-5. **Handoff:** copy and the native share sheet, plus manual insertion from the keyboard extension in fields that support third-party keyboards. Each voice session starts in the containing app.
+5. **Handoff:** copy and the native share sheet, plus safe automatic keyboard insertion with explicit fallback and bounded undo in fields that support third-party keyboards. Each voice session starts in the containing app, directly or through its foreground Shortcut. No automatic return to the destination app is promised.
 6. **Desktop compatibility:** share stable Rust business logic through a standalone crate. Keep iOS audio capture, app lifecycle, storage paths, and UI native to iOS. Do not make the desktop runtime a dependency of the iOS app.
 
 ## User journeys

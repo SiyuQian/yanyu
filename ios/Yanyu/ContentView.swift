@@ -14,12 +14,16 @@ struct ContentView: View {
   private var records: [TranscriptRecord]
   @AppStorage("yanyu.ios.onboarding-complete") private var hasCompletedOnboarding = false
 
-  @State private var isModelImporterPresented = false
   #if DEBUG
+    @State private var isModelImporterPresented = false
     @State private var isEvaluationAudioImporterPresented = false
     @State private var evaluationReferenceText = ""
   #endif
   @State private var keyboardDictation = KeyboardDictationController()
+  @State private var isKeyboardSetupPresented = false
+  @State private var isStartingShortcut = false
+  @State private var hasRestoredLocalState = false
+  @State private var shortcutNoticeKey: String?
   @State private var searchText = ""
   @State private var hasCopiedTranscript = false
 
@@ -46,11 +50,14 @@ struct ContentView: View {
         }
       }
       .navigationTitle("Yanyu")
+      .navigationDestination(isPresented: $isKeyboardSetupPresented) {
+        KeyboardSetupView(controller: keyboardDictation)
+      }
       .toolbar {
         ToolbarItem(placement: .topBarLeading) {
           if hasCompletedOnboarding {
-            NavigationLink {
-              KeyboardSetupView(controller: keyboardDictation)
+            Button {
+              isKeyboardSetupPresented = true
             } label: {
               Image(systemName: "keyboard")
             }
@@ -80,6 +87,16 @@ struct ContentView: View {
         }
       }
     }
+    .safeAreaInset(edge: .top) {
+      if let shortcutNoticeKey {
+        Text(LocalizedStringKey(shortcutNoticeKey))
+          .font(.footnote)
+          .padding()
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .background(.regularMaterial)
+          .accessibilityIdentifier("shortcutNotice")
+      }
+    }
     .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) {
       notification in
       guard
@@ -95,12 +112,19 @@ struct ContentView: View {
       viewModel.handleRecordingInterruption(messageKey: "iosApp.audioRouteChanged")
     }
     .onChange(of: scenePhase) { _, newPhase in
+      if newPhase == .active { handleShortcutRequest() }
       if newPhase == .background {
         let continuesKeyboardSession =
           keyboardDictation.isActive
           && (viewModel.state == .recording || viewModel.state == .transcribing)
         if !continuesKeyboardSession { viewModel.handleAppBackground() }
       }
+    }
+    .onChange(of: KeyboardDictationLaunchRequest.shared.requestedAt) { _, _ in
+      handleShortcutRequest()
+    }
+    .onChange(of: hasRestoredLocalState) { _, _ in
+      handleShortcutRequest()
     }
     .onReceive(
       NotificationCenter.default.publisher(
@@ -113,6 +137,7 @@ struct ContentView: View {
         prepareUITestHistoryIfRequested(using: modelContext)
       #endif
       await viewModel.restoreLocalStateIfPresent()
+      hasRestoredLocalState = true
       #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--yanyu-ui-test-microphone-denied") {
           viewModel.errorKey = "iosApp.permissionDenied"
@@ -166,6 +191,56 @@ struct ContentView: View {
     #endif
   }
 
+  @MainActor
+  private func handleShortcutRequest() {
+    guard hasRestoredLocalState, scenePhase == .active else { return }
+    keyboardDictation.refresh(viewModel: viewModel, using: modelContext)
+    let stateAllowsStart: Bool
+    switch viewModel.state {
+    case .ready, .transcript, .failed: stateAllowsStart = true
+    default: stateAllowsStart = false
+    }
+    let canStart =
+      stateAllowsStart && !isStartingShortcut && !keyboardDictation.isActive
+      && !viewModel.isPreparingModel && !viewModel.hasDiscardablePendingAudio
+      && !viewModel.hasPendingTranscriptSave
+      && keyboardDictation.pendingResult == nil
+    guard
+      let outcome = KeyboardDictationLaunchRequest.shared.consume(
+        afterRestore: true,
+        onboardingCompleted: hasCompletedOnboarding,
+        modelLoaded: viewModel.isModelLoaded,
+        canStart: canStart)
+    else { return }
+    if hasCompletedOnboarding, keyboardDictation.pendingResult != nil {
+      shortcutNoticeKey = nil
+      isKeyboardSetupPresented = true
+      return
+    }
+    switch outcome {
+    case .start:
+      shortcutNoticeKey = nil
+      isStartingShortcut = true
+      isKeyboardSetupPresented = true
+      Task { @MainActor in
+        defer { isStartingShortcut = false }
+        guard UIApplication.shared.applicationState == .active else { return }
+        await keyboardDictation.start(viewModel: viewModel)
+        if UIApplication.shared.applicationState != .active {
+          keyboardDictation.cancel(viewModel: viewModel)
+        }
+      }
+    case .onboardingRequired:
+      shortcutNoticeKey = "iosApp.shortcutOnboardingRequired"
+    case .modelRequired:
+      shortcutNoticeKey = "iosApp.shortcutModelRequired"
+    case .busy:
+      shortcutNoticeKey = "iosApp.shortcutBusy"
+    case .expired:
+      shortcutNoticeKey = "iosApp.shortcutExpired"
+    }
+  }
+
   private var onboardingScreen: some View {
     VStack(spacing: 24) {
       Image(systemName: "waveform.and.mic")
@@ -204,9 +279,7 @@ struct ContentView: View {
           .frame(maxWidth: .infinity, alignment: .leading)
 
         modelStatus
-        #if DEBUG
-          evaluationTools
-        #endif
+        recordingModeGuidance
         recordingControls
 
         if viewModel.hasTranscriptForDisplay {
@@ -228,6 +301,7 @@ struct ContentView: View {
       Label {
         Text(viewModel.isModelLoaded ? "iosApp.modelReady" : "iosApp.modelMissing")
           .foregroundStyle(.primary)
+          .accessibilityIdentifier("speechModelStatus")
       } icon: {
         Image(systemName: viewModel.isModelLoaded ? "checkmark.circle.fill" : "cpu")
           .foregroundStyle(viewModel.isModelLoaded ? .green : .secondary)
@@ -248,37 +322,41 @@ struct ContentView: View {
         .pickerStyle(.menu)
       }
 
+      catalogModelPreparationControls
+
       #if DEBUG
-        Button {
-          isModelImporterPresented = true
-        } label: {
-          Label("iosApp.importModel", systemImage: "square.and.arrow.down")
-        }
-        .buttonStyle(.bordered)
-        .tint(.primary)
-        Text("iosApp.importModelHint")
-          .font(.caption)
-          .foregroundStyle(.primary)
+        DisclosureGroup("iosApp.developerTools") {
+          Button {
+            isModelImporterPresented = true
+          } label: {
+            Label("iosApp.importModel", systemImage: "square.and.arrow.down")
+          }
+          .buttonStyle(.bordered)
+          .tint(.primary)
+          Text("iosApp.importModelHint")
+            .font(.caption)
+            .foregroundStyle(.primary)
 
-        catalogModelEvaluationControls
-
-        Button {
-          isEvaluationAudioImporterPresented = true
-        } label: {
-          Label("iosApp.evaluateAudio", systemImage: "waveform.badge.magnifyingglass")
+          Button {
+            isEvaluationAudioImporterPresented = true
+          } label: {
+            Label("iosApp.evaluateAudio", systemImage: "waveform.badge.magnifyingglass")
+          }
+          .buttonStyle(.bordered)
+          .tint(.primary)
+          .disabled(
+            !viewModel.isModelLoaded
+              || viewModel.isEvaluatingAudio
+              || viewModel.state == .recording
+              || viewModel.state == .requestingPermission
+              || viewModel.state == .transcribing
+          )
+          Text("iosApp.evaluateAudioHint")
+            .font(.caption)
+            .foregroundStyle(.primary)
+          evaluationTools
         }
-        .buttonStyle(.bordered)
         .tint(.primary)
-        .disabled(
-          !viewModel.isModelLoaded
-            || viewModel.isEvaluatingAudio
-            || viewModel.state == .recording
-            || viewModel.state == .requestingPermission
-            || viewModel.state == .transcribing
-        )
-        Text("iosApp.evaluateAudioHint")
-          .font(.caption)
-          .foregroundStyle(.primary)
       #endif
 
       if let errorKey = viewModel.errorKey {
@@ -310,70 +388,84 @@ struct ContentView: View {
     .background(.background, in: RoundedRectangle(cornerRadius: 16))
   }
 
-  #if DEBUG
-    private var catalogModelEvaluationControls: some View {
-      Group {
-        Text("iosApp.evaluationModelCatalog")
+  private var catalogModelPreparationControls: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text("iosApp.modelCandidateDisclosure")
+        .font(.footnote)
+        .foregroundStyle(.primary)
+        .accessibilityIdentifier("modelCandidateDisclosure")
+
+      if !viewModel.isModelLoaded,
+        let model = bundledModelCatalog().first(where: { $0.name == "Qwen3-ASR 0.6B" }),
+        let file = model.files.first(where: { $0.quant == "Q4_K_M" })
+      {
+        Text("iosApp.prepareModelTitle")
           .font(.subheadline.weight(.medium))
+        Text("iosApp.modelDownloadPrivacy")
+          .font(.footnote)
+          .foregroundStyle(.primary)
+        Text(
+          "\(model.name) · \(ByteCountFormatter.string(fromByteCount: Int64(clamping: file.sizeBytes), countStyle: .file))"
+        )
+        .font(.footnote)
+        .accessibilityIdentifier("modelDownloadSize")
 
-        if let model = bundledModelCatalog().first(where: { $0.name == "Qwen3-ASR 0.6B" }) {
-          ForEach(model.files.filter { ["Q4_K_M", "Q8_0"].contains($0.quant) }, id: \.filename) {
-            file in
-            HStack {
-              Button {
-                Task {
-                  await viewModel.installCatalogModel(model: model, file: file)
-                }
-              } label: {
-                Label(
-                  file.quant == "Q4_K_M"
-                    ? "iosApp.downloadQ4Model"
-                    : "iosApp.downloadQ8Model",
-                  systemImage: "arrow.down.circle"
-                )
-              }
-              .buttonStyle(.bordered)
-              .tint(.primary)
-              .disabled(!viewModel.canInstallCatalogModel)
-
-              Spacer(minLength: 8)
-              Text(
-                "\(file.quant.replacingOccurrences(of: "_", with: " ")) · \(ByteCountFormatter.string(fromByteCount: Int64(clamping: file.sizeBytes), countStyle: .file))"
-              )
-              .font(.caption)
-              .foregroundStyle(.primary)
-              .multilineTextAlignment(.trailing)
-            }
-          }
+        Button {
+          Task { await viewModel.installCatalogModel(model: model, file: file) }
+        } label: {
+          Label(
+            viewModel.catalogModelInstallErrorKey == nil
+              ? "iosApp.prepareSpeechModel" : "iosApp.retryModelPreparation",
+            systemImage: "arrow.down.circle"
+          )
         }
+        .buttonStyle(.borderedProminent)
+        .tint(Color(red: 0.04, green: 0.22, blue: 0.56))
+        .disabled(!viewModel.canInstallCatalogModel)
+        .accessibilityIdentifier("prepareSpeechModel")
+      }
 
-        if viewModel.isInstallingCatalogModel {
-          if let progress = viewModel.catalogModelDownloadProgress {
-            ProgressView(value: progress.fractionCompleted)
-            Text(
-              "\(ByteCountFormatter.string(fromByteCount: Int64(clamping: progress.completedBytes), countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: Int64(clamping: progress.totalBytes), countStyle: .file))"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-          } else {
-            ProgressView("iosApp.downloadingModel")
-          }
-          Button("iosApp.cancelModelDownload", role: .cancel) {
-            viewModel.cancelCatalogModelInstall()
-          }
-          .buttonStyle(.bordered)
-        } else if viewModel.isLoadingCatalogModel {
-          ProgressView("iosApp.loadingModel")
+      if viewModel.isInstallingCatalogModel {
+        if let progress = viewModel.catalogModelDownloadProgress {
+          ProgressView("iosApp.downloadingModel", value: progress.fractionCompleted)
+          Text(
+            "\(ByteCountFormatter.string(fromByteCount: Int64(clamping: progress.completedBytes), countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: Int64(clamping: progress.totalBytes), countStyle: .file))"
+          )
+          .font(.caption)
+          .foregroundStyle(.primary)
+        } else {
+          ProgressView("iosApp.downloadingModel")
         }
+        Button("iosApp.cancelModelDownload", role: .cancel) {
+          viewModel.cancelCatalogModelInstall()
+        }
+        .buttonStyle(.bordered)
+      } else if viewModel.isLoadingCatalogModel {
+        ProgressView("iosApp.loadingModel")
+      }
 
-        if let errorKey = viewModel.catalogModelInstallErrorKey {
-          Text(LocalizedStringKey(errorKey))
-            .font(.footnote)
-            .foregroundStyle(.red)
-        }
+      if let errorKey = viewModel.catalogModelInstallErrorKey {
+        Text(LocalizedStringKey(errorKey))
+          .font(.footnote)
+          .foregroundStyle(.red)
       }
     }
-  #endif
+  }
+
+  private var recordingModeGuidance: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text("iosApp.recordingModeGuidance")
+        .font(.footnote)
+        .foregroundStyle(.primary)
+        .accessibilityIdentifier("recordingModeGuidance")
+      Button {
+        isKeyboardSetupPresented = true
+      } label: {
+        Label("iosApp.keyboardVoiceInput", systemImage: "keyboard")
+      }
+      .tint(.primary)
+    }
+  }
 
   private func languageOptionLabel(_ language: String) -> Text {
     if language == "auto" {
@@ -548,6 +640,7 @@ struct ContentView: View {
       .tint(recordingControlTint)
       .disabled(
         !viewModel.isModelLoaded
+          || viewModel.isPreparingModel
           || (keyboardDictation.isActive && viewModel.state != .recording)
           || viewModel.state == .requestingPermission
           || viewModel.state == .transcribing
@@ -561,6 +654,7 @@ struct ContentView: View {
           viewModel.retryTranscription(using: modelContext)
         }
         .buttonStyle(.bordered)
+        .disabled(viewModel.isPreparingModel)
       }
       if viewModel.hasDiscardablePendingAudio && viewModel.state != .transcribing {
         Button("iosApp.discardRecording", role: .destructive) {
@@ -710,6 +804,21 @@ struct ContentView: View {
 
       if shouldResetHistory {
         try? TranscriptStore.deleteAllHistory(using: context)
+      }
+
+      if arguments.contains("--yanyu-ui-test-pending-keyboard-result") {
+        let store = KeyboardSessionStore(
+          directory: FileManager.default.temporaryDirectory.appendingPathComponent(
+            "yanyu-ui-keyboard-handoff", isDirectory: true))
+        try? store.clear()
+        try? store.write(
+          .init(
+            id: UUID(), phase: .ready, updatedAt: .now,
+            text: "Quarterly planning: We should ship on Friday."))
+        keyboardDictation = KeyboardDictationController(store: store)
+      }
+      if arguments.contains("--yanyu-ui-test-request-shortcut") {
+        KeyboardDictationLaunchRequest.shared.request()
       }
 
       guard shouldSeedHistory else {
