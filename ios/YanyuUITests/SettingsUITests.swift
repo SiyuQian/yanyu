@@ -1,6 +1,87 @@
 import XCTest
 
 final class SettingsUITests: XCTestCase {
+  #if DEBUG
+    @MainActor
+    func testShortcutOpensPendingResultInsteadOfStartingAnotherDictation() throws {
+      let app = launchApp(
+        language: "en", locale: "en_US", seedHistory: true, pendingKeyboardResult: true,
+        requestShortcut: true)
+      XCTAssertTrue(app.navigationBars["Yanyu Keyboard"].waitForExistence(timeout: 5))
+      XCTAssertTrue(app.staticTexts["pendingKeyboardResult"].exists)
+      let start = app.buttons["keyboardStartRecording"]
+      scrollUntilVisible(start, in: app)
+      XCTAssertTrue(start.exists)
+      XCTAssertFalse(start.isEnabled)
+    }
+
+    @MainActor
+    func testPendingKeyboardResultCanBeCopiedAndKeptInHistoryWithoutAModel() throws {
+      let app = launchApp(
+        language: "en", locale: "en_US", seedHistory: true, pendingKeyboardResult: true)
+      app.buttons["keyboardSetup"].tap()
+      let pendingText = app.staticTexts["pendingKeyboardResult"]
+      scrollUntilVisible(pendingText, in: app)
+      XCTAssertTrue(pendingText.exists)
+
+      let copy = app.buttons["copyPendingKeyboardResult"]
+      scrollUntilVisible(copy, in: app)
+      copy.tap()
+      XCTAssertEqual(copy.label, "Copied")
+
+      let keep = app.buttons["keepPendingKeyboardResult"]
+      scrollUntilVisible(keep, in: app)
+      keep.tap()
+      XCTAssertFalse(pendingText.exists)
+      app.navigationBars["Yanyu Keyboard"].buttons["Yanyu"].tap()
+      XCTAssertTrue(historyRecord(in: app).waitForExistence(timeout: 5))
+    }
+  #endif
+
+  @MainActor
+  func testModelPreparationIsReachableWithoutDeveloperTools() throws {
+    let app = launchApp(language: "en", locale: "en_US")
+    let prepare = app.buttons["prepareSpeechModel"]
+    XCTAssertTrue(prepare.waitForExistence(timeout: 10))
+    XCTAssertTrue(prepare.isEnabled)
+    XCTAssertTrue(app.staticTexts["modelCandidateDisclosure"].exists)
+    XCTAssertTrue(app.staticTexts["modelDownloadSize"].exists)
+    #if !DEBUG
+      XCTAssertFalse(app.buttons["Developer evaluation tools"].exists)
+      XCTAssertFalse(app.buttons["Import a local GGUF model"].exists)
+      XCTAssertFalse(app.buttons["Evaluate a local WAV"].exists)
+    #endif
+    let recording = app.buttons["Start recording"]
+    scrollUntilVisible(recording, in: app)
+    XCTAssertFalse(recording.isEnabled)
+    XCTAssertTrue(app.buttons["keyboardSetup"].isEnabled)
+    XCTAssertTrue(app.buttons["Settings"].isEnabled)
+  }
+
+  @MainActor
+  func testFirstRunCanReachSettingsAndHistoryWithoutPreparingSpeech() throws {
+    let app = XCUIApplication()
+    app.launchArguments += [
+      "-yanyu.ios.onboarding-complete", "NO", "-AppleLanguages", "(en)", "-AppleLocale",
+      "en_US",
+    ]
+    app.launch()
+    app.buttons["Continue"].tap()
+    // Remove the launch override so the app reads the completion saved by Continue.
+    app.terminate()
+    app.launchArguments.removeFirst(2)
+    app.launch()
+    XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 5))
+    let guidance = app.staticTexts["recordingModeGuidance"]
+    scrollUntilVisible(guidance, in: app)
+    XCTAssertTrue(guidance.exists)
+    let history = app.staticTexts["Recent transcripts"]
+    scrollUntilVisible(history, in: app)
+    XCTAssertTrue(history.exists)
+    app.buttons["Settings"].tap()
+    XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+  }
+
   @MainActor
   func testKeyboardSetupExplainsActivationAndDoesNotRecordWithoutAModel() throws {
     let app = launchApp(language: "en", locale: "en_US")
@@ -9,8 +90,11 @@ final class SettingsUITests: XCTestCase {
     setup.tap()
     XCTAssertTrue(app.navigationBars["Yanyu Keyboard"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["keyboardSetupInstructions"].exists)
-    XCTAssertFalse(app.buttons["keyboardStartRecording"].isEnabled)
     XCTAssertTrue(app.buttons["Open System Settings"].exists)
+    let start = app.buttons["keyboardStartRecording"]
+    scrollUntilVisible(start, in: app)
+    XCTAssertTrue(start.exists)
+    XCTAssertFalse(start.isEnabled)
   }
 
   @MainActor
@@ -198,7 +282,7 @@ final class SettingsUITests: XCTestCase {
   @MainActor
   func testDictationScreenPassesAccessibilityAudit() throws {
     let app = launchApp(language: "en", locale: "en_US")
-    XCTAssertTrue(app.staticTexts["A validated speech model is not installed yet."].exists)
+    XCTAssertTrue(app.staticTexts["speechModelStatus"].exists)
     XCTAssertFalse(app.buttons["Start recording"].isEnabled)
 
     try performProductAccessibilityAudit(in: app)
@@ -207,7 +291,7 @@ final class SettingsUITests: XCTestCase {
   @MainActor
   func testDictationScreenPassesAccessibilityAuditInDarkMode() throws {
     let app = launchApp(language: "en", locale: "en_US", appearance: "dark")
-    XCTAssertTrue(app.staticTexts["A validated speech model is not installed yet."].exists)
+    XCTAssertTrue(app.staticTexts["speechModelStatus"].exists)
     XCTAssertFalse(app.buttons["Start recording"].isEnabled)
 
     try performProductAccessibilityAudit(in: app)
@@ -251,7 +335,9 @@ final class SettingsUITests: XCTestCase {
     locale: String,
     dynamicTypeCategory: String? = nil,
     appearance: String? = nil,
-    seedHistory: Bool = false
+    seedHistory: Bool = false,
+    pendingKeyboardResult: Bool = false,
+    requestShortcut: Bool = false
   ) -> XCUIApplication {
     let app = XCUIApplication()
     app.launchArguments += [
@@ -268,6 +354,12 @@ final class SettingsUITests: XCTestCase {
     app.launchArguments += ["--yanyu-ui-test-reset-preferences"]
     if seedHistory {
       app.launchArguments += ["--yanyu-ui-test-seed-history"]
+    }
+    if pendingKeyboardResult {
+      app.launchArguments += ["--yanyu-ui-test-pending-keyboard-result"]
+    }
+    if requestShortcut {
+      app.launchArguments += ["--yanyu-ui-test-request-shortcut"]
     }
     app.launch()
     return app

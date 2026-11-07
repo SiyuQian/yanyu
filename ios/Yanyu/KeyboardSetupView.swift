@@ -5,12 +5,28 @@ import UIKit
 struct KeyboardSetupView: View {
   @Environment(DictationViewModel.self) private var viewModel
   @Environment(\.modelContext) private var modelContext
-  @Environment(\.scenePhase) private var scenePhase
   @Environment(\.openURL) private var openURL
   let controller: KeyboardDictationController
+  @State private var copiedPendingID: UUID?
+  @State private var pendingActionFailed = false
 
   var body: some View {
     Form {
+      if let pending = controller.pendingResult {
+        pendingResultSection(pending)
+      }
+      Section {
+        Label(
+          viewModel.isModelLoaded ? "iosApp.modelReady" : "iosApp.modelMissing",
+          systemImage: viewModel.isModelLoaded ? "checkmark.circle.fill" : "cpu"
+        )
+        if !viewModel.isModelLoaded {
+          Text("iosApp.keyboardModelNeeded")
+        }
+        Text("iosApp.keyboardModeGuidance")
+      } header: {
+        Text("iosApp.prepareModelTitle")
+      }
       Section {
         Text("iosApp.keyboardSetupInstructions")
           .accessibilityIdentifier("keyboardSetupInstructions")
@@ -19,6 +35,12 @@ struct KeyboardSetupView: View {
         }
       } header: {
         Text("iosApp.keyboardEnable")
+      }
+      Section {
+        Text("iosApp.shortcutSetupInstructions")
+          .accessibilityIdentifier("shortcutSetupInstructions")
+      } header: {
+        Text("iosApp.shortcutStartTitle")
       }
       Section {
         Text("iosApp.keyboardPrivacy")
@@ -38,14 +60,17 @@ struct KeyboardSetupView: View {
           Button("iosApp.keyboardStartRecording") {
             Task {
               await controller.start(viewModel: viewModel)
-              if scenePhase != .active { controller.cancel(viewModel: viewModel) }
+              if UIApplication.shared.applicationState != .active {
+                controller.cancel(viewModel: viewModel)
+              }
             }
           }
           .accessibilityIdentifier("keyboardStartRecording")
           .disabled(
-            !viewModel.isModelLoaded || viewModel.state == .recording
+            !viewModel.isModelLoaded || viewModel.isPreparingModel || viewModel.state == .recording
               || viewModel.state == .requestingPermission || viewModel.state == .transcribing
               || viewModel.hasDiscardablePendingAudio || viewModel.hasPendingTranscriptSave
+              || controller.pendingResult != nil
           )
         }
         if let errorKey = viewModel.errorKey {
@@ -59,5 +84,45 @@ struct KeyboardSetupView: View {
       }
     }
     .navigationTitle("iosApp.keyboardTitle")
+  }
+
+  private func pendingResultSection(_ result: KeyboardSessionSnapshot) -> some View {
+    Section {
+      Text("iosApp.keyboardPendingResult")
+        .foregroundStyle(.primary)
+      Text(result.text ?? "")
+        .lineLimit(6)
+        .textSelection(.enabled)
+        .accessibilityIdentifier("pendingKeyboardResult")
+      Button {
+        UIPasteboard.general.string = result.text
+        copiedPendingID = result.id
+      } label: {
+        Label(
+          copiedPendingID == result.id ? "iosApp.copied" : "iosApp.copy",
+          systemImage: copiedPendingID == result.id ? "checkmark" : "doc.on.doc")
+      }
+      .buttonStyle(.bordered)
+      .tint(.primary)
+      .accessibilityIdentifier("copyPendingKeyboardResult")
+      Button("iosApp.keyboardKeepPendingResult") {
+        let cleared = controller.dismissPendingResult(id: result.id)
+        pendingActionFailed = !cleared
+        if cleared,
+          viewModel.errorKey == "iosApp.keyboardPendingResult"
+            || viewModel.errorKey == "iosApp.keyboardUnavailable"
+        {
+          viewModel.errorKey = nil
+        }
+      }
+      .buttonStyle(.bordered)
+      .tint(.primary)
+      .accessibilityIdentifier("keepPendingKeyboardResult")
+      if pendingActionFailed {
+        Text("iosApp.keyboardPendingActionFailed").foregroundStyle(.red)
+      }
+    } header: {
+      Text("iosApp.keyboardPendingResultTitle")
+    }
   }
 }

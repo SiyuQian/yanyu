@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import XCTest
 
 @testable import Yanyu
@@ -125,6 +126,178 @@ final class ModelCatalogInstallTests: XCTestCase {
     XCTAssertEqual(requestedURLs, [download.sources[0].url])
   }
 
+  func testRecordingDoesNotStartOrReportMissingModelDuringDownload() async throws {
+    let root = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let defaultsName = "YanyuCatalogModelGateTests.\(UUID().uuidString)"
+    let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+    defer { defaults.removePersistentDomain(forName: defaultsName) }
+    let candidate = try catalogCandidate(root: root, filename: "Qwen3-ASR-downloading.gguf")
+    let download = try makeCatalogModelPackageDownload(model: candidate.model, file: candidate.file)
+    let transport = CatalogInstallStubTransport(
+      dataByURL: [download.sources[0].url: candidate.data],
+      holdsDownloadUntilCancelled: true
+    )
+    let viewModel = DictationViewModel(
+      transcriptionEngine: CatalogInstallFakeTranscriptionEngine(),
+      modelPackageStore: ModelPackageStore(
+        modelsDirectory: root.appendingPathComponent("installed")),
+      modelPackageDownloadTransport: transport,
+      userDefaults: defaults
+    )
+    let installation = Task {
+      await viewModel.installCatalogModel(model: candidate.model, file: candidate.file)
+    }
+    await transport.waitUntilDownloadStarts()
+
+    await viewModel.startRecording()
+
+    XCTAssertEqual(viewModel.state, .ready)
+    XCTAssertNil(viewModel.errorKey)
+    viewModel.cancelCatalogModelInstall()
+    await installation.value
+  }
+
+  func testRecordingDoesNotStartOrReportMissingModelDuringModelLoad() async throws {
+    let root = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let defaultsName = "YanyuCatalogModelGateTests.\(UUID().uuidString)"
+    let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+    defer { defaults.removePersistentDomain(forName: defaultsName) }
+    let candidate = try catalogCandidate(root: root, filename: "Qwen3-ASR-loading.gguf")
+    let download = try makeCatalogModelPackageDownload(model: candidate.model, file: candidate.file)
+    let transport = CatalogInstallStubTransport(dataByURL: [download.sources[0].url: candidate.data]
+    )
+    let engine = CatalogInstallFakeTranscriptionEngine()
+    engine.holdsLoad = true
+    let viewModel = DictationViewModel(
+      transcriptionEngine: engine,
+      modelPackageStore: ModelPackageStore(
+        modelsDirectory: root.appendingPathComponent("installed")),
+      modelPackageDownloadTransport: transport,
+      userDefaults: defaults
+    )
+    let installation = Task {
+      await viewModel.installCatalogModel(model: candidate.model, file: candidate.file)
+    }
+    await engine.waitUntilLoadStarts()
+    XCTAssertTrue(viewModel.isLoadingCatalogModel)
+    XCTAssertFalse(viewModel.canInstallCatalogModel)
+
+    await viewModel.startRecording()
+
+    XCTAssertEqual(viewModel.state, .ready)
+    XCTAssertNil(viewModel.errorKey)
+    engine.finishLoad()
+    await installation.value
+    XCTAssertTrue(viewModel.isModelLoaded)
+  }
+
+  func testRestoringSavedModelBlocksPreparationAndRecordingUntilLoadCompletes() async throws {
+    let root = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let defaultsName = "YanyuCatalogModelRestoreTests.\(UUID().uuidString)"
+    let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+    defer { defaults.removePersistentDomain(forName: defaultsName) }
+    let candidate = try catalogCandidate(root: root, filename: "Qwen3-ASR-restore.gguf")
+    let download = try makeCatalogModelPackageDownload(model: candidate.model, file: candidate.file)
+    let store = ModelPackageStore(modelsDirectory: root.appendingPathComponent("installed"))
+    let installedViewModel = DictationViewModel(
+      transcriptionEngine: CatalogInstallFakeTranscriptionEngine(),
+      modelPackageStore: store,
+      modelPackageDownloadTransport: CatalogInstallStubTransport(
+        dataByURL: [download.sources[0].url: candidate.data]),
+      userDefaults: defaults
+    )
+    await installedViewModel.installCatalogModel(model: candidate.model, file: candidate.file)
+    let engine = CatalogInstallFakeTranscriptionEngine()
+    engine.holdsLoad = true
+    let viewModel = DictationViewModel(
+      transcriptionEngine: engine,
+      modelPackageStore: store,
+      recoverPendingAudio: { nil },
+      userDefaults: defaults
+    )
+    let restoration = Task { await viewModel.restoreLocalStateIfPresent() }
+    await engine.waitUntilLoadStarts()
+
+    XCTAssertTrue(viewModel.isPreparingModel)
+    XCTAssertFalse(viewModel.canInstallCatalogModel)
+    await viewModel.startRecording()
+    XCTAssertNil(viewModel.errorKey)
+
+    engine.finishLoad()
+    await restoration.value
+    XCTAssertTrue(viewModel.isModelLoaded)
+    XCTAssertFalse(viewModel.isPreparingModel)
+  }
+
+  func testRetainedRecordingRetryWaitsForRestoredModelAndThenSavesTranscript() async throws {
+    let recoveryKeys = ["yanyu.ios.pending-audio-saved", "yanyu.ios.pending-audio-failure"]
+    recoveryKeys.forEach(UserDefaults.standard.removeObject(forKey:))
+    defer { recoveryKeys.forEach(UserDefaults.standard.removeObject(forKey:)) }
+    let root = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let defaultsName = "YanyuCatalogRecoveryGateTests.\(UUID().uuidString)"
+    let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+    defer { defaults.removePersistentDomain(forName: defaultsName) }
+    let candidate = try catalogCandidate(root: root, filename: "Qwen3-ASR-recovery.gguf")
+    let download = try makeCatalogModelPackageDownload(model: candidate.model, file: candidate.file)
+    let store = ModelPackageStore(modelsDirectory: root.appendingPathComponent("installed"))
+    let installedViewModel = DictationViewModel(
+      transcriptionEngine: CatalogInstallFakeTranscriptionEngine(),
+      modelPackageStore: store,
+      modelPackageDownloadTransport: CatalogInstallStubTransport(
+        dataByURL: [download.sources[0].url: candidate.data]),
+      userDefaults: defaults
+    )
+    await installedViewModel.installCatalogModel(model: candidate.model, file: candidate.file)
+    let audio = try TemporaryAudioFile(in: root.appendingPathComponent("audio"))
+    try Data([1, 2, 3]).write(to: audio.url)
+    let engine = CatalogInstallFakeTranscriptionEngine()
+    engine.holdsLoad = true
+    engine.transcriptionText = "Recovered recording."
+    let viewModel = DictationViewModel(
+      transcriptionEngine: engine,
+      modelPackageStore: store,
+      recoverPendingAudio: { audio },
+      userDefaults: defaults
+    )
+    let container = try ModelContainer(
+      for: TranscriptRecord.self,
+      configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let context = ModelContext(container)
+    let restoration = Task { await viewModel.restoreLocalStateIfPresent() }
+    await engine.waitUntilLoadStarts()
+    XCTAssertTrue(viewModel.hasPendingAudioRecovery)
+
+    viewModel.retryTranscription(using: context)
+
+    XCTAssertEqual(viewModel.state, .failed("iosApp.audioInterrupted"))
+    XCTAssertTrue(viewModel.hasPendingAudioRecovery)
+    XCTAssertEqual(viewModel.noticeKey, "iosApp.recoveredRecording")
+    XCTAssertNil(viewModel.errorKey)
+    XCTAssertEqual(try Data(contentsOf: audio.url), Data([1, 2, 3]))
+    XCTAssertTrue(try context.fetch(FetchDescriptor<TranscriptRecord>()).isEmpty)
+
+    engine.finishLoad()
+    await restoration.value
+    XCTAssertTrue(viewModel.isModelLoaded)
+    viewModel.retryTranscription(using: context)
+    for _ in 0..<20 where viewModel.state == .transcribing {
+      await Task.yield()
+    }
+
+    XCTAssertEqual(viewModel.transcript, "Recovered recording.")
+    XCTAssertEqual(
+      try context.fetch(FetchDescriptor<TranscriptRecord>()).map(\.text),
+      ["Recovered recording."]
+    )
+    XCTAssertFalse(viewModel.hasPendingAudioRecovery)
+    XCTAssertFalse(FileManager.default.fileExists(atPath: audio.url.path))
+  }
+
   private func catalogCandidate(
     root: URL,
     filename: String
@@ -221,8 +394,29 @@ private actor CatalogInstallStubTransport: ModelPackageDownloadTransport {
 private final class CatalogInstallFakeTranscriptionEngine: TranscriptionEngine {
   private(set) var loadedModelURL: URL?
   var failNextLoad = false
+  var holdsLoad = false
+  var transcriptionText = ""
+  private var loadStarted = false
+  private var loadStartWaiter: CheckedContinuation<Void, Never>?
+  private var loadCompletion: CheckedContinuation<Void, Never>?
+
+  func waitUntilLoadStarts() async {
+    guard !loadStarted else { return }
+    await withCheckedContinuation { loadStartWaiter = $0 }
+  }
+
+  func finishLoad() {
+    loadCompletion?.resume()
+    loadCompletion = nil
+  }
 
   func loadModel(at modelURL: URL) async throws {
+    loadStarted = true
+    loadStartWaiter?.resume()
+    loadStartWaiter = nil
+    if holdsLoad {
+      await withCheckedContinuation { loadCompletion = $0 }
+    }
     if failNextLoad {
       failNextLoad = false
       throw URLError(.cannotLoadFromNetwork)
@@ -235,8 +429,9 @@ private final class CatalogInstallFakeTranscriptionEngine: TranscriptionEngine {
     language: String?,
     progress: @escaping @MainActor (TranscriptionProgress) -> Void
   ) async throws -> TranscriptionOutcome {
-    TranscriptionOutcome(
-      text: "",
+    guard loadedModelURL != nil else { throw CocoaError(.fileReadNoSuchFile) }
+    return TranscriptionOutcome(
+      text: transcriptionText,
       detectedLanguage: nil,
       audioDurationMs: 0,
       processingDurationMs: 0

@@ -59,8 +59,21 @@ struct KeyboardSessionStore {
     try decode(UUID.self, from: "stop.json") == id
   }
 
+  /// Records a keyboard insertion attempt, without asserting the destination accepted its text.
+  func markResultHandled(for id: UUID, now: Date = .now) throws {
+    guard let snapshot = try read(now: now), snapshot.id == id, snapshot.phase == .ready else {
+      throw CocoaError(.fileReadNoSuchFile)
+    }
+    guard try !isResultHandled(for: id) else { return }
+    try encode(id, to: "handled.json")
+  }
+
+  func isResultHandled(for id: UUID) throws -> Bool {
+    try decode(UUID.self, from: "handled.json") == id
+  }
+
   func clear() throws {
-    for name in ["session.json", "stop.json"] {
+    for name in ["stop.json", "handled.json", "session.json"] {
       let url = directory.appendingPathComponent(name)
       if FileManager.default.fileExists(atPath: url.path) {
         try FileManager.default.removeItem(at: url)
