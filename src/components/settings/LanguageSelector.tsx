@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { SettingContainer } from "../ui/SettingContainer";
 import { ResetButton } from "../ui/ResetButton";
 import { useSettings } from "../../hooks/useSettings";
+import { isComposingKeyEvent } from "../../lib/utils/keyboard";
 import {
   getLanguageLabel,
   LANGUAGES,
@@ -123,6 +124,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (isComposingKeyEvent(event.nativeEvent)) return;
     if (event.key === "Enter" && filteredLanguages.length > 0) {
       // Select first filtered language on Enter
       handleLanguageSelect(filteredLanguages[0].value);

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { BookA, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "@/hooks/useSettings";
+import { isComposingKeyEvent } from "@/lib/utils/keyboard";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { SettingsGroup } from "../ui/SettingsGroup";
@@ -52,6 +53,7 @@ export const CustomWords: React.FC = React.memo(() => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (isComposingKeyEvent(e.nativeEvent)) return;
     if (e.key === "Enter") {
       e.preventDefault();
       void handleAddWord();

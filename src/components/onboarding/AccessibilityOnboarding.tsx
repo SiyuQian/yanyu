@@ -264,6 +264,7 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
     if (preview) return;
 
     try {
+      await commands.resetMacosPermission("accessibility");
       await requestAccessibilityPermission();
       setPermissions((prev) => ({ ...prev, accessibility: "waiting" }));
       startPolling();
@@ -280,6 +281,7 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
       if (isWindows) {
         await commands.openMicrophonePrivacySettings();
       } else {
+        if (isMacOS) await commands.resetMacosPermission("microphone");
         await requestMicrophonePermission();
       }
 

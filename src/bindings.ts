@@ -927,6 +927,21 @@ async initializeShortcuts() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Clears Yanyu's macOS grant for `permission` before asking for it. A grant is
+ * tied to the app's code signature, so after an update the old entry stays in
+ * System Settings without matching the new build: macOS neither honors it nor
+ * asks again, and onboarding waits forever. Only called while the permission
+ * reads as not granted, so there is no working grant to lose.
+ */
+async resetMacosPermission(permission: MacPermission) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_macos_permission", { permission }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getAvailableModels() : Promise<Result<ModelInfo[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_available_models") };
@@ -1408,10 +1423,19 @@ export type KeyboardDiagnosticReport = { secure_input_enabled: boolean; culprit_
  * Counts only — key identity is deliberately never captured.
  */
 key_down: number; key_up: number; flags_changed: number; mouse: number; duration_ms: number }
-export type KeyboardImplementation = "tauri" | "handy_keys" | "none"
+export type KeyboardImplementation = "tauri" | "handy_keys" |
+/**
+ * No built-in global shortcuts; trigger Handy via CLI flags or signals
+ * (e.g. from a Wayland compositor keybinding).
+ */
+"none"
 export type LLMPrompt = { id: string; name: string; prompt: string }
 export type LocalPolishingStatus = { phase: string; progress: number; error: string | null; downloaded: boolean; supported: boolean }
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
+/**
+ * A macOS privacy permission Yanyu asks for during onboarding.
+ */
+export type MacPermission = "accessibility" | "microphone"
 export type Meeting = { version: number; id: string; title: string; mode: MeetingMode; created_at: string; status: MeetingStatus; mic_frames: number; system_frames: number; duration_ms: number; completed_ms: number; transcript_complete: boolean; segments: MeetingSegment[]; speakers: Partial<{ [key in string]: string }>; references: SpeakerReference[]; notes: string; notes_stale: boolean; error: string | null; capture_error?: string | null; durability_warning?: string | null }
 export type MeetingControl = "pause" | "resume" | "stop" | "cancel"
 export type MeetingMode = "in_person" | "online"

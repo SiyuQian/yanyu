@@ -18,6 +18,7 @@ import {
   supportsLanguageCode,
 } from "@/lib/constants/languages.ts";
 import type { ModelInfo } from "@/bindings";
+import { isComposingKeyEvent } from "@/lib/utils/keyboard";
 
 // check if model supports a language based on its supported_languages list
 const modelSupportsLanguage = (model: ModelInfo, langCode: string): boolean => {
@@ -326,6 +327,7 @@ export const ModelsSettings: React.FC = () => {
                         value={languageSearch}
                         onChange={(e) => setLanguageSearch(e.target.value)}
                         onKeyDown={(e) => {
+                          if (isComposingKeyEvent(e.nativeEvent)) return;
                           if (
                             e.key === "Enter" &&
                             filteredLanguages.length > 0
