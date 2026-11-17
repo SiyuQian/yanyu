@@ -546,6 +546,8 @@ pub(crate) fn validate_binding_change(
                 binding.parse::<::handy_keys::Hotkey>().ok()
                     == other.current_binding.parse::<::handy_keys::Hotkey>().ok()
             }
+            // Nothing is registered, so bindings cannot collide.
+            KeyboardImplementation::None => false,
         };
         if conflicts {
             return Err(format!("Shortcut '{}' is already in use", binding));
