@@ -1768,7 +1768,7 @@ fn post_process_transcription_text(
             _ => raw,
         };
 
-        post_process_transcription_for_core(
+        let text = post_process_transcription_for_core(
             raw,
             TranscriptPostProcessingOptions {
                 custom_words: if custom_words_already_prompted {
@@ -1781,7 +1781,13 @@ fn post_process_transcription_text(
                 custom_filler_words: settings.custom_filler_words.clone(),
                 filler_removal_enabled: settings.filler_word_removal_enabled,
             },
-        )
+        );
+        // Short, wordless clips often come back as just "." or "?".
+        if text.chars().any(char::is_alphanumeric) {
+            text
+        } else {
+            String::new()
+        }
     })
 }
 
@@ -2190,6 +2196,26 @@ mod tests {
             );
 
             assert_eq!(result, "学校に行きます", "{evidence:?}");
+        }
+    }
+
+    #[test]
+    fn punctuation_only_transcripts_are_empty() {
+        let settings = AppSettings::default();
+        let process = |text: &str| {
+            post_process_transcription_text(
+                text.to_string(),
+                &settings,
+                false,
+                &OutputLanguageEvidence::Unknown,
+                &languages(&["zh", "en"]),
+            )
+        };
+        for wordless in [".", "?", "。", "？", " ... "] {
+            assert_eq!(process(wordless), "", "{wordless}");
+        }
+        for speech in ["好", "0", "Ok."] {
+            assert_eq!(process(speech), speech);
         }
     }
 
