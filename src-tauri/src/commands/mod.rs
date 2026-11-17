@@ -198,3 +198,44 @@ pub fn initialize_shortcuts(app: AppHandle) -> Result<(), String> {
     log::info!("Shortcuts initialized successfully");
     Ok(())
 }
+
+/// A macOS privacy permission Yanyu asks for during onboarding.
+#[derive(Clone, Copy, Debug, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "lowercase")]
+pub enum MacPermission {
+    Accessibility,
+    Microphone,
+}
+
+/// Clears Yanyu's macOS grant for `permission` before asking for it. A grant is
+/// tied to the app's code signature, so after an update the old entry stays in
+/// System Settings without matching the new build: macOS neither honors it nor
+/// asks again, and onboarding waits forever. Only called while the permission
+/// reads as not granted, so there is no working grant to lose.
+#[tauri::command]
+#[specta::specta]
+pub fn reset_macos_permission(app: AppHandle, permission: MacPermission) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let service = match permission {
+            MacPermission::Accessibility => "Accessibility",
+            MacPermission::Microphone => "Microphone",
+        };
+        let identifier = app.config().identifier.clone();
+        let output = std::process::Command::new("/usr/bin/tccutil")
+            .args(["reset", service, &identifier])
+            .output()
+            .map_err(|e| format!("Failed to run tccutil: {e}"))?;
+        if !output.status.success() {
+            // Asking is still worth trying: on a first install there may be
+            // nothing to reset.
+            log::warn!(
+                "tccutil reset {service} failed: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (app, permission);
+    Ok(())
+}
