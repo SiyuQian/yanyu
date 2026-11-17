@@ -152,10 +152,18 @@ transcribe-cpp = { version = "0.3.1", default-features = false }
 candle-core = { version = "=0.11.0", features = ["metal"] }
 candle-transformers = { version = "=0.11.0", features = ["metal"] }
 tokenizers = { version = "0.22", default-features = false, features = ["onig"] }
+# Whisper backend per macOS arch. Apple Silicon links the static Metal build.
+# Intel Macs are CPU-only: ggml-metal compiles its embedded shader library at
+# backend init (app launch, regardless of the selected accelerator), and on
+# some AMD GPUs that compile never finishes, hanging every model load. With no
+# features, transcribe-cpp-sys sets TRANSCRIBE_METAL=OFF.
+transcribe-cpp = { version = "0.3.1", default-features = false, features = ["metal"] }
+
+[target.'cfg(all(target_os = "macos", target_arch = "x86_64"))'.dependencies]
+transcribe-cpp = { version = "0.3.1", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2.1" }
-transcribe-cpp = { version = "0.3.1", default-features = false, features = ["metal"] }
 # Used by the receipt-sequenced ("reliable") paste path for lazy NSPasteboard
 # promises. Versions track what Tauri already pulls in.
 objc2 = "0.6"
