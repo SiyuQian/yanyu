@@ -1333,7 +1333,8 @@ impl TranscriptionManager {
             run_options.vocabulary.len()
         );
 
-        let transcript = match self.engine.transcribe(audio, run_options) {
+        let vocabulary = run_options.vocabulary.clone();
+        let mut transcript = match self.engine.transcribe(audio, run_options) {
             Ok(transcript) => transcript,
             Err(EngineError::Cancelled) => return Err(EngineError::Cancelled.into()),
             Err(e) => {
@@ -1344,6 +1345,10 @@ impl TranscriptionManager {
                 ));
             }
         };
+        if echoes_vocabulary(&transcript.text, &vocabulary) {
+            info!("The model returned the custom words, not speech; dropping them");
+            transcript.text.clear();
+        }
         Ok(RunOutcome {
             text: transcript.text,
             languages,
@@ -1702,6 +1707,34 @@ struct TranscribeCppRunPlan {
 
 /// Build the transcribe-cpp language/task options shared by batch and live
 /// streaming paths.
+/// Whether `text` is the custom words read back instead of a transcript. A
+/// model that takes them as a prompt can answer audio with no speech in it by
+/// repeating the list, or the end of it, in order.
+fn echoes_vocabulary(text: &str, vocabulary: &[String]) -> bool {
+    let words = |s: &str| -> Vec<String> {
+        s.split(|c: char| !c.is_alphanumeric())
+            .filter(|word| !word.is_empty())
+            .map(str::to_lowercase)
+            .collect()
+    };
+    let said = words(text);
+    // Walk the text once, finding the custom words in the order of the list.
+    let (mut at, mut found, mut covered) = (0, 0, 0);
+    for term in vocabulary.iter().map(|term| words(term)) {
+        if term.is_empty() {
+            continue;
+        }
+        if let Some(offset) = said[at..].windows(term.len()).position(|w| w == term) {
+            at += offset + term.len();
+            found += 1;
+            covered += term.len();
+        }
+    }
+    // A sentence that uses a few custom words is speech. Three or more of
+    // them in list order, with next to nothing else, is the list.
+    found >= 3 && covered * 4 >= said.len() * 3
+}
+
 fn transcribe_cpp_run_plan(
     translate_to_english: bool,
     effective_language: &str,
@@ -2197,6 +2230,46 @@ mod tests {
 
             assert_eq!(result, "学校に行きます", "{evidence:?}");
         }
+    }
+
+    #[test]
+    fn custom_words_read_back_are_not_a_transcript() {
+        let words = [
+            "Handy",
+            "Qwen",
+            "VRAM",
+            "Claude",
+            "Opus",
+            "Codex",
+            "GPT-6.1 Sol",
+        ]
+        .map(String::from);
+
+        // The shapes Qwen3-ASR returned for recordings of room noise.
+        for echo in [
+            "Handy Qwen VRAM Claude Opus Codex GPT-6.1 Sol.",
+            "手 Handy Qwen VRAM Claude Opus Codex GPT-6.1 Sol.",
+            // Only the end of the list, as with a long one.
+            "Claude Opus Codex GPT-6.1 Sol",
+            // With a word of its own in front.
+            "Ich bin ein Handy Qwen VRAM Claude Opus Codex GPT-6.1 Sol",
+        ] {
+            assert!(echoes_vocabulary(echo, &words), "{echo}");
+        }
+
+        for speech in [
+            "",
+            "Okay.",
+            "I asked Claude to compare Opus and Codex on my Handy fork.",
+            // Too few of them to tell from someone saying them.
+            "Claude Opus",
+            "GPT-6.1 Sol",
+            // Not the order of the list.
+            "Codex, Opus, Claude",
+        ] {
+            assert!(!echoes_vocabulary(speech, &words), "{speech}");
+        }
+        assert!(!echoes_vocabulary("Handy Qwen VRAM", &[]));
     }
 
     #[test]
