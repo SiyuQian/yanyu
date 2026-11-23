@@ -455,10 +455,8 @@
         "title": "API (совместимый с OpenAI)",
         "provider": {
           "title": "Поставщик",
-          "description": "Выберите поставщика, совместимого с OpenAI."
-        },
-        "appleIntelligence": {
-          "unavailable": "Apple Intelligence недоступен на этом устройстве. Требуется Apple Silicon Mac под управлением macOS Tahoe (26.0) или более поздней версии с включенным Apple Intelligence в настройках системы."
+          "description": "Выберите поставщика, совместимого с OpenAI.",
+          "placeholder": "Выберите поставщика"
         },
         "baseUrl": {
           "title": "Базовый URL",

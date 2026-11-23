@@ -1,5 +1,3 @@
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::apple_intelligence;
 use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
 use crate::audio_toolkit::{is_microphone_access_denied, is_no_input_device_error, VadPolicy};
 use crate::managers::audio::AudioRecordingManager;
@@ -10,7 +8,7 @@ use crate::managers::local_polishing::{
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::TranscriptionManager;
-use crate::settings::{get_settings, AppSettings, OverlayStyle, APPLE_INTELLIGENCE_PROVIDER_ID};
+use crate::settings::{get_settings, AppSettings, OverlayStyle};
 use crate::shortcut;
 use crate::tray::{set_tray_state, TrayIconState};
 use crate::utils::{
@@ -216,50 +214,6 @@ pub(crate) async fn post_process_transcription(
         let system_prompt = build_system_prompt(&prompt);
         let user_content = transcription.to_string();
 
-        // Handle Apple Intelligence separately since it uses native Swift APIs
-        if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
-            #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-            {
-                if !apple_intelligence::check_apple_intelligence_availability() {
-                    debug!(
-                        "Apple Intelligence selected but not currently available on this device"
-                    );
-                    return None;
-                }
-
-                let token_limit = model.trim().parse::<i32>().unwrap_or(0);
-                return match apple_intelligence::process_text_with_system_prompt(
-                    &system_prompt,
-                    &user_content,
-                    token_limit,
-                ) {
-                    Ok(result) => {
-                        if result.trim().is_empty() {
-                            debug!("Apple Intelligence returned an empty response");
-                            None
-                        } else {
-                            let result = strip_invisible_chars(&result);
-                            debug!(
-                                "Apple Intelligence post-processing succeeded. Output length: {} chars",
-                                result.len()
-                            );
-                            Some(result)
-                        }
-                    }
-                    Err(err) => {
-                        error!("Apple Intelligence post-processing failed: {}", err);
-                        None
-                    }
-                };
-            }
-
-            #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
-            {
-                debug!("Apple Intelligence provider selected on unsupported platform");
-                return None;
-            }
-        }
-
         // Define JSON schema for transcription output
         let json_schema = serde_json::json!({
             "type": "object",
@@ -385,30 +339,12 @@ where
     check_output(transcription, &text, true)
 }
 
-#[cfg(any(test, all(target_os = "macos", target_arch = "aarch64")))]
-async fn generated_apple_worker<F>(data: String, bridge: F) -> Result<String, PolishSkip>
-where
-    F: FnOnce(&str, &str, i32) -> Result<String, String> + Send + 'static,
-{
-    // shortcut: timed-out Apple inference can continue, add cancellation when the bridge supports it.
-    let result = tauri::async_runtime::spawn_blocking(move || {
-        bridge(crate::personalization::RULES, &data, 0)
-    })
-    .await
-    .map_err(|_| PolishSkip::Failed)?
-    .map_err(|_| PolishSkip::Failed)?;
-    usable_generated_text(&result).ok_or(PolishSkip::Incomplete)
-}
-
 /// Use the same provider client while keeping generated rules separate from untrusted data.
 async fn generated_processing(
     settings: &AppSettings,
     transcription: &str,
 ) -> Result<String, PolishSkip> {
-    if !crate::personalization::service_ready(
-        settings,
-        crate::commands::check_apple_intelligence_available(),
-    ) {
+    if !crate::personalization::service_ready(settings) {
         return Err(PolishSkip::Unavailable);
     }
     let provider = settings
@@ -420,13 +356,6 @@ async fn generated_processing(
         .map(String::as_str)
         .unwrap_or("");
     let data = crate::personalization::request_data(settings, transcription);
-    if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
-        #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-        return generated_apple_worker(data, apple_intelligence::process_text_with_system_prompt)
-            .await;
-        #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
-        return Err(PolishSkip::Unavailable);
-    }
     let schema = provider.supports_structured_output.then(|| {
         serde_json::json!({
             "type": "object", "properties": {"transcription": {"type": "string"}},
@@ -1169,77 +1098,6 @@ mod tests {
         }
     }
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-    async fn generated_apple_worker_timeout_and_cancellation_discard_late_output() {
-        struct ReleaseWorker(Option<std::sync::mpsc::Sender<()>>);
-        impl Drop for ReleaseWorker {
-            fn drop(&mut self) {
-                if let Some(sender) = self.0.take() {
-                    let _ = sender.send(());
-                }
-            }
-        }
-        for cancel in [false, true] {
-            let (started, worker_started) = tokio::sync::oneshot::channel();
-            let (release, worker_release) = std::sync::mpsc::channel();
-            let release = ReleaseWorker(Some(release));
-            let (finished, worker_finished) = tokio::sync::oneshot::channel();
-            let cancelled = Arc::new(AtomicBool::new(false));
-            let worker_cancelled = Arc::clone(&cancelled);
-            let task = tokio::spawn(async move {
-                complete_unless_cancelled(
-                    super::process_generated_with_deadline(
-                        "hello",
-                        super::generated_apple_worker(
-                            "fixture".into(),
-                            move |rules, data, max_tokens| {
-                                started
-                                    .send((rules.to_string(), data.to_string(), max_tokens))
-                                    .unwrap();
-                                worker_release.recv().unwrap();
-                                finished.send(()).unwrap();
-                                Ok("hello".into())
-                            },
-                        ),
-                    ),
-                    || worker_cancelled.load(Ordering::Acquire),
-                )
-                .await
-            });
-            let (rules, data, max_tokens) =
-                tokio::time::timeout(Duration::from_secs(2), worker_started)
-                    .await
-                    .unwrap()
-                    .unwrap();
-            assert_eq!(rules, crate::personalization::RULES);
-            assert_eq!(data, "fixture");
-            assert_eq!(max_tokens, 0);
-            cancelled.store(cancel, Ordering::Release);
-            let deadline = if cancel {
-                Duration::from_secs(2)
-            } else {
-                Duration::from_secs(15)
-            };
-            let result = tokio::time::timeout(deadline, task).await;
-            drop(release);
-            tokio::time::timeout(Duration::from_secs(2), worker_finished)
-                .await
-                .unwrap()
-                .unwrap();
-            let result = result
-                .expect("Worker prevented deadline or cancellation from progressing")
-                .unwrap();
-            assert_eq!(
-                result,
-                if cancel {
-                    None
-                } else {
-                    Some(Err(crate::managers::local_polishing::PolishSkip::Timeout))
-                }
-            );
-        }
-    }
-
     #[tokio::test]
     async fn daily_generated_output_uses_service_and_profile_for_both_provider_paths() {
         use std::io::{Read, Write};
@@ -1465,6 +1323,75 @@ mod tests {
         assert_eq!(output.final_text, "Please keep Codex.");
         assert!(output.post_processed_text.is_none());
         assert_eq!(output.post_process_skip_reason, Some("timeout"));
+    }
+
+    #[tokio::test]
+    async fn retired_provider_never_sends_transcript() {
+        use std::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let mut settings = crate::settings::get_default_settings();
+        settings.processing_mode = crate::personalization::ProcessingMode::Generated;
+        settings.personalization.enabled = true;
+        let custom = settings.post_process_provider_mut("custom").unwrap();
+        custom.base_url = format!("http://{}/v1", listener.local_addr().unwrap());
+        let mut retired = custom.clone();
+        retired.id = "apple_intelligence".into();
+        settings
+            .post_process_providers
+            .retain(|provider| provider.id != retired.id);
+        settings.post_process_providers.push(retired.clone());
+        settings.post_process_provider_id = retired.id.clone();
+        for id in ["custom", &retired.id] {
+            settings
+                .post_process_models
+                .insert(id.into(), "fixture".into());
+            settings
+                .post_process_api_keys
+                .insert(id.into(), "fixture-key".into());
+        }
+
+        let original = "um, proof of local handling";
+        let result = super::process_output_with_local_polisher(&settings, original, |_, _| async {
+            panic!("Local polishing is off");
+        })
+        .await;
+        assert_eq!(result.final_text, original);
+        assert!(result.post_processed_text.is_none());
+        assert_eq!(result.post_process_skip_reason, Some("unavailable"));
+        assert_eq!(
+            listener.accept().unwrap_err().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+
+        settings.local_polishing_enabled = true;
+        let polished =
+            super::process_output_with_local_polisher(&settings, original, |_, _| async {
+                Ok("proof of local handling".into())
+            })
+            .await;
+        assert_eq!(polished.final_text, "proof of local handling");
+
+        let unavailable =
+            super::process_output_with_local_polisher(&settings, original, |_, _| async {
+                Err(crate::managers::local_polishing::PolishSkip::Unavailable)
+            })
+            .await;
+        assert_eq!(unavailable.final_text, original);
+        assert_eq!(unavailable.post_process_skip_reason, Some("unavailable"));
+
+        let long = "a".repeat(201);
+        let skipped = super::process_output_with_local_polisher(&settings, &long, |_, _| async {
+            panic!("A long transcript must bypass local polishing");
+        })
+        .await;
+        assert_eq!(skipped.final_text, long);
+        assert_eq!(skipped.post_process_skip_reason, Some("too_long"));
+        assert_eq!(
+            listener.accept().unwrap_err().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
     }
 
     #[tokio::test]

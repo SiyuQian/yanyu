@@ -11457,22 +11457,6 @@
         }
       }
     },
-    "settings.postProcessing.api.appleIntelligence.unavailable": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Intelligence is not available on this device. Requires an Apple Silicon Mac running macOS Tahoe (26.0) or later with Apple Intelligence enabled in System Settings."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Intelligence 在此设备上不可用。需要运行 macOS Tahoe（26.0）或更高版本的 Apple Silicon Mac，并在系统设置中启用 Apple Intelligence。"
-          }
-        }
-      }
-    },
     "settings.postProcessing.api.baseUrl.description": {
       "localizations": {
         "en": {
@@ -11629,6 +11613,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择一个兼容 OpenAI 的提供商。"
+          }
+        }
+      }
+    },
+    "settings.postProcessing.api.provider.placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a provider"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择提供商"
           }
         }
       }
