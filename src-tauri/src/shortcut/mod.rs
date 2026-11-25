@@ -19,12 +19,10 @@ use specta::Type;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter, Manager};
 
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
     self, get_settings, AutoSubmitKey, ChineseScript, ClipboardHandling, KeyboardImplementation,
     LLMPrompt, OverlayPosition, OverlayStyle, PasteMethod, ShortcutActivation, ShortcutBinding,
-    SoundTheme, Theme, TypingTool, VadBackend, APPLE_INTELLIGENCE_PROVIDER_ID,
+    SoundTheme, Theme, TypingTool, VadBackend,
 };
 use crate::transcription_coordinator::is_additional_transcribe_binding;
 use crate::tray;
@@ -1211,11 +1209,7 @@ fn validate_provider_exists(
     settings: &settings::AppSettings,
     provider_id: &str,
 ) -> Result<(), String> {
-    if !settings
-        .post_process_providers
-        .iter()
-        .any(|provider| provider.id == provider_id)
-    {
+    if settings.post_process_provider(provider_id).is_none() {
         return Err(format!("Provider '{}' not found", provider_id));
     }
     Ok(())
@@ -1345,22 +1339,8 @@ pub async fn fetch_post_process_models(
 
     // Find the provider
     let provider = settings
-        .post_process_providers
-        .iter()
-        .find(|p| p.id == provider_id)
+        .post_process_provider(&provider_id)
         .ok_or_else(|| format!("Provider '{}' not found", provider_id))?;
-
-    if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
-        #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-        {
-            return Ok(vec![APPLE_INTELLIGENCE_DEFAULT_MODEL_ID.to_string()]);
-        }
-
-        #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
-        {
-            return Err("Apple Intelligence is only available on Apple silicon Macs running macOS 15 or later.".to_string());
-        }
-    }
 
     // Get API key
     let api_key = settings

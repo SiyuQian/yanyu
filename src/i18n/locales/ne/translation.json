@@ -455,10 +455,8 @@
         "title": "API (OpenAI अनुकूल)",
         "provider": {
           "title": "प्रदायक",
-          "description": "OpenAI-अनुकूल प्रदायक चयन गर्नुहोस्।"
-        },
-        "appleIntelligence": {
-          "unavailable": "यो डिभाइसमा Apple Intelligence उपलब्ध छैन। macOS Tahoe (26.0) वा पछिको संस्करण चलिरहेको र System Settings मा Apple Intelligence सक्षम गरिएको Apple Silicon Mac आवश्यक छ।"
+          "description": "OpenAI-अनुकूल प्रदायक चयन गर्नुहोस्।",
+          "placeholder": "प्रदायक छान्नुहोस्"
         },
         "baseUrl": {
           "title": "आधार URL",

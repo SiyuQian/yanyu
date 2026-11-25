@@ -49,14 +49,27 @@ struct KeyboardSetupView: View {
             Label("iosApp.keyboardRecording", systemImage: "mic.fill")
               .foregroundStyle(.red)
             Button("iosApp.stop") {
-              controller.prepareForTranscription(viewModel: viewModel)
-              viewModel.stopAndTranscribe(using: modelContext)
+              controller.stop(viewModel: viewModel, using: modelContext)
             }
           } else {
             ProgressView("iosApp.transcribing")
           }
           Button("iosApp.cancel", role: .cancel) { controller.cancel(viewModel: viewModel) }
         } else {
+          if controller.isPreparingMicrophone {
+            ProgressView("iosApp.requestingPermission")
+          } else if controller.isMicrophoneEnabled {
+            Label("iosApp.keyboardMicrophoneEnabled", systemImage: "mic.fill")
+            Button("iosApp.keyboardDisableMicrophone") {
+              controller.disableMicrophone(viewModel: viewModel)
+            }
+          } else {
+            Button("iosApp.keyboardEnableMicrophone") {
+              Task { await controller.enableMicrophone(viewModel: viewModel) }
+            }
+            .accessibilityIdentifier("keyboardEnableMicrophone")
+            .disabled(!viewModel.canStartKeyboardRecording || controller.pendingResult != nil)
+          }
           Button("iosApp.keyboardStartRecording") {
             Task {
               await controller.start(viewModel: viewModel)
@@ -67,9 +80,7 @@ struct KeyboardSetupView: View {
           }
           .accessibilityIdentifier("keyboardStartRecording")
           .disabled(
-            !viewModel.isModelLoaded || viewModel.isPreparingModel || viewModel.state == .recording
-              || viewModel.state == .requestingPermission || viewModel.state == .transcribing
-              || viewModel.hasDiscardablePendingAudio || viewModel.hasPendingTranscriptSave
+            !viewModel.canStartKeyboardRecording || controller.isPreparingMicrophone
               || controller.pendingResult != nil
           )
         }

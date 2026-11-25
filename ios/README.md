@@ -40,32 +40,34 @@ background-audio mode are checked in; XcodeGen regenerates both Info.plists.
 A provisioning profile must authorize that group before device installation.
 
 1. In iPhone Settings → General → Keyboard → Keyboards → Add New Keyboard,
-   select Yanyu. Allow Full Access if you want to stop recording from the keyboard.
+   select Yanyu. Turn on Allow Full Access to dictate from the keyboard.
    Basic typing remains available without Full Access. No network requests are
    made by the keyboard, including with Full Access enabled.
 2. Use **Prepare speech model** in Yanyu to download, verify and load the pinned
    Qwen Q4 candidate, with visible size, progress, cancellation and retry. This
    preparation is available in Release; arbitrary imports and evaluation tools
    remain Debug-only. Model quality/performance on a physical iPhone is still an
-   open gate. Open the keyboard button in the toolbar and tap **Start keyboard
-   dictation**. Each session starts explicitly in the app. The ordinary recording
-   button is a separate foreground-only path and stops when the app backgrounds.
+   open gate. Turn on the **Keyboard microphone** switch at the top right of
+   the Yanyu home screen. Grant microphone permission when iOS asks.
 3. Switch to your destination app, focus an editable field, and select Yanyu
-   with the globe key. Recording continues in the background, for up to 60 seconds.
-4. Tap **Stop** in the keyboard (or in Yanyu). The containing app transcribes
-   locally within the execution time iOS grants after recording stops.
-5. When stopped through the keyboard, a completed result inserts automatically
-   only if the same keyboard instance, session, field and cursor context remain
-   unchanged. Changing fields, editing, moving the cursor or hiding the keyboard
-   falls back to a preview with **Insert text**. Manual insertion can replace a
-   selection; automatic insertion never replaces selected text. Results insert
-   once. The keyboard never taps Send.
+   with the globe key. Tap the mic to replace the keys with a listening panel
+   that shows the current microphone and audio level.
+4. Tap **×** to discard the recording and return to typing. Tap **✓** to
+   transcribe locally. After 60 seconds Yanyu ends the recording and offers the
+   result for review.
+5. After confirmation on the keyboard, a completed result inserts automatically
+   if the same keyboard instance, session, field and cursor context remain
+   unchanged. Changing fields, editing, moving the cursor, hiding the keyboard
+   or reaching the recording limit without confirmation brings up the preview
+   and **Insert text** button. Manual insertion can replace a selection.
+   Automatic insertion requires a cursor with no selection. Results insert
+   once, leaving Send to the user.
 6. **Undo insertion** is available only while the host exposes the full inserted
    text and both insertion boundaries are intact. It is unavailable for truncated
    context or grapheme merges, and is invalidated by typing, selection changes or
    hiding the keyboard. It removes only that insertion and cannot be repeated.
-   Start the next recording by returning to Yanyu or invoking its foreground
-   Shortcut again.
+   Tap the keyboard mic again to start another dictation while the microphone
+   is enabled.
 7. A ready result that the keyboard has not handled blocks the next keyboard
    recording. Yanyu shows that result even when no speech model is loaded: copy
    it, return to the keyboard to insert it, or explicitly choose **Keep in history
@@ -74,6 +76,13 @@ A provisioning profile must authorize that group before device installation.
    recording. A Shortcut request opens this recovery page and is consumed; clearing
    does not start recording automatically.
 
+While enabled, the main app keeps microphone input active so iOS shows its
+microphone indicator. Standby discards incoming audio. The app starts saving
+audio when it receives an explicit start, and turns off the microphone after
+five idle minutes, when the device locks, or on interruption. Turn off the switch
+to release the microphone early. If a dictation is recording when you turn it
+off, the app keeps the captured audio available for retry or deletion.
+
 ### Foreground Shortcut
 
 In Shortcuts, add Yanyu's **Start Keyboard Dictation** action. On supported
@@ -81,7 +90,9 @@ iPhones, assign that shortcut under Settings → Action Button → Shortcut. Thi
 uses a public foreground App Intent on iOS 17 and later, opens Yanyu, restores its
 existing state, and starts the same keyboard session if setup/model/recovery state
 permits. Return to your destination app manually and select the Yanyu keyboard.
-This does not register automatic Siri phrases or background/Live Activity capture.
+The **Start keyboard dictation** button in Yanyu provides the same one-off
+recording workflow. The main screen’s recording button is for foreground use
+in Yanyu.
 
 A request expires after 30 seconds and is consumed on setup, model or busy errors;
 finish the indicated step and invoke it again. Pending audio, an unsaved result,
@@ -91,8 +102,8 @@ transcript remains in the app's history. Shortcut
 metadata/build verification does not establish physical Action Button behavior.
 See the [experience plan](../docs/exec-plans/ios-flow-experience.md).
 
-The shared App Group contains one session snapshot, a session-specific stop
-request, and a UUID-only handling receipt. The receipt records a keyboard insertion
+The shared App Group contains one session snapshot, session-specific start,
+confirm and cancel requests, and a UUID-only handling receipt. The receipt records a keyboard insertion
 attempt; it does not prove the destination accepted the text. The keyboard retries
 the receipt after a write failure without repeating insertion. Missing local keyboard
 preferences do not override an existing receipt. Only explicit keyboard sessions publish text, after a successful

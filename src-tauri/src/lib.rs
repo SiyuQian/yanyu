@@ -1,6 +1,4 @@
 mod actions;
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-mod apple_intelligence;
 mod audio_feedback;
 pub mod audio_toolkit;
 mod autostart;
@@ -752,7 +750,6 @@ fn command_builder() -> Builder<tauri::Wry> {
             commands::open_recordings_folder,
             commands::open_log_dir,
             commands::open_app_data_dir,
-            commands::check_apple_intelligence_available,
             commands::initialize_enigo,
             commands::initialize_shortcuts,
             commands::reset_macos_permission,

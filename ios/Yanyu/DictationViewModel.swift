@@ -17,7 +17,7 @@ final class DictationViewModel {
   private let modelPackageStore: ModelPackageStore?
   private let modelPackageDownloadTransport: any ModelPackageDownloadTransport
   private let recoverPendingAudio: () throws -> TemporaryAudioFile?
-  private var transcriptionTask: Task<Void, Never>?
+  private var transcriptionID: UUID?
   private var editSaveTask: Task<Void, Never>?
   private var selectedRecord: TranscriptRecord?
   private var pendingAudioFile: TemporaryAudioFile?
@@ -572,6 +572,40 @@ final class DictationViewModel {
     }
   #endif
 
+  var canStartKeyboardRecording: Bool {
+    guard isModelLoaded, !isPreparingModel, pendingAudioFile == nil, !hasPendingTranscriptSave
+    else {
+      return false
+    }
+    switch state {
+    case .ready, .transcript, .failed: return true
+    case .requestingPermission, .recording, .transcribing: return false
+    }
+  }
+
+  var isKeyboardMicrophoneRunning: Bool { audioCapture.isKeyboardMicrophoneRunning }
+  var keyboardMicrophoneName: String? { audioCapture.microphoneName }
+  var keyboardAudioLevel: Float { audioCapture.audioLevel }
+
+  func enableKeyboardMicrophone() throws {
+    try audioCapture.enableKeyboardMicrophone()
+  }
+
+  func disableKeyboardMicrophone() {
+    audioCapture.disableKeyboardMicrophone()
+  }
+
+  func startKeyboardRecording() {
+    guard canStartKeyboardRecording else { return }
+    do {
+      try audioCapture.startKeyboardRecording()
+      beginRecording()
+    } catch {
+      errorKey = "iosApp.genericError"
+      state = .failed("iosApp.genericError")
+    }
+  }
+
   func startRecording() async {
     guard !isPreparingModel else { return }
     guard isModelLoaded else {
@@ -591,13 +625,7 @@ final class DictationViewModel {
     state = permissionRequestState
     do {
       try await audioCapture.startRecording()
-      selectedRecord = nil
-      transcript = ""
-      UserDefaults.standard.removeObject(forKey: pendingAudioFailureKey)
-      recordingStartedAt = .now
-      errorKey = nil
-      noticeKey = nil
-      state = DictationStateMachine.reduce(state, event: .permissionGranted)
+      beginRecording()
     } catch AudioCaptureError.microphonePermissionDenied {
       errorKey = "iosApp.permissionDenied"
       state = DictationStateMachine.reduce(
@@ -608,6 +636,16 @@ final class DictationViewModel {
       errorKey = "iosApp.genericError"
       state = DictationStateMachine.reduce(state, event: .failed("iosApp.genericError"))
     }
+  }
+
+  private func beginRecording() {
+    selectedRecord = nil
+    transcript = ""
+    UserDefaults.standard.removeObject(forKey: pendingAudioFailureKey)
+    recordingStartedAt = .now
+    errorKey = nil
+    noticeKey = nil
+    state = .recording
   }
 
   func stopAndTranscribe(using context: ModelContext) {
@@ -632,9 +670,7 @@ final class DictationViewModel {
         case nil:
           nil
         }
-      transcriptionTask = Task { [weak self] in
-        await self?.transcribe(capture.audioFile, using: context)
-      }
+      startTranscription(capture.audioFile, using: context)
     } catch {
       recordingStartedAt = nil
       errorKey = "iosApp.genericError"
@@ -667,6 +703,8 @@ final class DictationViewModel {
     if state == .recording {
       handleRecordingInterruption(messageKey: "iosApp.recordingStoppedBackground")
     } else if state == .transcribing {
+      transcriptionID = nil
+      transcriptionProgress = nil
       transcriptionEngine.cancel()
       canRetryPendingTranscription = true
       errorKey = nil
@@ -696,9 +734,7 @@ final class DictationViewModel {
     UserDefaults.standard.removeObject(forKey: pendingAudioFailureKey)
     errorKey = nil
     state = DictationStateMachine.reduce(state, event: .retryTranscription)
-    transcriptionTask = Task { [weak self] in
-      await self?.transcribe(pendingAudioFile, using: context)
-    }
+    startTranscription(pendingAudioFile, using: context)
   }
 
   func handleIncompleteTranscription(kind: IncompleteOutputKind, partialText: String?) {
@@ -866,18 +902,35 @@ final class DictationViewModel {
     }
   }
 
-  private func transcribe(_ audioFile: TemporaryAudioFile, using context: ModelContext) async {
-    state = .transcribing
+  private func startTranscription(_ audioFile: TemporaryAudioFile, using context: ModelContext) {
+    let id = UUID()
+    transcriptionID = id
+    Task { [weak self] in
+      await self?.transcribe(audioFile, id: id, using: context)
+    }
+  }
+
+  private func transcribe(_ audioFile: TemporaryAudioFile, id: UUID, using context: ModelContext)
+    async
+  {
+    guard transcriptionID == id else { return }
     transcriptionProgress = .preparingAudio
-    defer { transcriptionProgress = nil }
+    defer {
+      if transcriptionID == id {
+        transcriptionID = nil
+        transcriptionProgress = nil
+      }
+    }
     do {
       let result = try await transcriptionEngine.transcribe(
         fileAt: audioFile.url,
         language: languageSelection.transcriptionLanguage,
         progress: { [weak self] progress in
-          self?.transcriptionProgress = progress
+          guard let self, transcriptionID == id else { return }
+          transcriptionProgress = progress
         }
       )
+      guard transcriptionID == id else { return }
       let processedText = postProcessTranscript(
         result.text, detectedLanguage: result.detectedLanguage)
       guard !processedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -894,6 +947,8 @@ final class DictationViewModel {
         processingDurationMs: result.processingDurationMs,
         using: context
       )
+    } catch  where transcriptionID != id {
+      return
     } catch TranscriptionEngineError.cancelled(partialText: let partialText) {
       if let partialText, !partialText.isEmpty {
         let processedText = postProcessTranscript(partialText, detectedLanguage: nil)

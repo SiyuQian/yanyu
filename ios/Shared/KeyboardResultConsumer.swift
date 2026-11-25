@@ -25,8 +25,7 @@ protocol KeyboardTextDocument: AnyObject {
 @MainActor
 final class KeyboardTextDelivery {
   private let consumer: KeyboardResultConsumer
-  private var expectedSession: UUID?
-  private var expectedContext: KeyboardTextContext?
+  private var trackedContext: (id: UUID, text: KeyboardTextContext, confirmed: Bool)?
   private var insertion: (text: String, after: KeyboardTextContext)?
 
   init(defaults: UserDefaults) {
@@ -34,14 +33,24 @@ final class KeyboardTextDelivery {
   }
 
   func prepareAutomaticInsertion(for sessionID: UUID, in context: KeyboardTextContext) {
-    expectedSession = sessionID
-    expectedContext = context.readable
-    insertion = nil
+    trackContext(for: sessionID, in: context)
+    confirmAutomaticInsertion(for: sessionID)
+  }
+
+  func trackContext(for sessionID: UUID, in context: KeyboardTextContext) {
+    invalidateContext()
+    if let context = context.readable {
+      trackedContext = (sessionID, context, false)
+    }
+  }
+
+  func confirmAutomaticInsertion(for sessionID: UUID) {
+    guard trackedContext?.id == sessionID else { return }
+    trackedContext?.confirmed = true
   }
 
   func invalidateContext() {
-    expectedSession = nil
-    expectedContext = nil
+    trackedContext = nil
     insertion = nil
   }
 
@@ -50,13 +59,13 @@ final class KeyboardTextDelivery {
     into document: any KeyboardTextDocument,
     automatically: Bool = false
   ) -> Bool {
+    if automatically, trackedContext?.confirmed != true || trackedContext?.id != result.id {
+      return false
+    }
     let before = document.context.readable
-    if automatically {
-      guard let expectedSession else { return false }
-      guard expectedSession == result.id, let expectedContext, before == expectedContext else {
-        invalidateContext()
-        return false
-      }
+    if automatically, before != trackedContext?.text {
+      invalidateContext()
+      return false
     }
     guard let text = consumer.consume(result) else { return false }
     invalidateContext()
@@ -76,9 +85,9 @@ final class KeyboardTextDelivery {
     return true
   }
 
-  func canUndo(in context: KeyboardTextContext) -> Bool {
+  func canUndo(in context: @autoclosure () -> KeyboardTextContext) -> Bool {
     guard let insertion else { return false }
-    return context.readable == insertion.after
+    return context().readable == insertion.after
   }
 
   func undo(in document: any KeyboardTextDocument) -> Bool {
