@@ -455,10 +455,8 @@
         "title": "API (Kompatibel dengan OpenAI)",
         "provider": {
           "title": "Penyedia",
-          "description": "Pilih penyedia yang kompatibel dengan OpenAI."
-        },
-        "appleIntelligence": {
-          "unavailable": "Apple Intelligence tidak tersedia di perangkat ini. Memerlukan Mac Apple Silicon yang menjalankan macOS Tahoe (26.0) atau yang lebih baru dengan Apple Intelligence diaktifkan di Pengaturan Sistem."
+          "description": "Pilih penyedia yang kompatibel dengan OpenAI.",
+          "placeholder": "Pilih penyedia"
         },
         "baseUrl": {
           "title": "URL Dasar",

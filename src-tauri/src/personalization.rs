@@ -1,5 +1,5 @@
 //! Local profile data and conservative generated processing rules.
-use crate::settings::{AppSettings, APPLE_INTELLIGENCE_PROVIDER_ID};
+use crate::settings::AppSettings;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -87,13 +87,10 @@ pub fn generated_enabled(settings: &AppSettings) -> bool {
 }
 
 /// Configuration readiness is distinct from an observed successful provider response.
-pub fn service_ready(settings: &AppSettings, apple_available: bool) -> bool {
+pub fn service_ready(settings: &AppSettings) -> bool {
     let Some(provider) = settings.active_post_process_provider() else {
         return false;
     };
-    if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
-        return apple_available;
-    }
     let has_model = settings
         .post_process_models
         .get(&provider.id)
@@ -219,27 +216,19 @@ mod tests {
         settings
             .post_process_api_keys
             .insert("openai".into(), String::new());
-        assert!(!service_ready(&settings, false));
+        assert!(!service_ready(&settings));
         settings
             .post_process_api_keys
             .insert("openai".into(), "test".into());
-        assert!(service_ready(&settings, false));
+        assert!(service_ready(&settings));
+        settings.post_process_provider_id = "custom".into();
+        assert!(!service_ready(&settings));
         settings
-            .post_process_providers
-            .retain(|provider| provider.id != APPLE_INTELLIGENCE_PROVIDER_ID);
-        settings.post_process_provider_id = APPLE_INTELLIGENCE_PROVIDER_ID.into();
-        assert!(!service_ready(&settings, true));
-        settings
-            .post_process_providers
-            .push(crate::settings::PostProcessProvider {
-                id: APPLE_INTELLIGENCE_PROVIDER_ID.into(),
-                label: "Apple Intelligence test provider".into(),
-                base_url: "apple-intelligence://local".into(),
-                allow_base_url_edit: false,
-                models_endpoint: None,
-                supports_structured_output: true,
-            });
-        assert!(!service_ready(&settings, false));
-        assert!(service_ready(&settings, true));
+            .post_process_models
+            .insert("custom".into(), "model".into());
+        assert!(service_ready(&settings));
+
+        settings.post_process_provider_id = "missing-provider".into();
+        assert!(!service_ready(&settings));
     }
 }

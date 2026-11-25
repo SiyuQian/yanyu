@@ -5,6 +5,100 @@ import XCTest
 
 final class KeyboardDictationControllerTests: XCTestCase {
   @MainActor
+  func testKeyboardCanStartConfirmAndStartAgainAfterInsertion() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = KeyboardSessionStore(directory: directory)
+    let controller = KeyboardDictationController(
+      store: store, requestMicrophonePermission: { true })
+    let driver = KeyboardTestDriver()
+    let container = try makeContainer()
+    await controller.enableMicrophone(viewModel: driver)
+    let standby = try XCTUnwrap(store.read())
+    XCTAssertEqual(standby.phase, .standby)
+    XCTAssertEqual(driver.state, .ready)
+
+    try store.requestStart(for: standby.id)
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    XCTAssertEqual(driver.state, .recording)
+    XCTAssertEqual(try store.read()?.id, standby.id)
+    XCTAssertEqual(try store.read()?.startedFromKeyboard, true)
+
+    try store.requestStop(for: standby.id)
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    XCTAssertEqual(driver.state, .transcribing)
+    driver.state = .transcript("你好")
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    XCTAssertEqual(try store.read()?.text, "你好")
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    XCTAssertEqual(try store.read()?.phase, .ready)
+
+    try store.markResultHandled(for: standby.id)
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    let next = try XCTUnwrap(store.read())
+    XCTAssertEqual(next.phase, .standby)
+    XCTAssertNotEqual(next.id, standby.id)
+    try store.requestStart(for: next.id)
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    XCTAssertEqual(driver.state, .recording)
+    XCTAssertEqual(try store.read()?.id, next.id)
+  }
+
+  @MainActor
+  func testCancelWhileStartingOrListeningReturnsToTypingWithoutAResult() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = KeyboardSessionStore(directory: directory)
+    let controller = KeyboardDictationController(
+      store: store, requestMicrophonePermission: { true })
+    let driver = KeyboardTestDriver()
+    let container = try makeContainer()
+    await controller.enableMicrophone(viewModel: driver)
+    let first = try XCTUnwrap(store.read())
+
+    try store.requestStart(for: first.id)
+    try store.requestCancel(for: first.id)
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    XCTAssertEqual(driver.recordingStarts, 0)
+    let next = try XCTUnwrap(store.read())
+    XCTAssertEqual(next.phase, .standby)
+    XCTAssertNotEqual(next.id, first.id)
+
+    try store.requestStart(for: next.id)
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    XCTAssertEqual(driver.recordingStarts, 1)
+    try store.requestStop(for: next.id)
+    try store.requestCancel(for: next.id)
+    controller.refresh(viewModel: driver, using: container.mainContext)
+    XCTAssertEqual(driver.state, .ready)
+    XCTAssertFalse(controller.isActive)
+    XCTAssertEqual(try store.read()?.phase, .standby)
+    XCTAssertNil(controller.pendingResult)
+  }
+
+  @MainActor
+  func testStandbyExpiresAndDisablesInputEvenWhenAStartWasRequested() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = KeyboardSessionStore(directory: directory)
+    var elapsed = ContinuousClock.now
+    let controller = KeyboardDictationController(
+      store: store, requestMicrophonePermission: { true }, elapsedNow: { elapsed })
+    let driver = KeyboardTestDriver()
+    let container = try makeContainer()
+    await controller.enableMicrophone(viewModel: driver)
+    let standby = try XCTUnwrap(store.read())
+    try store.requestStart(for: standby.id)
+
+    elapsed = elapsed.advanced(by: .seconds(301))
+    let afterExpiry = standby.updatedAt.addingTimeInterval(-30)
+    controller.refresh(viewModel: driver, using: container.mainContext, now: afterExpiry)
+    XCTAssertFalse(driver.isKeyboardMicrophoneRunning)
+    XCTAssertEqual(driver.recordingStarts, 0)
+    XCTAssertNil(try store.read(now: afterExpiry))
+  }
+
+  @MainActor
   func testKeyboardStopTranscribesAndPublishesOnlySavedResult() async throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -16,6 +110,16 @@ final class KeyboardDictationControllerTests: XCTestCase {
     XCTAssertTrue(controller.isActive)
     let session = try XCTUnwrap(store.read())
     XCTAssertEqual(session.phase, .recording)
+    driver.onStop = {
+      XCTAssertEqual(try? store.read()?.phase, .transcribing)
+      do {
+        try store.requestCancel(for: session.id)
+        XCTFail("The recording must stop accepting cancels before transcription starts")
+      } catch CocoaError.fileReadNoSuchFile {
+      } catch {
+        XCTFail("Unexpected cancellation error: \(error)")
+      }
+    }
     try store.requestStop(for: session.id)
     controller.refresh(viewModel: driver, using: container.mainContext)
     XCTAssertEqual(driver.state, .transcribing)
@@ -52,12 +156,14 @@ final class KeyboardDictationControllerTests: XCTestCase {
   func testRecordingLimitStopsAndTranscribesInsteadOfRecordingIndefinitely() async throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: directory) }
-    let controller = KeyboardDictationController(store: .init(directory: directory))
+    var elapsed = ContinuousClock.now
+    let controller = KeyboardDictationController(
+      store: .init(directory: directory), elapsedNow: { elapsed })
     let driver = KeyboardTestDriver()
     let container = try makeContainer()
     await controller.start(viewModel: driver)
-    controller.refresh(
-      viewModel: driver, using: container.mainContext, now: .now.addingTimeInterval(61))
+    elapsed = elapsed.advanced(by: .seconds(61))
+    controller.refresh(viewModel: driver, using: container.mainContext)
     XCTAssertEqual(driver.state, .transcribing)
     controller.cancel(viewModel: driver)
     XCTAssertFalse(controller.isActive)
@@ -289,8 +395,24 @@ private final class KeyboardTestDriver: KeyboardDictationDriver {
   var state = DictationState.ready
   var hasPendingTranscriptSave = false
   var errorKey: String?
+  var canStartKeyboardRecording = true
+  var isKeyboardMicrophoneRunning = false
+  var recordingStarts = 0
+  var onStop: (() -> Void)?
+  var keyboardMicrophoneName: String? { "Test Microphone" }
+  var keyboardAudioLevel: Float { 0 }
+  func enableKeyboardMicrophone() throws { isKeyboardMicrophoneRunning = true }
+  func disableKeyboardMicrophone() { isKeyboardMicrophoneRunning = false }
+  func startKeyboardRecording() {
+    recordingStarts += 1
+    state = .recording
+  }
+  func discardPendingAudio() { state = .ready }
   func startRecording() async { state = .recording }
-  func stopAndTranscribe(using context: ModelContext) { state = .transcribing }
+  func stopAndTranscribe(using context: ModelContext) {
+    onStop?()
+    state = .transcribing
+  }
   func handleRecordingInterruption(messageKey: String) { state = .failed(messageKey) }
   func handleAppBackground() { state = .failed("iosApp.backgroundTranscriptionStopped") }
 }

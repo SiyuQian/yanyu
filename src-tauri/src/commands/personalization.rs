@@ -147,11 +147,7 @@ fn personalization_status(
             let status = manager.status();
             status.supported && status.phase == "ready"
         });
-    let (ready, active) = processing_readiness(
-        settings,
-        local_ready,
-        !settings.local_polishing_enabled && super::check_apple_intelligence_available(),
-    );
+    let (ready, active) = processing_readiness(settings, local_ready);
     PersonalizationStatus {
         service_ready: ready,
         asr_ready: app
@@ -165,12 +161,11 @@ fn personalization_status(
 fn processing_readiness(
     settings: &crate::settings::AppSettings,
     local_ready: bool,
-    apple_available: bool,
 ) -> (bool, bool) {
     if settings.local_polishing_enabled {
         return (local_ready, settings.personalization.enabled && local_ready);
     }
-    let ready = service_ready(settings, apple_available);
+    let ready = service_ready(settings);
     (ready, generated_enabled(settings) && ready)
 }
 
@@ -441,12 +436,32 @@ mod tests {
         settings.local_polishing_enabled = true;
         settings.personalization.enabled = true;
         settings.post_process_models.clear();
-        assert_eq!(processing_readiness(&settings, true, false), (true, true));
-        assert_eq!(processing_readiness(&settings, false, true), (false, false));
+        assert_eq!(processing_readiness(&settings, true), (true, true));
+        assert_eq!(processing_readiness(&settings, false), (false, false));
         settings.personalization.enabled = false;
-        assert_eq!(processing_readiness(&settings, true, false), (true, false));
+        assert_eq!(processing_readiness(&settings, true), (true, false));
         settings.local_polishing_enabled = false;
-        assert_eq!(processing_readiness(&settings, true, false), (false, false));
+        assert_eq!(processing_readiness(&settings, true), (false, false));
+    }
+
+    #[test]
+    fn generated_profile_requires_an_available_provider_or_local_model() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.processing_mode = ProcessingMode::Generated;
+        settings.personalization.enabled = true;
+        settings.post_process_provider_id = "missing-provider".into();
+        assert_eq!(processing_readiness(&settings, false), (false, false));
+
+        settings.local_polishing_enabled = true;
+        assert_eq!(processing_readiness(&settings, false), (false, false));
+        assert_eq!(processing_readiness(&settings, true), (true, true));
+
+        settings.local_polishing_enabled = false;
+        settings.post_process_provider_id = "custom".into();
+        settings
+            .post_process_models
+            .insert("custom".into(), "fixture".into());
+        assert_eq!(processing_readiness(&settings, false), (true, true));
     }
 
     #[tokio::test]

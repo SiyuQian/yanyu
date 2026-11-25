@@ -432,10 +432,8 @@
         "title": "API (متوافق مع OpenAI)",
         "provider": {
           "title": "المزود",
-          "description": "اختر مزوداً متوافقاً مع OpenAI."
-        },
-        "appleIntelligence": {
-          "unavailable": "Apple Intelligence غير متاح على هذا الجهاز. يتطلب جهاز Mac بمعالج Apple Silicon يعمل بنظام macOS Tahoe (26.0) أو أحدث مع تمكين Apple Intelligence في إعدادات النظام."
+          "description": "اختر مزوداً متوافقاً مع OpenAI.",
+          "placeholder": "اختر مزوّدًا"
         },
         "baseUrl": {
           "title": "URL الأساسي",
