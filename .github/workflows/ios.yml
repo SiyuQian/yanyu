@@ -80,13 +80,21 @@ jobs:
         run: xcrun swift-format lint --strict ios/Yanyu/*.swift ios/YanyuTests/*.swift ios/YanyuUITests/*.swift
 
       - name: Run iPhone simulator tests
-        run: xcodebuild test -quiet -project ios/Yanyu.xcodeproj -scheme Yanyu -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO
+        run: xcodebuild test -project ios/Yanyu.xcodeproj -scheme Yanyu -destination 'platform=iOS Simulator,name=iPhone 17' -resultBundlePath "$RUNNER_TEMP/yanyu-iphone.xcresult" CODE_SIGNING_ALLOWED=NO
 
       - name: Run compact iPhone simulator tests
-        run: xcodebuild test -quiet -project ios/Yanyu.xcodeproj -scheme Yanyu -destination 'platform=iOS Simulator,name=iPhone 16e,OS=26.2' CODE_SIGNING_ALLOWED=NO
+        run: xcodebuild test -project ios/Yanyu.xcodeproj -scheme Yanyu -destination 'platform=iOS Simulator,name=iPhone 16e,OS=26.2' -resultBundlePath "$RUNNER_TEMP/yanyu-compact.xcresult" CODE_SIGNING_ALLOWED=NO
 
       - name: Build unsigned iOS Release app
         run: |
           derived_data="$RUNNER_TEMP/YanyuDerivedData"
           xcodebuild build -quiet -project ios/Yanyu.xcodeproj -scheme Yanyu -destination 'generic/platform=iOS' -configuration Release -derivedDataPath "$derived_data" CODE_SIGNING_ALLOWED=NO
           plutil -lint "$derived_data/Build/Products/Release-iphoneos/Yanyu.app/PrivacyInfo.xcprivacy"
+
+      - name: Upload failed iOS test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-test-results
+          path: ${{ runner.temp }}/yanyu-*.xcresult
+          retention-days: 7

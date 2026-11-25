@@ -17,7 +17,7 @@ final class DictationViewModel {
   private let modelPackageStore: ModelPackageStore?
   private let modelPackageDownloadTransport: any ModelPackageDownloadTransport
   private let recoverPendingAudio: () throws -> TemporaryAudioFile?
-  private var transcriptionTask: Task<Void, Never>?
+  private var transcriptionID: UUID?
   private var editSaveTask: Task<Void, Never>?
   private var selectedRecord: TranscriptRecord?
   private var pendingAudioFile: TemporaryAudioFile?
@@ -42,13 +42,13 @@ final class DictationViewModel {
     private(set) var evaluation: InferenceEvaluation?
     private(set) var isEvaluatingAudio = false
     var evaluationErrorKey: String?
-    private(set) var isInstallingCatalogModel = false
-    private(set) var isLoadingCatalogModel = false
-    private(set) var catalogModelDownloadProgress: ModelPackageDownloadProgress?
-    var catalogModelInstallErrorKey: String?
-    private var catalogModelInstallTask: Task<InstalledModelPackage, Error>?
-    private var catalogModelInstallID: UUID?
   #endif
+  private(set) var isInstallingCatalogModel = false
+  private(set) var isLoadingCatalogModel = false
+  private(set) var catalogModelDownloadProgress: ModelPackageDownloadProgress?
+  var catalogModelInstallErrorKey: String?
+  private var catalogModelInstallTask: Task<InstalledModelPackage, Error>?
+  private var catalogModelInstallID: UUID?
 
   var hasPendingAudioRecovery: Bool {
     pendingAudioFile != nil && canRetryPendingTranscription && pendingTranscriptRecord == nil
@@ -213,6 +213,8 @@ final class DictationViewModel {
       return
     }
 
+    isLoadingCatalogModel = true
+    defer { isLoadingCatalogModel = false }
     let modelURL = URL(fileURLWithPath: modelPath)
     let packageStore: ModelPackageStore
     do {
@@ -326,141 +328,144 @@ final class DictationViewModel {
     }
   #endif
 
-  #if DEBUG
-    var canInstallCatalogModel: Bool {
-      !isInstallingCatalogModel
-        && !isLoadingCatalogModel
-        && !isEvaluatingAudio
-        && state != .recording
-        && state != .requestingPermission
-        && state != .transcribing
+  var isPreparingModel: Bool {
+    isInstallingCatalogModel || isLoadingCatalogModel
+  }
+
+  var canInstallCatalogModel: Bool {
+    #if DEBUG
+      guard !isEvaluatingAudio else { return false }
+    #endif
+    return !isPreparingModel
+      && state != .recording
+      && state != .requestingPermission
+      && state != .transcribing
+  }
+
+  func installCatalogModel(model: ModelDescriptor, file: QuantFile) async {
+    guard canInstallCatalogModel else {
+      return
     }
 
-    func installCatalogModel(model: ModelDescriptor, file: QuantFile) async {
-      guard canInstallCatalogModel else {
+    let installID = UUID()
+    catalogModelInstallID = installID
+    isInstallingCatalogModel = true
+    isLoadingCatalogModel = false
+    catalogModelDownloadProgress = nil
+    catalogModelInstallErrorKey = nil
+    defer {
+      catalogModelInstallTask = nil
+      catalogModelInstallID = nil
+      catalogModelDownloadProgress = nil
+      isInstallingCatalogModel = false
+      isLoadingCatalogModel = false
+    }
+
+    do {
+      let download = try makeCatalogModelPackageDownload(model: model, file: file)
+      let packageStore = try modelPackageStore ?? ModelPackageStore.applicationStore()
+      let installer = ModelPackageInstaller(
+        store: packageStore,
+        transport: modelPackageDownloadTransport
+      )
+      let updateProgress: @Sendable (ModelPackageDownloadProgress) -> Void = {
+        [weak self] progress in
+        Task { @MainActor [weak self] in
+          guard self?.catalogModelInstallID == installID else {
+            return
+          }
+          self?.catalogModelDownloadProgress = progress
+        }
+      }
+      let installTask = Task<InstalledModelPackage, Error> { [weak self] in
+        guard let self else {
+          throw CancellationError()
+        }
+        return try await self.installOrReuseCatalogPackage(
+          download.manifest,
+          sources: download.sources,
+          in: packageStore,
+          using: installer,
+          progress: updateProgress
+        )
+      }
+      catalogModelInstallTask = installTask
+      let installedPackage: InstalledModelPackage
+      do {
+        installedPackage = try await withTaskCancellationHandler {
+          try await installTask.value
+        } onCancel: {
+          installTask.cancel()
+        }
+      } catch {
+        if error is CancellationError || (error as? URLError)?.code == .cancelled {
+          return
+        }
+        throw error
+      }
+
+      catalogModelInstallTask = nil
+      isInstallingCatalogModel = false
+      isLoadingCatalogModel = true
+      let modelURL = installedPackage.directoryURL.appendingPathComponent(file.filename)
+      let probe = probeModelFile(path: modelURL.path)
+      guard probe.verdict != .unsupported else {
+        try await packageStore.remove(
+          id: installedPackage.manifest.id,
+          version: installedPackage.manifest.version
+        )
+        catalogModelInstallErrorKey = "iosApp.invalidModel"
         return
       }
 
-      let installID = UUID()
-      catalogModelInstallID = installID
-      isInstallingCatalogModel = true
-      isLoadingCatalogModel = false
-      catalogModelDownloadProgress = nil
-      catalogModelInstallErrorKey = nil
-      defer {
-        catalogModelInstallTask = nil
-        catalogModelInstallID = nil
-        catalogModelDownloadProgress = nil
-        isInstallingCatalogModel = false
-        isLoadingCatalogModel = false
-      }
+      try await transcriptionEngine.loadModel(at: modelURL)
+      languageSelection.updateCapabilities(probe)
+      preferencesDefaults.set(modelURL.path, forKey: modelPathKey)
+      preferencesDefaults.set("\(model.name) · \(file.quant)", forKey: modelNameKey)
+      preferencesDefaults.set(installedPackage.manifest.id, forKey: modelPackageIDKey)
+      preferencesDefaults.set(installedPackage.manifest.version, forKey: modelPackageVersionKey)
+      isModelLoaded = true
+      errorKey = nil
+    } catch {
+      catalogModelInstallErrorKey = "iosApp.modelPreparationFailed"
+    }
+  }
 
+  func cancelCatalogModelInstall() {
+    catalogModelInstallTask?.cancel()
+  }
+
+  private func installOrReuseCatalogPackage(
+    _ manifest: ModelPackageManifest,
+    sources: [ModelPackageDownloadSource],
+    in store: ModelPackageStore,
+    using installer: ModelPackageInstaller,
+    progress: @escaping @Sendable (ModelPackageDownloadProgress) -> Void
+  ) async throws -> InstalledModelPackage {
+    do {
+      let installed = try await store.resolveInstalledPackage(
+        id: manifest.id,
+        version: manifest.version
+      )
       do {
-        let download = try makeCatalogModelPackageDownload(model: model, file: file)
-        let packageStore = try modelPackageStore ?? ModelPackageStore.applicationStore()
-        let installer = ModelPackageInstaller(
-          store: packageStore,
-          transport: modelPackageDownloadTransport
-        )
-        let updateProgress: @Sendable (ModelPackageDownloadProgress) -> Void = {
-          [weak self] progress in
-          Task { @MainActor [weak self] in
-            guard self?.catalogModelInstallID == installID else {
-              return
-            }
-            self?.catalogModelDownloadProgress = progress
-          }
-        }
-        let installTask = Task<InstalledModelPackage, Error> { [weak self] in
-          guard let self else {
-            throw CancellationError()
-          }
-          return try await self.installOrReuseCatalogPackage(
-            download.manifest,
-            sources: download.sources,
-            in: packageStore,
-            using: installer,
-            progress: updateProgress
+        for file in installed.manifest.files {
+          let fileURL = installed.directoryURL.appendingPathComponent(file.relativePath)
+          _ = try verifyFileIntegrity(
+            path: fileURL.path,
+            expectedSizeBytes: file.sizeBytes,
+            expectedSha256: file.sha256
           )
         }
-        catalogModelInstallTask = installTask
-        let installedPackage: InstalledModelPackage
-        do {
-          installedPackage = try await withTaskCancellationHandler {
-            try await installTask.value
-          } onCancel: {
-            installTask.cancel()
-          }
-        } catch {
-          if error is CancellationError || (error as? URLError)?.code == .cancelled {
-            return
-          }
-          throw error
-        }
-
-        catalogModelInstallTask = nil
-        isInstallingCatalogModel = false
-        isLoadingCatalogModel = true
-        let modelURL = installedPackage.directoryURL.appendingPathComponent(file.filename)
-        let probe = probeModelFile(path: modelURL.path)
-        guard probe.verdict != .unsupported else {
-          try await packageStore.remove(
-            id: installedPackage.manifest.id,
-            version: installedPackage.manifest.version
-          )
-          catalogModelInstallErrorKey = "iosApp.invalidModel"
-          return
-        }
-
-        try await transcriptionEngine.loadModel(at: modelURL)
-        languageSelection.updateCapabilities(probe)
-        preferencesDefaults.set(modelURL.path, forKey: modelPathKey)
-        preferencesDefaults.set("\(model.name) · \(file.quant)", forKey: modelNameKey)
-        preferencesDefaults.set(installedPackage.manifest.id, forKey: modelPackageIDKey)
-        preferencesDefaults.set(installedPackage.manifest.version, forKey: modelPackageVersionKey)
-        isModelLoaded = true
-        errorKey = nil
+        return installed
       } catch {
-        catalogModelInstallErrorKey = "iosApp.genericError"
-      }
-    }
-
-    func cancelCatalogModelInstall() {
-      catalogModelInstallTask?.cancel()
-    }
-
-    private func installOrReuseCatalogPackage(
-      _ manifest: ModelPackageManifest,
-      sources: [ModelPackageDownloadSource],
-      in store: ModelPackageStore,
-      using installer: ModelPackageInstaller,
-      progress: @escaping @Sendable (ModelPackageDownloadProgress) -> Void
-    ) async throws -> InstalledModelPackage {
-      do {
-        let installed = try await store.resolveInstalledPackage(
-          id: manifest.id,
-          version: manifest.version
-        )
-        do {
-          for file in installed.manifest.files {
-            let fileURL = installed.directoryURL.appendingPathComponent(file.relativePath)
-            _ = try verifyFileIntegrity(
-              path: fileURL.path,
-              expectedSizeBytes: file.sizeBytes,
-              expectedSha256: file.sha256
-            )
-          }
-          return installed
-        } catch {
-          try await store.remove(id: manifest.id, version: manifest.version)
-        }
-      } catch ModelPackageStoreError.packageNotInstalled {
-      } catch ModelPackageStoreError.installedPackageMismatch {
         try await store.remove(id: manifest.id, version: manifest.version)
       }
-      return try await installer.install(manifest, from: sources, progress: progress)
+    } catch ModelPackageStoreError.packageNotInstalled {
+    } catch ModelPackageStoreError.installedPackageMismatch {
+      try await store.remove(id: manifest.id, version: manifest.version)
     }
-  #endif
+    return try await installer.install(manifest, from: sources, progress: progress)
+  }
 
   private func clearSavedModelPreferences() {
     preferencesDefaults.removeObject(forKey: modelPathKey)
@@ -567,7 +572,42 @@ final class DictationViewModel {
     }
   #endif
 
+  var canStartKeyboardRecording: Bool {
+    guard isModelLoaded, !isPreparingModel, pendingAudioFile == nil, !hasPendingTranscriptSave
+    else {
+      return false
+    }
+    switch state {
+    case .ready, .transcript, .failed: return true
+    case .requestingPermission, .recording, .transcribing: return false
+    }
+  }
+
+  var isKeyboardMicrophoneRunning: Bool { audioCapture.isKeyboardMicrophoneRunning }
+  var keyboardMicrophoneName: String? { audioCapture.microphoneName }
+  var keyboardAudioLevel: Float { audioCapture.audioLevel }
+
+  func enableKeyboardMicrophone() throws {
+    try audioCapture.enableKeyboardMicrophone()
+  }
+
+  func disableKeyboardMicrophone() {
+    audioCapture.disableKeyboardMicrophone()
+  }
+
+  func startKeyboardRecording() {
+    guard canStartKeyboardRecording else { return }
+    do {
+      try audioCapture.startKeyboardRecording()
+      beginRecording()
+    } catch {
+      errorKey = "iosApp.genericError"
+      state = .failed("iosApp.genericError")
+    }
+  }
+
   func startRecording() async {
+    guard !isPreparingModel else { return }
     guard isModelLoaded else {
       errorKey = "iosApp.modelMissing"
       return
@@ -585,13 +625,7 @@ final class DictationViewModel {
     state = permissionRequestState
     do {
       try await audioCapture.startRecording()
-      selectedRecord = nil
-      transcript = ""
-      UserDefaults.standard.removeObject(forKey: pendingAudioFailureKey)
-      recordingStartedAt = .now
-      errorKey = nil
-      noticeKey = nil
-      state = DictationStateMachine.reduce(state, event: .permissionGranted)
+      beginRecording()
     } catch AudioCaptureError.microphonePermissionDenied {
       errorKey = "iosApp.permissionDenied"
       state = DictationStateMachine.reduce(
@@ -602,6 +636,16 @@ final class DictationViewModel {
       errorKey = "iosApp.genericError"
       state = DictationStateMachine.reduce(state, event: .failed("iosApp.genericError"))
     }
+  }
+
+  private func beginRecording() {
+    selectedRecord = nil
+    transcript = ""
+    UserDefaults.standard.removeObject(forKey: pendingAudioFailureKey)
+    recordingStartedAt = .now
+    errorKey = nil
+    noticeKey = nil
+    state = .recording
   }
 
   func stopAndTranscribe(using context: ModelContext) {
@@ -626,9 +670,7 @@ final class DictationViewModel {
         case nil:
           nil
         }
-      transcriptionTask = Task { [weak self] in
-        await self?.transcribe(capture.audioFile, using: context)
-      }
+      startTranscription(capture.audioFile, using: context)
     } catch {
       recordingStartedAt = nil
       errorKey = "iosApp.genericError"
@@ -661,6 +703,8 @@ final class DictationViewModel {
     if state == .recording {
       handleRecordingInterruption(messageKey: "iosApp.recordingStoppedBackground")
     } else if state == .transcribing {
+      transcriptionID = nil
+      transcriptionProgress = nil
       transcriptionEngine.cancel()
       canRetryPendingTranscription = true
       errorKey = nil
@@ -680,7 +724,8 @@ final class DictationViewModel {
   }
 
   func retryTranscription(using context: ModelContext) {
-    guard hasPendingAudioRecovery,
+    guard !isPreparingModel,
+      hasPendingAudioRecovery,
       let pendingAudioFile
     else {
       return
@@ -689,9 +734,7 @@ final class DictationViewModel {
     UserDefaults.standard.removeObject(forKey: pendingAudioFailureKey)
     errorKey = nil
     state = DictationStateMachine.reduce(state, event: .retryTranscription)
-    transcriptionTask = Task { [weak self] in
-      await self?.transcribe(pendingAudioFile, using: context)
-    }
+    startTranscription(pendingAudioFile, using: context)
   }
 
   func handleIncompleteTranscription(kind: IncompleteOutputKind, partialText: String?) {
@@ -859,18 +902,35 @@ final class DictationViewModel {
     }
   }
 
-  private func transcribe(_ audioFile: TemporaryAudioFile, using context: ModelContext) async {
-    state = .transcribing
+  private func startTranscription(_ audioFile: TemporaryAudioFile, using context: ModelContext) {
+    let id = UUID()
+    transcriptionID = id
+    Task { [weak self] in
+      await self?.transcribe(audioFile, id: id, using: context)
+    }
+  }
+
+  private func transcribe(_ audioFile: TemporaryAudioFile, id: UUID, using context: ModelContext)
+    async
+  {
+    guard transcriptionID == id else { return }
     transcriptionProgress = .preparingAudio
-    defer { transcriptionProgress = nil }
+    defer {
+      if transcriptionID == id {
+        transcriptionID = nil
+        transcriptionProgress = nil
+      }
+    }
     do {
       let result = try await transcriptionEngine.transcribe(
         fileAt: audioFile.url,
         language: languageSelection.transcriptionLanguage,
         progress: { [weak self] progress in
-          self?.transcriptionProgress = progress
+          guard let self, transcriptionID == id else { return }
+          transcriptionProgress = progress
         }
       )
+      guard transcriptionID == id else { return }
       let processedText = postProcessTranscript(
         result.text, detectedLanguage: result.detectedLanguage)
       guard !processedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -887,6 +947,8 @@ final class DictationViewModel {
         processingDurationMs: result.processingDurationMs,
         using: context
       )
+    } catch  where transcriptionID != id {
+      return
     } catch TranscriptionEngineError.cancelled(partialText: let partialText) {
       if let partialText, !partialText.isEmpty {
         let processedText = postProcessTranscript(partialText, detectedLanguage: nil)

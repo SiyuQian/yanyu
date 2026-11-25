@@ -7,9 +7,6 @@ use std::fmt;
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
 
-pub const APPLE_INTELLIGENCE_PROVIDER_ID: &str = "apple_intelligence";
-pub const APPLE_INTELLIGENCE_DEFAULT_MODEL_ID: &str = "Apple Intelligence";
-
 #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
@@ -214,6 +211,9 @@ pub enum RecordingRetentionPeriod {
 pub enum KeyboardImplementation {
     Tauri,
     HandyKeys,
+    /// No built-in global shortcuts; trigger Handy via CLI flags or signals
+    /// (e.g. from a Wayland compositor keybinding).
+    None,
 }
 
 impl Default for KeyboardImplementation {
@@ -726,22 +726,6 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
         },
     ];
 
-    // Note: We always include Apple Intelligence on macOS ARM64 without checking availability
-    // at startup. The availability check is deferred to when the user actually tries to use it
-    // (in actions.rs). This prevents crashes on macOS 26.x beta where accessing
-    // SystemLanguageModel.default during early app initialization causes SIGABRT.
-    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-    {
-        providers.push(PostProcessProvider {
-            id: APPLE_INTELLIGENCE_PROVIDER_ID.to_string(),
-            label: "Apple Intelligence".to_string(),
-            base_url: "apple-intelligence://local".to_string(),
-            allow_base_url_edit: false,
-            models_endpoint: None,
-            supports_structured_output: true,
-        });
-    }
-
     // AWS Bedrock via Mantle (OpenAI-compatible endpoint)
     providers.push(PostProcessProvider {
         id: "bedrock_mantle".to_string(),
@@ -773,20 +757,10 @@ fn default_post_process_api_keys() -> SecretMap {
     SecretMap(map)
 }
 
-fn default_model_for_provider(provider_id: &str) -> String {
-    if provider_id == APPLE_INTELLIGENCE_PROVIDER_ID {
-        return APPLE_INTELLIGENCE_DEFAULT_MODEL_ID.to_string();
-    }
-    String::new()
-}
-
 fn default_post_process_models() -> HashMap<String, String> {
     let mut map = HashMap::new();
     for provider in default_post_process_providers() {
-        map.insert(
-            provider.id.clone(),
-            default_model_for_provider(&provider.id),
-        );
+        map.insert(provider.id, String::new());
     }
     map
 }
@@ -860,20 +834,11 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
             changed = true;
         }
 
-        let default_model = default_model_for_provider(&provider.id);
-        match settings.post_process_models.get_mut(&provider.id) {
-            Some(existing) => {
-                if existing.is_empty() && !default_model.is_empty() {
-                    *existing = default_model.clone();
-                    changed = true;
-                }
-            }
-            None => {
-                settings
-                    .post_process_models
-                    .insert(provider.id.clone(), default_model);
-                changed = true;
-            }
+        if let std::collections::hash_map::Entry::Vacant(entry) =
+            settings.post_process_models.entry(provider.id)
+        {
+            entry.insert(String::new());
+            changed = true;
         }
     }
 
@@ -1016,15 +981,21 @@ impl Default for AppSettings {
 }
 
 impl AppSettings {
-    pub fn active_post_process_provider(&self) -> Option<&PostProcessProvider> {
+    /// List supported providers without changing the user's stored configuration.
+    pub(crate) fn available_post_process_providers(
+        &self,
+    ) -> impl Iterator<Item = &PostProcessProvider> {
         self.post_process_providers
             .iter()
-            .find(|provider| provider.id == self.post_process_provider_id)
+            .filter(|provider| provider.id != "apple_intelligence")
+    }
+
+    pub fn active_post_process_provider(&self) -> Option<&PostProcessProvider> {
+        self.post_process_provider(&self.post_process_provider_id)
     }
 
     pub fn post_process_provider(&self, provider_id: &str) -> Option<&PostProcessProvider> {
-        self.post_process_providers
-            .iter()
+        self.available_post_process_providers()
             .find(|provider| provider.id == provider_id)
     }
 
@@ -1498,6 +1469,41 @@ mod tests {
         let result = get_stored_binding(&settings, "unknown");
 
         assert_eq!(result.unwrap_err(), "Binding with id 'unknown' not found");
+    }
+
+    #[test]
+    fn retired_apple_provider_is_ignored() {
+        let mut settings = get_default_settings();
+        let mut retired = settings.post_process_provider("custom").unwrap().clone();
+        retired.id = "apple_intelligence".into();
+        retired.label = "Apple Intelligence".into();
+        assert!(default_post_process_providers()
+            .iter()
+            .all(|provider| provider.id != retired.id));
+        settings.post_process_provider_id = retired.id.clone();
+        settings
+            .post_process_models
+            .insert(retired.id.clone(), "fixture".into());
+        settings
+            .post_process_api_keys
+            .insert(retired.id.clone(), "fixture-key".into());
+
+        assert!(settings.active_post_process_provider().is_none());
+        settings.post_process_providers.push(retired);
+        let stored = serde_json::to_value(&settings).unwrap();
+        assert!(settings
+            .post_process_provider("apple_intelligence")
+            .is_none());
+        assert!(settings.active_post_process_provider().is_none());
+        assert_eq!(serde_json::to_value(&settings).unwrap(), stored);
+
+        settings.post_process_provider_id = "custom".into();
+        assert_eq!(
+            settings
+                .active_post_process_provider()
+                .map(|provider| provider.id.as_str()),
+            Some("custom")
+        );
     }
 
     fn default_settings_json() -> serde_json::Value {

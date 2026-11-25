@@ -455,10 +455,8 @@
         "title": "API (OpenAI Uyumlu)",
         "provider": {
           "title": "Sağlayıcı",
-          "description": "OpenAI uyumlu bir sağlayıcı seçin."
-        },
-        "appleIntelligence": {
-          "unavailable": "Apple Intelligence bu cihazda kullanılamıyor. macOS Tahoe (26.0) veya üzeri ve Sistem Ayarları'nda Apple Intelligence etkin olan bir Apple Silicon Mac gerektirir."
+          "description": "OpenAI uyumlu bir sağlayıcı seçin.",
+          "placeholder": "Bir sağlayıcı seçin"
         },
         "baseUrl": {
           "title": "Temel URL",

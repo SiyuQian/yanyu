@@ -3,17 +3,26 @@ import Foundation
 /// The only data shared with the keyboard; ordinary dictation and history stay private to the app.
 struct KeyboardSessionSnapshot: Codable, Equatable, Sendable {
   enum Phase: String, Codable, Sendable {
-    case recording, transcribing, ready, failed
+    case standby, recording, transcribing, ready, failed
   }
   let id: UUID
   let phase: Phase
   let updatedAt: Date
   var text: String? = nil
+  var startedFromKeyboard: Bool? = nil
+  var microphoneName: String? = nil
+  var audioLevel: Float? = nil
 }
 
 struct KeyboardSessionStore {
   static let groupIdentifier = "group.com.siyuqian.yanyu"
+  static let liveLifetime: TimeInterval = 5
   let directory: URL
+
+  private struct StartRequest: Codable {
+    let id: UUID
+    let requestedAt: Date
+  }
 
   static func shared() -> Self? {
     guard
@@ -38,13 +47,44 @@ struct KeyboardSessionStore {
       return nil
     }
     let age = now.timeIntervalSince(snapshot.updatedAt)
-    let lifetime: TimeInterval = snapshot.phase == .ready ? 300 : 5
+    let lifetime = snapshot.phase == .ready ? 300 : Self.liveLifetime
     guard age >= -1, age <= lifetime,
       (snapshot.text?.utf8.count ?? 0) <= 100_000,
       snapshot.phase != .ready
         || !(snapshot.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     else { return nil }
     return snapshot
+  }
+
+  func requestStart(for id: UUID, now: Date = .now) throws {
+    guard let snapshot = try read(now: now), snapshot.id == id, snapshot.phase == .standby else {
+      throw CocoaError(.fileReadNoSuchFile)
+    }
+    guard try !startRequested(for: id, now: now) else { return }
+    try encode(StartRequest(id: id, requestedAt: now), to: "start.json")
+  }
+
+  func startRequested(for id: UUID, now: Date = .now) throws -> Bool {
+    guard let request = try decode(StartRequest.self, from: "start.json"), request.id == id else {
+      return false
+    }
+    let age = now.timeIntervalSince(request.requestedAt)
+    return age >= -1 && age <= Self.liveLifetime
+  }
+
+  func requestCancel(for id: UUID, now: Date = .now) throws {
+    guard let snapshot = try read(now: now), snapshot.id == id,
+      try snapshot.phase == .recording
+        || (snapshot.phase == .standby && startRequested(for: id, now: now))
+    else { throw CocoaError(.fileReadNoSuchFile) }
+    try encode(id, to: "cancel.json")
+    guard let current = try read(now: now), current.id == id,
+      current.phase == .recording || current.phase == .standby
+    else { throw CocoaError(.fileReadNoSuchFile) }
+  }
+
+  func cancelRequested(for id: UUID) throws -> Bool {
+    try decode(UUID.self, from: "cancel.json") == id
   }
 
   func requestStop(for id: UUID, now: Date = .now) throws {
@@ -59,8 +99,21 @@ struct KeyboardSessionStore {
     try decode(UUID.self, from: "stop.json") == id
   }
 
+  /// Records a keyboard insertion attempt, without asserting the destination accepted its text.
+  func markResultHandled(for id: UUID, now: Date = .now) throws {
+    guard let snapshot = try read(now: now), snapshot.id == id, snapshot.phase == .ready else {
+      throw CocoaError(.fileReadNoSuchFile)
+    }
+    guard try !isResultHandled(for: id) else { return }
+    try encode(id, to: "handled.json")
+  }
+
+  func isResultHandled(for id: UUID) throws -> Bool {
+    try decode(UUID.self, from: "handled.json") == id
+  }
+
   func clear() throws {
-    for name in ["session.json", "stop.json"] {
+    for name in ["start.json", "stop.json", "cancel.json", "handled.json", "session.json"] {
       let url = directory.appendingPathComponent(name)
       if FileManager.default.fileExists(atPath: url.path) {
         try FileManager.default.removeItem(at: url)

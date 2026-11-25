@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { formatKeyCombination, getKeyName } from "./keyboard";
+import {
+  formatKeyCombination,
+  getKeyName,
+  isComposingKeyEvent,
+} from "./keyboard";
 
 const keyboardEvent = (value: { code?: string; key?: string }): KeyboardEvent =>
   value as KeyboardEvent;
@@ -25,3 +29,8 @@ assert.equal(
 );
 
 console.log("keyboard: all assertions passed");
+
+// IME confirmation: either flag marks the keydown as part of composition.
+assert.equal(isComposingKeyEvent({ isComposing: true, keyCode: 13 }), true);
+assert.equal(isComposingKeyEvent({ isComposing: false, keyCode: 229 }), true);
+assert.equal(isComposingKeyEvent({ isComposing: false, keyCode: 13 }), false);

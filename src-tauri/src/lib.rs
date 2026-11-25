@@ -1,6 +1,4 @@
 mod actions;
-#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-mod apple_intelligence;
 mod audio_feedback;
 pub mod audio_toolkit;
 mod autostart;
@@ -752,9 +750,9 @@ fn command_builder() -> Builder<tauri::Wry> {
             commands::open_recordings_folder,
             commands::open_log_dir,
             commands::open_app_data_dir,
-            commands::check_apple_intelligence_available,
             commands::initialize_enigo,
             commands::initialize_shortcuts,
+            commands::reset_macos_permission,
             commands::models::get_available_models,
             commands::models::get_model_info,
             commands::models::download_model,
@@ -1085,6 +1083,8 @@ pub fn run(cli_args: CliArgs) {
             // Only forward logs to the webview while debug mode is on (the live log
             // viewer is the sole consumer and only exists in debug mode). This also
             // honors the runtime `--debug` override applied to `settings` above.
+            // Build the runtime first: its Trace logs would re-enter spawn() mid-init and deadlock.
+            let _ = tauri::async_runtime::handle();
             WEBVIEW_LOG_STREAMING.store(settings.debug_mode, Ordering::Relaxed);
             let app_handle = app.handle().clone();
             app.manage(TranscriptionCoordinator::new(app_handle.clone()));

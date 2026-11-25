@@ -44,7 +44,12 @@ pub fn get_app_dir_path(app: AppHandle) -> Result<String, String> {
 #[tauri::command]
 #[specta::specta]
 pub fn get_app_settings(app: AppHandle) -> Result<AppSettings, String> {
-    Ok(get_settings(&app))
+    let mut settings = get_settings(&app);
+    settings.post_process_providers = settings
+        .available_post_process_providers()
+        .cloned()
+        .collect();
+    Ok(settings)
 }
 
 #[tauri::command]
@@ -124,21 +129,6 @@ pub fn open_app_data_dir(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Check if Apple Intelligence is available on this device.
-/// Called by the frontend when the user selects Apple Intelligence provider.
-#[specta::specta]
-#[tauri::command]
-pub fn check_apple_intelligence_available() -> bool {
-    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-    {
-        crate::apple_intelligence::check_apple_intelligence_availability()
-    }
-    #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
-    {
-        false
-    }
-}
-
 /// Try to initialize Enigo (keyboard/mouse simulation).
 /// On macOS, this will return an error if accessibility permissions are not granted.
 #[specta::specta]
@@ -196,5 +186,46 @@ pub fn initialize_shortcuts(app: AppHandle) -> Result<(), String> {
     crate::secure_input::reconcile_fallback(&app);
 
     log::info!("Shortcuts initialized successfully");
+    Ok(())
+}
+
+/// A macOS privacy permission Yanyu asks for during onboarding.
+#[derive(Clone, Copy, Debug, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "lowercase")]
+pub enum MacPermission {
+    Accessibility,
+    Microphone,
+}
+
+/// Clears Yanyu's macOS grant for `permission` before asking for it. A grant is
+/// tied to the app's code signature, so after an update the old entry stays in
+/// System Settings without matching the new build: macOS neither honors it nor
+/// asks again, and onboarding waits forever. Only called while the permission
+/// reads as not granted, so there is no working grant to lose.
+#[tauri::command]
+#[specta::specta]
+pub fn reset_macos_permission(app: AppHandle, permission: MacPermission) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let service = match permission {
+            MacPermission::Accessibility => "Accessibility",
+            MacPermission::Microphone => "Microphone",
+        };
+        let identifier = app.config().identifier.clone();
+        let output = std::process::Command::new("/usr/bin/tccutil")
+            .args(["reset", service, &identifier])
+            .output()
+            .map_err(|e| format!("Failed to run tccutil: {e}"))?;
+        if !output.status.success() {
+            // Asking is still worth trying: on a first install there may be
+            // nothing to reset.
+            log::warn!(
+                "tccutil reset {service} failed: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (app, permission);
     Ok(())
 }
