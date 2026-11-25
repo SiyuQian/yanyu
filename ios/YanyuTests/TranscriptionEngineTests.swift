@@ -5,6 +5,33 @@ import XCTest
 
 final class TranscriptionEngineTests: XCTestCase {
   @MainActor
+  func testBackgroundExpirationKeepsAudioWhenTheEngineFinishesLate() async throws {
+    let directory = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let pendingAudio = try TemporaryAudioFile(in: directory)
+    try Data([1, 2, 3]).write(to: pendingAudio.url)
+    let container = try ModelContainer(
+      for: TranscriptRecord.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    let engine = FakeTranscriptionEngine()
+    engine.holdsTranscription = true
+    let viewModel = DictationViewModel(pendingAudioFile: pendingAudio, transcriptionEngine: engine)
+    viewModel.handleIncompleteTranscription(kind: .repetition, partialText: nil)
+    viewModel.retryTranscription(using: container.mainContext)
+    await engine.waitUntilTranscriptionStarts()
+
+    viewModel.handleAppBackground()
+    engine.reportProgress(.recognizing)
+    engine.finishTranscription()
+    for _ in 0..<20 { await Task.yield() }
+
+    XCTAssertEqual(viewModel.state, .failed("iosApp.backgroundTranscriptionStopped"))
+    XCTAssertNil(viewModel.transcriptionProgress)
+    XCTAssertTrue(viewModel.hasPendingAudioRecovery)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: pendingAudio.url.path))
+    XCTAssertTrue(try container.mainContext.fetch(FetchDescriptor<TranscriptRecord>()).isEmpty)
+  }
+
+  @MainActor
   func testLocalTranscriptionPreferencesPersistAndDefaultToFillerRemoval() throws {
     let suiteName = "YanyuTranscriptionPreferencesTests.\(UUID().uuidString)"
     let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

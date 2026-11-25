@@ -1521,6 +1521,38 @@
         }
       }
     },
+    "iosApp.keyboardCancelling": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelling dictation…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在取消听写…"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardConfirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish dictation and insert text"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结束听写并插入文字"
+          }
+        }
+      }
+    },
     "iosApp.keyboardDelete": {
       "localizations": {
         "en": {
@@ -1537,6 +1569,22 @@
         }
       }
     },
+    "iosApp.keyboardDisableMicrophone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off keyboard microphone"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭键盘麦克风"
+          }
+        }
+      }
+    },
     "iosApp.keyboardEnable": {
       "localizations": {
         "en": {
@@ -1549,6 +1597,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "启用键盘"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardEnableMicrophone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable keyboard microphone"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用键盘麦克风"
           }
         }
       }
@@ -1574,13 +1638,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Allow Full Access in keyboard settings to stop here, or stop in Yanyu. Recording ends after 60 seconds."
+            "value": "Turn on Allow Full Access to dictate."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在键盘设置中允许完全访问，即可在此结束录音；也可返回言语结束。录音将在 60 秒后停止。"
+            "value": "请允许完全访问以使用听写。"
           }
         }
       }
@@ -1606,13 +1670,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Yanyu and start keyboard dictation, then return here."
+            "value": "Enable the keyboard microphone in Yanyu."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开言语并开始键盘语音输入，然后返回此处。"
+            "value": "请在言语中启用键盘麦克风。"
           }
         }
       }
@@ -1638,13 +1702,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Check your text before sending. Start the next recording in Yanyu."
+            "value": "Check your text before sending."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "发送前请检查文字。请在言语中开始下一次录音。"
+            "value": "发送前请检查文字。"
           }
         }
       }
@@ -1665,18 +1729,98 @@
         }
       }
     },
-    "iosApp.keyboardModeGuidance": {
+    "iosApp.keyboardListening": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keyboard dictation starts explicitly here, then continues when you switch apps. Ordinary recording on the main screen stops when you leave Yanyu. The keyboard cannot start its own microphone recording."
+            "value": "Listening"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请在此主动开始键盘语音输入，之后可切换 App 继续录音。主页的普通录音会在离开言语时停止。键盘本身不能启动麦克风录音。"
+            "value": "正在聆听"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardMicrophone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "麦克风"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardMicrophoneEnabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard microphone enabled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键盘麦克风已启用"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardMicrophoneReady": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to dictate"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可以开始听写"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardMicrophoneToggle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard microphone"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键盘麦克风"
+          }
+        }
+      }
+    },
+    "iosApp.keyboardModeGuidance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable the keyboard microphone below. Switch to your text field, select Yanyu with the globe key, and tap the mic. Tap ✓ to transcribe and insert, or × to discard the recording."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在下方启用键盘麦克风。返回输入框，用地球键切换到言语，再点麦克风。点 ✓ 转写并插入文字，或点 × 丢弃本次录音。"
           }
         }
       }
@@ -1766,13 +1910,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Start here, switch to another app, and select Yanyu with the globe key. Recording continues for up to 60 seconds. Stop from the keyboard to insert automatically into the unchanged field; otherwise review and tap Insert text. Audio and recognition stay on this iPhone. Only this session’s text is shared with the keyboard, for up to 5 minutes. Start the next recording in Yanyu. Locking the phone stops the session."
+            "value": "While the keyboard microphone is enabled, iOS shows its microphone indicator. Yanyu saves audio only during dictation and transcribes on this device. The microphone turns off after five idle minutes or when you lock the device. Dictation lasts up to 60 seconds."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在这里开始录音，然后切换到其他 App，用地球键选择言语键盘。录音最长持续 60 秒。在键盘中停止后，文字会自动插入未改变的输入框；否则请预览后点击“插入文字”。音频和识别过程留在这台 iPhone 上，键盘只能读取本次会话的文字，最长保留 5 分钟。请在言语中开始下一次录音。锁屏会停止会话。"
+            "value": "键盘麦克风启用期间，iOS 会显示麦克风指示。言语只在听写时保存音频，并在本机转写。闲置 5 分钟或锁屏后，麦克风会自动关闭。每次听写最长 60 秒。"
           }
         }
       }
@@ -1830,13 +1974,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The input field changed or automatic insertion was unavailable. Review the text, then insert it."
+            "value": "Review your transcript before inserting."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "输入框已改变或无法自动插入，请预览文字后手动插入。"
+            "value": "请先检查转写，再插入文字。"
           }
         }
       }
@@ -1846,13 +1990,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "In Settings → General → Keyboard → Keyboards → Add New Keyboard, select Yanyu. Enable Allow Full Access to stop a recording from the keyboard. Basic typing works without it."
+            "value": "In Settings → General → Keyboard → Keyboards → Add New Keyboard, select Yanyu. Turn on Allow Full Access to dictate from the keyboard. Basic typing works without it."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在「设置 → 通用 → 键盘 → 键盘 → 添加新键盘」中选择言语。开启「允许完全访问」后，可从键盘结束录音；基础文字输入无需此权限。"
+            "value": "在「设置 → 通用 → 键盘 → 键盘 → 添加新键盘」中选择言语。开启「允许完全访问」后即可在键盘中听写。基础文字输入无需此权限。"
           }
         }
       }
@@ -1889,18 +2033,18 @@
         }
       }
     },
-    "iosApp.keyboardStartInApp": {
+    "iosApp.keyboardStarting": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Start recording in Yanyu"
+            "value": "Starting microphone…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请在言语中开始录音"
+            "value": "正在启动麦克风…"
           }
         }
       }
@@ -2470,13 +2614,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Start recording creates a transcript here and stops when you leave Yanyu. To dictate into another app, open Voice input and start keyboard dictation before switching apps."
+            "value": "To dictate in another app, turn on the keyboard microphone at the top right. Recording from this screen stops when you leave Yanyu."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "「开始录音」用于在此转写，离开言语时会停止。如需向其他 App 输入文字，请打开「语音输入」，先开始键盘语音输入，再切换 App。"
+            "value": "若要在其他 App 中听写，请打开右上角的键盘麦克风开关。此页面开始的录音会在离开言语时停止。"
           }
         }
       }

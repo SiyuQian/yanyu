@@ -85,6 +85,11 @@ struct ContentView: View {
             .accessibilityLabel(Text("iosApp.onboardingTitle"))
           }
         }
+        ToolbarItem(placement: .topBarTrailing) {
+          if hasCompletedOnboarding {
+            keyboardMicrophoneToggle
+          }
+        }
       }
     }
     .safeAreaInset(edge: .top) {
@@ -105,15 +110,26 @@ struct ContentView: View {
       else {
         return
       }
-      viewModel.handleRecordingInterruption(messageKey: "iosApp.audioInterrupted")
+      interruptRecording(messageKey: "iosApp.audioInterrupted")
     }
-    .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) {
-      _ in
-      viewModel.handleRecordingInterruption(messageKey: "iosApp.audioRouteChanged")
+    .onReceive(
+      NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)
+        .receive(on: RunLoop.main)
+    ) {
+      notification in
+      guard let rawReason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+        let reason = AVAudioSession.RouteChangeReason(rawValue: rawReason),
+        reason == .newDeviceAvailable || reason == .oldDeviceUnavailable
+          || reason == .noSuitableRouteForCategory || reason == .routeConfigurationChange
+      else { return }
+      interruptRecording(messageKey: "iosApp.audioRouteChanged")
     }
     .onChange(of: scenePhase) { _, newPhase in
       if newPhase == .active { handleShortcutRequest() }
       if newPhase == .background {
+        if keyboardDictation.isPreparingMicrophone {
+          keyboardDictation.disableMicrophone(viewModel: viewModel)
+        }
         let continuesKeyboardSession =
           keyboardDictation.isActive
           && (viewModel.state == .recording || viewModel.state == .transcribing)
@@ -130,6 +146,7 @@ struct ContentView: View {
       NotificationCenter.default.publisher(
         for: UIApplication.protectedDataWillBecomeUnavailableNotification)
     ) { _ in
+      keyboardDictation.disableMicrophone(viewModel: viewModel)
       keyboardDictation.cancel(viewModel: viewModel)
     }
     .task {
@@ -191,20 +208,44 @@ struct ContentView: View {
     #endif
   }
 
+  private var keyboardMicrophoneToggle: some View {
+    Toggle(
+      "iosApp.keyboardMicrophoneToggle",
+      isOn: Binding(
+        get: { keyboardDictation.isMicrophoneEnabled },
+        set: { enabled in
+          if enabled {
+            Task { await keyboardDictation.enableMicrophone(viewModel: viewModel) }
+          } else if keyboardDictation.isActive, viewModel.state == .recording {
+            keyboardDictation.cancel(viewModel: viewModel)
+          } else {
+            keyboardDictation.disableMicrophone(viewModel: viewModel)
+          }
+        })
+    )
+    .toggleStyle(.switch)
+    .labelsHidden()
+    .accessibilityIdentifier("keyboardMicrophoneToggle")
+    .disabled(
+      keyboardDictation.isPreparingMicrophone
+        || (!keyboardDictation.isMicrophoneEnabled
+          && (!hasRestoredLocalState || keyboardDictation.isActive
+            || !viewModel.canStartKeyboardRecording || keyboardDictation.pendingResult != nil))
+    )
+  }
+
+  private func interruptRecording(messageKey: String) {
+    keyboardDictation.disableMicrophone(viewModel: viewModel)
+    viewModel.handleRecordingInterruption(messageKey: messageKey)
+  }
+
   @MainActor
   private func handleShortcutRequest() {
     guard hasRestoredLocalState, scenePhase == .active else { return }
     keyboardDictation.refresh(viewModel: viewModel, using: modelContext)
-    let stateAllowsStart: Bool
-    switch viewModel.state {
-    case .ready, .transcript, .failed: stateAllowsStart = true
-    default: stateAllowsStart = false
-    }
     let canStart =
-      stateAllowsStart && !isStartingShortcut && !keyboardDictation.isActive
-      && !viewModel.isPreparingModel && !viewModel.hasDiscardablePendingAudio
-      && !viewModel.hasPendingTranscriptSave
-      && keyboardDictation.pendingResult == nil
+      viewModel.canStartKeyboardRecording && !isStartingShortcut && !keyboardDictation.isActive
+      && !keyboardDictation.isPreparingMicrophone && keyboardDictation.pendingResult == nil
     guard
       let outcome = KeyboardDictationLaunchRequest.shared.consume(
         afterRestore: true,
@@ -619,10 +660,14 @@ struct ContentView: View {
 
       Button {
         if viewModel.state == .recording {
-          keyboardDictation.prepareForTranscription(viewModel: viewModel)
-          viewModel.stopAndTranscribe(using: modelContext)
+          if keyboardDictation.isActive {
+            keyboardDictation.stop(viewModel: viewModel, using: modelContext)
+          } else {
+            viewModel.stopAndTranscribe(using: modelContext)
+          }
         } else if !keyboardDictation.isActive {
           hasCopiedTranscript = false
+          keyboardDictation.disableMicrophone(viewModel: viewModel)
           Task { await viewModel.startRecording() }
         }
       } label: {

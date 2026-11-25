@@ -5,6 +5,40 @@ import XCTest
 
 final class KeyboardResultConsumerTests: XCTestCase {
   @MainActor
+  func testKeyboardStartedDictationRequiresConfirmationFromItsOriginalContext() throws {
+    let defaults = try isolatedDefaults()
+    defer { defaults.0.removePersistentDomain(forName: defaults.1) }
+    let delivery = KeyboardTextDelivery(defaults: defaults.0)
+    let document = KeyboardTestDocument(text: "Draft: ")
+    let result = KeyboardSessionSnapshot(id: UUID(), phase: .ready, updatedAt: .now, text: "你好")
+    delivery.trackContext(for: result.id, in: document.context)
+
+    XCTAssertFalse(delivery.insert(result, into: document, automatically: true))
+    delivery.confirmAutomaticInsertion(for: UUID())
+    XCTAssertFalse(delivery.insert(result, into: document, automatically: true))
+    delivery.confirmAutomaticInsertion(for: result.id)
+    XCTAssertTrue(delivery.insert(result, into: document, automatically: true))
+    XCTAssertEqual(document.view.text, "Draft: 你好")
+  }
+
+  @MainActor
+  func testConfirmDoesNotRearmInsertionAfterAKeyboardContextChange() throws {
+    let defaults = try isolatedDefaults()
+    defer { defaults.0.removePersistentDomain(forName: defaults.1) }
+    let delivery = KeyboardTextDelivery(defaults: defaults.0)
+    let document = KeyboardTestDocument(text: "Original")
+    let result = KeyboardSessionSnapshot(
+      id: UUID(), phase: .ready, updatedAt: .now, text: " speech")
+    delivery.trackContext(for: result.id, in: document.context)
+    delivery.invalidateContext()
+    delivery.confirmAutomaticInsertion(for: result.id)
+
+    XCTAssertFalse(delivery.insert(result, into: document, automatically: true))
+    XCTAssertEqual(document.view.text, "Original")
+    XCTAssertTrue(delivery.insert(result, into: document))
+  }
+
+  @MainActor
   func testReadyResultAutomaticallyInsertsOnlyOnceIntoTheOriginalField() throws {
     let defaults = try isolatedDefaults()
     defer { defaults.0.removePersistentDomain(forName: defaults.1) }
