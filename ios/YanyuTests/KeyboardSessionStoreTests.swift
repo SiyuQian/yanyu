@@ -5,6 +5,28 @@ import XCTest
 final class KeyboardSessionStoreTests: XCTestCase {
   private let now = Date(timeIntervalSince1970: 1_000)
 
+  func testStartCommandBelongsToOneFreshStandbySession() throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = KeyboardSessionStore(directory: directory)
+    let standby = KeyboardSessionSnapshot(id: UUID(), phase: .standby, updatedAt: now)
+    try store.write(standby)
+
+    XCTAssertThrowsError(try store.requestStart(for: UUID(), now: now))
+    XCTAssertThrowsError(try store.requestStop(for: standby.id, now: now))
+    XCTAssertThrowsError(try store.requestCancel(for: standby.id, now: now))
+    try store.requestStart(for: standby.id, now: now)
+    XCTAssertTrue(try store.startRequested(for: standby.id, now: now))
+    XCTAssertFalse(try store.startRequested(for: standby.id, now: now.addingTimeInterval(6)))
+    try store.requestCancel(for: standby.id, now: now)
+    XCTAssertTrue(try store.cancelRequested(for: standby.id))
+
+    let next = KeyboardSessionSnapshot(id: UUID(), phase: .standby, updatedAt: now)
+    try store.write(next)
+    XCTAssertFalse(try store.startRequested(for: next.id, now: now))
+    XCTAssertFalse(try store.cancelRequested(for: next.id))
+  }
+
   func testAppResultIsReadableByAnotherStoreButExpires() throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: directory) }

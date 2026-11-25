@@ -41,6 +41,11 @@ final class SettingsUITests: XCTestCase {
   @MainActor
   func testModelPreparationIsReachableWithoutDeveloperTools() throws {
     let app = launchApp(language: "en", locale: "en_US")
+    let microphone = app.navigationBars.switches["keyboardMicrophoneToggle"]
+    XCTAssertTrue(microphone.waitForExistence(timeout: 5))
+    XCTAssertEqual(microphone.label, "Keyboard microphone")
+    XCTAssertEqual(microphone.value as? String, "0")
+    XCTAssertFalse(microphone.isEnabled)
     let prepare = app.buttons["prepareSpeechModel"]
     XCTAssertTrue(prepare.waitForExistence(timeout: 10))
     XCTAssertTrue(prepare.isEnabled)
@@ -91,6 +96,10 @@ final class SettingsUITests: XCTestCase {
     XCTAssertTrue(app.navigationBars["Yanyu Keyboard"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["keyboardSetupInstructions"].exists)
     XCTAssertTrue(app.buttons["Open System Settings"].exists)
+    let enable = app.buttons["keyboardEnableMicrophone"]
+    scrollUntilVisible(enable, in: app)
+    XCTAssertTrue(enable.exists)
+    XCTAssertFalse(enable.isEnabled)
     let start = app.buttons["keyboardStartRecording"]
     scrollUntilVisible(start, in: app)
     XCTAssertTrue(start.exists)
