@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshCcw } from "lucide-react";
 
-import { Alert } from "../../ui/Alert";
 import { SettingContainer, SettingsGroup } from "@/components/ui";
 import { ResetButton } from "../../ui/ResetButton";
 
@@ -29,18 +28,13 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
           <ProviderSelect
             options={state.providerOptions}
             value={state.selectedProviderId}
+            placeholder={t("settings.postProcessing.api.provider.placeholder")}
             onChange={state.handleProviderSelect}
           />
         </div>
       </SettingContainer>
 
-      {state.isAppleProvider ? (
-        state.appleIntelligenceUnavailable ? (
-          <Alert variant="error" contained>
-            {t("settings.postProcessing.api.appleIntelligence.unavailable")}
-          </Alert>
-        ) : null
-      ) : (
+      {state.selectedProvider && (
         <>
           {state.selectedProvider?.id === "custom" && (
             <SettingContainer
@@ -83,51 +77,50 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
               />
             </div>
           </SettingContainer>
-        </>
-      )}
-
-      {!state.isAppleProvider && (
-        <SettingContainer
-          title={t("settings.postProcessing.api.model.title")}
-          description={
-            state.isCustomProvider
-              ? t("settings.postProcessing.api.model.descriptionCustom")
-              : t("settings.postProcessing.api.model.descriptionDefault")
-          }
-          descriptionMode="tooltip"
-          layout="stacked"
-          grouped={true}
-        >
-          <div className="flex items-center gap-2">
-            <ModelSelect
-              value={state.model}
-              options={state.modelOptions}
-              disabled={state.isModelUpdating}
-              isLoading={state.isFetchingModels}
-              placeholder={
-                state.modelOptions.length > 0
-                  ? t(
-                      "settings.postProcessing.api.model.placeholderWithOptions",
-                    )
-                  : t("settings.postProcessing.api.model.placeholderNoOptions")
-              }
-              onSelect={state.handleModelSelect}
-              onCreate={state.handleModelCreate}
-              onBlur={() => {}}
-              className="flex-1 min-w-[380px]"
-            />
-            <ResetButton
-              onClick={state.handleRefreshModels}
-              disabled={state.isFetchingModels}
-              ariaLabel={t("settings.postProcessing.api.model.refreshModels")}
-              className="flex h-10 w-10 items-center justify-center"
-            >
-              <RefreshCcw
-                className={`h-4 w-4 ${state.isFetchingModels ? "animate-spin" : ""}`}
+          <SettingContainer
+            title={t("settings.postProcessing.api.model.title")}
+            description={
+              state.isCustomProvider
+                ? t("settings.postProcessing.api.model.descriptionCustom")
+                : t("settings.postProcessing.api.model.descriptionDefault")
+            }
+            descriptionMode="tooltip"
+            layout="stacked"
+            grouped={true}
+          >
+            <div className="flex items-center gap-2">
+              <ModelSelect
+                value={state.model}
+                options={state.modelOptions}
+                disabled={state.isModelUpdating}
+                isLoading={state.isFetchingModels}
+                placeholder={
+                  state.modelOptions.length > 0
+                    ? t(
+                        "settings.postProcessing.api.model.placeholderWithOptions",
+                      )
+                    : t(
+                        "settings.postProcessing.api.model.placeholderNoOptions",
+                      )
+                }
+                onSelect={state.handleModelSelect}
+                onCreate={state.handleModelCreate}
+                onBlur={() => {}}
+                className="flex-1 min-w-[380px]"
               />
-            </ResetButton>
-          </div>
-        </SettingContainer>
+              <ResetButton
+                onClick={state.handleRefreshModels}
+                disabled={state.isFetchingModels}
+                ariaLabel={t("settings.postProcessing.api.model.refreshModels")}
+                className="flex h-10 w-10 items-center justify-center"
+              >
+                <RefreshCcw
+                  className={`h-4 w-4 ${state.isFetchingModels ? "animate-spin" : ""}`}
+                />
+              </ResetButton>
+            </div>
+          </SettingContainer>
+        </>
       )}
     </>
   );

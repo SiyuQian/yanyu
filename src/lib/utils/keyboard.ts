@@ -4,6 +4,11 @@
 
 export type OSType = "macos" | "windows" | "linux" | "unknown";
 
+/** IME boundary keydowns can have isComposing=false while keyCode is still 229. */
+export const isComposingKeyEvent = (
+  event: Pick<KeyboardEvent, "isComposing" | "keyCode">,
+): boolean => event.isComposing || event.keyCode === 229;
+
 // Shortcut parsers require compact tokens; keep display labels separate.
 const COMPOUND_KEY_DISPLAY: Record<string, string> = {
   capslock: "Caps Lock",

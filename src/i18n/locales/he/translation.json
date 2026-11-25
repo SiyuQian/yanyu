@@ -455,10 +455,8 @@
         "title": "API (תואם OpenAI)",
         "provider": {
           "title": "ספק",
-          "description": "בחר ספק שתואם ל-OpenAI."
-        },
-        "appleIntelligence": {
-          "unavailable": "Apple Intelligence לא זמין במכשיר הזה. נדרש Mac עם Apple Silicon שמריץ macOS Tahoe (26.0) ומעלה, עם Apple Intelligence מופעל בהגדרות המערכת."
+          "description": "בחר ספק שתואם ל-OpenAI.",
+          "placeholder": "בחרו ספק"
         },
         "baseUrl": {
           "title": "כתובת URL בסיסית",
