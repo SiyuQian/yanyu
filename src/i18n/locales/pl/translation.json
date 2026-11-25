@@ -455,10 +455,8 @@
         "title": "API (zgodne z OpenAI)",
         "provider": {
           "title": "Dostawca",
-          "description": "Wybierz dostawcę zgodnego z OpenAI."
-        },
-        "appleIntelligence": {
-          "unavailable": "Apple Intelligence nie jest dostępne na tym urządzeniu. Wymaga komputera Mac z Apple Silicon i systemem macOS Tahoe (26.0) lub nowszym z włączonym Apple Intelligence w Ustawieniach systemowych."
+          "description": "Wybierz dostawcę zgodnego z OpenAI.",
+          "placeholder": "Wybierz dostawcę"
         },
         "baseUrl": {
           "title": "Adres bazowy",

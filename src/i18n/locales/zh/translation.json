@@ -455,10 +455,8 @@
         "title": "API（兼容 OpenAI）",
         "provider": {
           "title": "提供商",
-          "description": "选择一个兼容 OpenAI 的提供商。"
-        },
-        "appleIntelligence": {
-          "unavailable": "Apple Intelligence 在此设备上不可用。需要运行 macOS Tahoe（26.0）或更高版本的 Apple Silicon Mac，并在系统设置中启用 Apple Intelligence。"
+          "description": "选择一个兼容 OpenAI 的提供商。",
+          "placeholder": "选择提供商"
         },
         "baseUrl": {
           "title": "基础 URL",

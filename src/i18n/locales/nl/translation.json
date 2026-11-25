@@ -455,10 +455,8 @@
         "title": "API (OpenAI-compatibel)",
         "provider": {
           "title": "Provider",
-          "description": "Selecteer een OpenAI-compatibele provider."
-        },
-        "appleIntelligence": {
-          "unavailable": "Apple Intelligence is niet beschikbaar op dit apparaat. Vereist een Apple Silicon Mac met macOS Tahoe (26.0) of nieuwer waarop Apple Intelligence is ingeschakeld via de Systeeminstellingen."
+          "description": "Selecteer een OpenAI-compatibele provider.",
+          "placeholder": "Selecteer een provider"
         },
         "baseUrl": {
           "title": "Basis-URL",
